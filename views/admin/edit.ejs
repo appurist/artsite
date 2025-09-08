@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Edit Artwork - Art Gallery Admin</title>
+    <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+    <nav class="admin-nav">
+        <div class="nav-content">
+            <h1>Art Gallery Admin</h1>
+            <div class="nav-links">
+                <a href="/admin/dashboard" class="btn btn-secondary">Back to Dashboard</a>
+                <a href="/admin/logout" class="btn btn-secondary">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="admin-content">
+        <div class="edit-container">
+            <h2>Edit Artwork</h2>
+            
+            <div class="artwork-preview">
+                <img src="/uploads/thumbs/<%= artwork.thumbnail_filename %>" 
+                     alt="<%= artwork.title %>" 
+                     class="preview-image">
+                <div class="file-info">
+                    <strong>Filename:</strong> <%= artwork.image_filename %><br>
+                    <small>Note: Filename cannot be changed</small>
+                </div>
+            </div>
+            
+            <% if (error) { %>
+                <div class="error"><%= error %></div>
+            <% } %>
+            
+            <% if (success) { %>
+                <div class="success"><%= success %></div>
+            <% } %>
+            
+            <form method="POST" action="/admin/edit/<%= artwork.id %>" class="edit-form">
+                <div class="form-group">
+                    <label for="title">Title *</label>
+                    <input type="text" id="title" name="title" value="<%= artwork.title %>" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="description">Description</label>
+                    <textarea id="description" name="description" rows="4"><%= artwork.description %></textarea>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="medium">Medium</label>
+                        <input type="text" id="medium" name="medium" value="<%= artwork.medium %>" placeholder="Oil on canvas, Watercolor, etc.">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="dimensions">Dimensions</label>
+                        <input type="text" id="dimensions" name="dimensions" value="<%= artwork.dimensions %>" placeholder="24&quot; x 36&quot;">
+                    </div>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="year_created">Year Created</label>
+                        <input type="number" id="year_created" name="year_created" value="<%= artwork.year_created || '' %>" min="1900" max="2030">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="price">Price (optional)</label>
+                        <input type="text" id="price" name="price" value="<%= artwork.price %>" placeholder="$500, Not for sale, etc.">
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="tags">Tags</label>
+                    <input type="text" id="tags" name="tags" value="<%= artwork.tags %>" placeholder="landscape, abstract, portrait (comma separated)">
+                </div>
+                
+                <div class="form-actions">
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                    <a href="/admin/dashboard" class="btn btn-secondary">Cancel</a>
+                    <a href="/artwork/<%= artwork.id %>" target="_blank" class="btn btn-secondary">Preview</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</body>
+</html>

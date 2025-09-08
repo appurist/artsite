@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= artwork.title %> - Art Gallery</title>
+    <link rel="stylesheet" href="/css/gallery.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <header class="artwork-header">
+        <div class="header-content">
+            <nav class="breadcrumb">
+                <a href="/" class="back-link">← Back to Gallery</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="artwork-main">
+        <div class="artwork-container">
+            <div class="artwork-image-section">
+                <div class="full-artwork-container">
+                    <img src="/uploads/full/<%= artwork.image_filename %>" 
+                         alt="<%= artwork.title %>" 
+                         class="full-artwork-image">
+                </div>
+            </div>
+            
+            <div class="artwork-info-section">
+                <div class="artwork-info">
+                    <h1 class="artwork-title"><%= artwork.title %></h1>
+                    
+                    <div class="artwork-metadata">
+                        <% if (artwork.medium) { %>
+                            <div class="metadata-item">
+                                <label>Medium:</label>
+                                <span><%= artwork.medium %></span>
+                            </div>
+                        <% } %>
+                        
+                        <% if (artwork.dimensions) { %>
+                            <div class="metadata-item">
+                                <label>Dimensions:</label>
+                                <span><%= artwork.dimensions %></span>
+                            </div>
+                        <% } %>
+                        
+                        <% if (artwork.year_created) { %>
+                            <div class="metadata-item">
+                                <label>Year:</label>
+                                <span><%= artwork.year_created %></span>
+                            </div>
+                        <% } %>
+                        
+                        <% if (artwork.price) { %>
+                            <div class="metadata-item">
+                                <label>Price:</label>
+                                <span><%= artwork.price %></span>
+                            </div>
+                        <% } %>
+                        
+                        <% if (artwork.tags) { %>
+                            <div class="metadata-item">
+                                <label>Tags:</label>
+                                <div class="artwork-tags">
+                                    <% artwork.tags.split(',').forEach(function(tag) { %>
+                                        <span class="tag"><%= tag.trim() %></span>
+                                    <% }); %>
+                                </div>
+                            </div>
+                        <% } %>
+                    </div>
+                    
+                    <% if (artwork.description) { %>
+                        <div class="artwork-description">
+                            <h3>About this artwork</h3>
+                            <p><%= artwork.description %></p>
+                        </div>
+                    <% } %>
+                    
+                    <div class="artwork-actions">
+                        <a href="/" class="btn btn-primary">Back to Gallery</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="gallery-footer">
+        <p>&copy; <%= new Date().getFullYear() %> Art Gallery. All rights reserved.</p>
+    </footer>
+</body>
+</html>

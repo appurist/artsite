@@ -1,0 +1,617 @@
+/* Public Gallery Styles */
+:root {
+    --primary-color: #667eea;
+    --secondary-color: #764ba2;
+    --text-color: #333;
+    --bg-color: #fafafa;
+    --white: #fff;
+    --gray-light: #f0f0f0;
+    --gray-medium: #7f8c8d;
+    --gray-dark: #2c3e50;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    line-height: 1.6;
+    color: var(--text-color);
+    background-color: var(--bg-color);
+}
+
+/* Navigation */
+.main-nav {
+    background: var(--white);
+    padding: 1rem 0;
+    border-bottom: 1px solid var(--gray-light);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.nav-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.logo {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.5rem;
+    font-weight: 700;
+    text-decoration: none;
+    color: var(--gray-dark);
+}
+
+.nav-menu {
+    display: flex;
+    list-style: none;
+    gap: 2rem;
+    margin: 0;
+    padding: 0;
+}
+
+.nav-menu a {
+    text-decoration: none;
+    color: var(--gray-medium);
+    font-weight: 500;
+    transition: color 0.2s;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid transparent;
+}
+
+.nav-menu a:hover,
+.nav-menu a.active {
+    color: var(--primary-color);
+    border-bottom-color: var(--primary-color);
+}
+
+/* Typography */
+.gallery-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 3rem;
+    font-weight: 700;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+}
+
+.gallery-subtitle {
+    font-size: 1.2rem;
+    color: #7f8c8d;
+    font-weight: 300;
+}
+
+/* Header */
+.gallery-header {
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    padding: 4rem 0;
+    text-align: center;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.gallery-header .gallery-title {
+    color: white;
+}
+
+.gallery-header .gallery-subtitle {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+/* Main Content */
+.gallery-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.artwork-count {
+    text-align: center;
+    margin-bottom: 2rem;
+}
+
+.artwork-count p {
+    color: #7f8c8d;
+    font-size: 1rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Empty Gallery */
+.empty-gallery {
+    text-align: center;
+    padding: 4rem 2rem;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.empty-gallery h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.empty-gallery p {
+    color: #7f8c8d;
+    font-size: 1.1rem;
+}
+
+/* Gallery Grid */
+.gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 2rem;
+}
+
+.artwork-item {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    transition: all 0.3s ease;
+}
+
+.artwork-item:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+}
+
+.artwork-link {
+    text-decoration: none;
+    color: inherit;
+    display: block;
+}
+
+.artwork-image-container {
+    position: relative;
+    width: 100%;
+    height: 280px;
+    overflow: hidden;
+}
+
+.artwork-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+}
+
+.artwork-item:hover .artwork-image {
+    transform: scale(1.05);
+}
+
+.artwork-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.artwork-item:hover .artwork-overlay {
+    opacity: 1;
+}
+
+.view-artwork {
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.artwork-details {
+    padding: 1.5rem;
+}
+
+.artwork-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #2c3e50;
+    margin-bottom: 0.5rem;
+    line-height: 1.3;
+}
+
+.artwork-medium {
+    color: #7f8c8d;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    font-style: italic;
+}
+
+.artwork-year {
+    color: #95a5a6;
+    font-size: 0.9rem;
+    font-weight: 600;
+}
+
+/* Individual Artwork Page */
+.artwork-header {
+    background: white;
+    padding: 1rem 0;
+    border-bottom: 1px solid #eee;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.breadcrumb {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.back-link {
+    color: #3498db;
+    text-decoration: none;
+    font-weight: 600;
+    transition: color 0.2s;
+}
+
+.back-link:hover {
+    color: #2980b9;
+}
+
+.artwork-main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.artwork-container {
+    display: grid;
+    grid-template-columns: 1fr 400px;
+    gap: 3rem;
+    align-items: start;
+}
+
+.artwork-image-section {
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.full-artwork-container {
+    width: 100%;
+    max-height: 80vh;
+    overflow: hidden;
+}
+
+.full-artwork-image {
+    width: 100%;
+    height: auto;
+    display: block;
+}
+
+.artwork-info-section {
+    background: white;
+    border-radius: 12px;
+    padding: 2rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    position: sticky;
+    top: 100px;
+}
+
+.artwork-info .artwork-title {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2rem;
+    color: #2c3e50;
+    margin-bottom: 1.5rem;
+    line-height: 1.2;
+}
+
+.artwork-metadata {
+    margin-bottom: 2rem;
+}
+
+.metadata-item {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 0.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.metadata-item:last-child {
+    border-bottom: none;
+    margin-bottom: 0;
+    padding-bottom: 0;
+}
+
+.metadata-item label {
+    font-weight: 600;
+    color: #2c3e50;
+    min-width: 100px;
+    margin-right: 1rem;
+}
+
+.metadata-item span {
+    color: #555;
+}
+
+.artwork-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+}
+
+.tag {
+    background: #ecf0f1;
+    color: #2c3e50;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
+.artwork-description {
+    margin-bottom: 2rem;
+}
+
+.artwork-description h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.3rem;
+    color: #2c3e50;
+    margin-bottom: 1rem;
+}
+
+.artwork-description p {
+    color: #555;
+    line-height: 1.7;
+}
+
+/* Buttons */
+.btn {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    background: #3498db;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: background-color 0.2s;
+}
+
+.btn:hover {
+    background: #2980b9;
+}
+
+.btn-primary {
+    background: #3498db;
+}
+
+.btn-primary:hover {
+    background: #2980b9;
+}
+
+/* Page Layouts (About, Contact, etc.) */
+.page-main {
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 3rem 2rem;
+}
+
+.page-container {
+    background: white;
+    border-radius: 12px;
+    padding: 3rem;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+}
+
+.page-header {
+    text-align: center;
+    margin-bottom: 3rem;
+    padding-bottom: 2rem;
+    border-bottom: 2px solid var(--gray-light);
+}
+
+.page-header h1 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 2.5rem;
+    color: var(--gray-dark);
+}
+
+.page-content section {
+    margin-bottom: 3rem;
+}
+
+.page-content section:last-child {
+    margin-bottom: 0;
+}
+
+.artist-intro h2 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.8rem;
+    color: var(--gray-dark);
+    margin-bottom: 1rem;
+}
+
+.artist-bio {
+    font-size: 1.1rem;
+    line-height: 1.7;
+    color: var(--gray-medium);
+}
+
+.page-text .content-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-color);
+}
+
+.artist-statement h3,
+.artist-links h3,
+.contact-info h3,
+.inquiry-info h3 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-size: 1.4rem;
+    color: var(--gray-dark);
+    margin-bottom: 1rem;
+}
+
+.statement-text {
+    font-size: 1.1rem;
+    line-height: 1.8;
+    color: var(--text-color);
+    font-style: italic;
+}
+
+.artist-links .links p,
+.contact-grid .contact-item {
+    margin-bottom: 0.5rem;
+}
+
+.artist-links a,
+.contact-item a {
+    color: var(--primary-color);
+    text-decoration: none;
+}
+
+.artist-links a:hover,
+.contact-item a:hover {
+    text-decoration: underline;
+}
+
+.contact-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 2rem;
+    margin-bottom: 2rem;
+}
+
+.contact-item {
+    text-align: center;
+    padding: 1.5rem;
+    background: var(--bg-color);
+    border-radius: 8px;
+}
+
+.contact-item h3 {
+    margin-bottom: 0.5rem;
+}
+
+.inquiry-info {
+    background: var(--bg-color);
+    padding: 2rem;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.inquiry-info p {
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+.inquiry-info a {
+    color: var(--primary-color);
+    text-decoration: none;
+    font-weight: 600;
+}
+
+.inquiry-info a:hover {
+    text-decoration: underline;
+}
+
+/* Footer */
+.gallery-footer {
+    background: var(--gray-dark);
+    color: white;
+    text-align: center;
+    padding: 2rem;
+    margin-top: 4rem;
+}
+
+.gallery-footer p {
+    color: rgba(255, 255, 255, 0.8);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .gallery-title {
+        font-size: 2.2rem;
+    }
+    
+    .gallery-subtitle {
+        font-size: 1rem;
+    }
+    
+    .gallery-header {
+        padding: 2.5rem 0;
+    }
+    
+    .gallery-main {
+        padding: 2rem 1rem;
+    }
+    
+    .gallery-grid {
+        grid-template-columns: 1fr;
+        gap: 1.5rem;
+    }
+    
+    .artwork-container {
+        grid-template-columns: 1fr;
+        gap: 2rem;
+    }
+    
+    .artwork-info-section {
+        position: static;
+    }
+    
+    .artwork-main {
+        padding: 1rem;
+    }
+    
+    .artwork-info .artwork-title {
+        font-size: 1.6rem;
+    }
+    
+    .metadata-item {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    
+    .metadata-item label {
+        min-width: auto;
+        margin-right: 0;
+        margin-bottom: 0.25rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .gallery-title {
+        font-size: 1.8rem;
+    }
+    
+    .artwork-image-container {
+        height: 240px;
+    }
+    
+    .artwork-details {
+        padding: 1rem;
+    }
+    
+    .artwork-title {
+        font-size: 1.1rem;
+    }
+}
