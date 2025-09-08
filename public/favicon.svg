@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+  <!-- Sky -->
+  <rect x="2" y="2" width="28" height="16" fill="#6BB6D6"/>
+  
+  <!-- Cloud on left -->
+  <ellipse cx="8" cy="8" rx="3.6" ry="1.8" fill="white" opacity="0.9"/>
+  <ellipse cx="9.5" cy="7.5" rx="2.4" ry="1.2" fill="white" opacity="0.9"/>
+  
+  <!-- Mountains at horizon -->
+  <path d="M2 18 L6 14 L10 16 L14 12 L18 15 L22 13 L26 17 L30 18 Z" fill="#8D6E63"/>
+  <path d="M2 18 L4 16 L8 17 L12 14 L16 16 L20 14 L24 16 L30 18 Z" fill="#A0795A"/>
+  
+  <!-- Grass ground -->
+  <rect x="2" y="18" width="28" height="12" fill="#6B8E23"/>
+  
+  <!-- Curving river on left -->
+  <path d="M2 20 Q6 22 8 24 Q10 26 12 30" stroke="#4682B4" stroke-width="2" fill="none"/>
+  
+  <!-- Tree on right -->
+  <rect x="20.5" y="10" width="2" height="16" fill="#8B4513"/>
+  <ellipse cx="21.5" cy="14.5" rx="4.5" ry="7.5" fill="#228B22"/>
+  
+  <!-- Frame (drawn last to be on top) -->
+  <rect x="2" y="2" width="28" height="28" fill="none" stroke="#654321" stroke-width="2"/>
+  
+</svg>

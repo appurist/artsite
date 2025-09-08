@@ -21,6 +21,11 @@ app.use(express.json());
 app.use(express.static('public'));
 app.set('view engine', 'ejs');
 
+// Disable view caching in development
+if (process.env.NODE_ENV !== 'production') {
+  app.set('view cache', false);
+}
+
 // Session configuration
 app.use(session({
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',

@@ -3,7 +3,7 @@
     --primary-color: #667eea;
     --secondary-color: #764ba2;
     --text-color: #333;
-    --bg-color: #fafafa;
+    --bg-color: #f0f0f0;
     --white: #fff;
     --gray-light: #f0f0f0;
     --gray-medium: #7f8c8d;
@@ -25,7 +25,7 @@ body {
 
 /* Navigation */
 .main-nav {
-    background: var(--white);
+    background: #f0f0f0;
     padding: 1rem 0;
     border-bottom: 1px solid var(--gray-light);
     position: sticky;
@@ -43,9 +43,9 @@ body {
 }
 
 .logo {
-    font-family: 'Playfair Display', Georgia, serif;
+    font-family: 'Segoe UI', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
     font-size: 1.5rem;
-    font-weight: 700;
+    font-weight: 200;
     text-decoration: none;
     color: var(--gray-dark);
 }
@@ -61,7 +61,8 @@ body {
 .nav-menu a {
     text-decoration: none;
     color: var(--gray-medium);
-    font-weight: 500;
+    font-family: 'Segoe UI', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-weight: 200;
     transition: color 0.2s;
     padding: 0.5rem 0;
     border-bottom: 2px solid transparent;
@@ -90,8 +91,8 @@ body {
 
 /* Header */
 .gallery-header {
-    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-    color: white;
+    background: #f0f0f0;
+    color: var(--text-color);
     padding: 4rem 0;
     text-align: center;
 }
@@ -103,11 +104,15 @@ body {
 }
 
 .gallery-header .gallery-title {
-    color: white;
+    color: var(--text-color);
+    font-family: 'Segoe UI', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-weight: 200;
 }
 
 .gallery-header .gallery-subtitle {
-    color: rgba(255, 255, 255, 0.9);
+    color: var(--gray-medium);
+    font-family: 'Segoe UI', 'Source Sans Pro', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    font-weight: 200;
 }
 
 /* Main Content */
@@ -158,16 +163,16 @@ body {
 }
 
 .artwork-item {
-    background: white;
-    border-radius: 12px;
-    overflow: hidden;
-    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    background: transparent;
+    border-radius: 0;
+    overflow: visible;
+    box-shadow: none;
     transition: all 0.3s ease;
 }
 
 .artwork-item:hover {
     transform: translateY(-8px);
-    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+    box-shadow: none;
 }
 
 .artwork-link {
@@ -186,7 +191,7 @@ body {
 .artwork-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     transition: transform 0.3s ease;
 }
 
@@ -221,7 +226,8 @@ body {
 }
 
 .artwork-details {
-    padding: 1.5rem;
+    padding: 1.5rem 0;
+    text-align: center;
 }
 
 .artwork-title {
@@ -288,7 +294,7 @@ body {
 
 .artwork-image-section {
     background: white;
-    border-radius: 12px;
+    border-radius: 0;
     overflow: hidden;
     box-shadow: 0 4px 20px rgba(0,0,0,0.08);
 }
