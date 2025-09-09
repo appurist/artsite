@@ -19,13 +19,25 @@ const ADMIN_PASSWORD_HASH = bcrypt.hashSync(process.env.PASSWORD || 'admin123', 
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 app.use(express.static('public'));
+// Serve uploaded files from persistent volume
+app.use('/uploads', express.static(path.join(dataPath, 'uploads')));
 app.set('view engine', 'ejs');
 
 // Disable view caching to ensure config changes are reflected
 app.set('view cache', false);
 
-// Session configuration
+// Session configuration - File-based session store for persistence
+const FileStore = require('session-file-store')(session);
+
+// Use persistent volume in production, local storage in development
+const dataPath = process.env.NODE_ENV === 'production' ? '/app/data' : './data';
+
 app.use(session({
+  store: new FileStore({
+    path: path.join(dataPath, 'sessions'),
+    ttl: 86400, // 24 hours in seconds
+    reapInterval: 3600 // Clean up expired sessions every hour
+  }),
   secret: process.env.SESSION_SECRET || 'your-secret-key-change-this',
   resave: false,
   saveUninitialized: false,
@@ -39,13 +51,18 @@ app.use(session({
 const createDirectories = async () => {
   try {
     await fs.mkdir('public', { recursive: true });
-    await fs.mkdir('public/uploads', { recursive: true });
-    await fs.mkdir('public/uploads/full', { recursive: true });
-    await fs.mkdir('public/uploads/thumbs', { recursive: true });
     await fs.mkdir('public/css', { recursive: true });
     await fs.mkdir('public/js', { recursive: true });
     await fs.mkdir('views', { recursive: true });
     await fs.mkdir('views/admin', { recursive: true });
+    
+    // Create persistent data directories
+    await fs.mkdir(dataPath, { recursive: true });
+    await fs.mkdir(path.join(dataPath, 'uploads'), { recursive: true });
+    await fs.mkdir(path.join(dataPath, 'uploads/full'), { recursive: true });
+    await fs.mkdir(path.join(dataPath, 'uploads/thumbs'), { recursive: true });
+    await fs.mkdir(path.join(dataPath, 'sessions'), { recursive: true });
+    await fs.mkdir(path.join(dataPath, 'config'), { recursive: true });
     await fs.mkdir('views/public', { recursive: true });
   } catch (err) {
     console.log('Directories created or already exist');
@@ -57,7 +74,7 @@ createDirectories();
 // Site configuration helpers
 const getSiteConfig = async () => {
   try {
-    const configPath = path.join('config', 'site.json');
+    const configPath = path.join(dataPath, 'config', 'site.json');
     const configData = await fs.readFile(configPath, 'utf8');
     return JSON.parse(configData);
   } catch (err) {
@@ -92,8 +109,8 @@ const getSiteConfig = async () => {
 
 const saveSiteConfig = async (config) => {
   try {
-    await fs.mkdir('config', { recursive: true });
-    const configPath = path.join('config', 'site.json');
+    await fs.mkdir(path.join(dataPath, 'config'), { recursive: true });
+    const configPath = path.join(dataPath, 'config', 'site.json');
     await fs.writeFile(configPath, JSON.stringify(config, null, 2));
     return true;
   } catch (err) {
@@ -105,7 +122,7 @@ const saveSiteConfig = async (config) => {
 // Helper functions
 const getArtworkList = async () => {
   try {
-    const fullDir = 'public/uploads/full';
+    const fullDir = path.join(dataPath, 'uploads/full');
     const files = await fs.readdir(fullDir);
     const imageFiles = files.filter(file =>
       /\.(jpg|jpeg|png|gif|webp)$/i.test(file)
@@ -116,7 +133,7 @@ const getArtworkList = async () => {
 
     for (const imageFile of imageFiles) {
       const baseName = path.parse(imageFile).name;
-      const metadataFile = path.join('public/uploads/full', `${baseName}.json`);
+      const metadataFile = path.join(dataPath, 'uploads/full', `${baseName}.json`);
       const thumbnailFile = `thumb_${imageFile}`;
 
       let metadata = {
@@ -137,7 +154,7 @@ const getArtworkList = async () => {
       }
 
       // Check if thumbnail exists
-      const thumbnailPath = path.join('public/uploads/thumbs', thumbnailFile);
+      const thumbnailPath = path.join(dataPath, 'uploads/thumbs', thumbnailFile);
       let hasThumbnail = false;
       try {
         await fs.access(thumbnailPath);
@@ -176,7 +193,7 @@ const getArtworkList = async () => {
 
 const saveArtworkMetadata = async (imageFilename, metadata) => {
   const baseName = path.parse(imageFilename).name;
-  const metadataFile = path.join('public/uploads/full', `${baseName}.json`);
+  const metadataFile = path.join(dataPath, 'uploads/full', `${baseName}.json`);
 
   try {
     await fs.writeFile(metadataFile, JSON.stringify(metadata, null, 2));
@@ -190,7 +207,7 @@ const saveArtworkMetadata = async (imageFilename, metadata) => {
 // Multer configuration
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'public/uploads/full/');
+    cb(null, path.join(dataPath, 'uploads/full/'));
   },
   filename: function (req, file, cb) {
     // Use original filename, sanitize it for safety
@@ -449,7 +466,7 @@ app.post('/admin/upload', requireAuth, upload.single('image'), async (req, res) 
           fit: 'inside',
           withoutEnlargement: true
         })
-        .toFile(path.join('public/uploads/thumbs', thumbnailFilename));
+        .toFile(path.join(dataPath, 'uploads/thumbs', thumbnailFilename));
     } catch (sharpErr) {
       console.log('Warning: Could not create thumbnail:', sharpErr);
     }
@@ -492,14 +509,14 @@ app.post('/admin/delete/:id', requireAuth, async (req, res) => {
 
     // Delete files
     try {
-      await fs.unlink(path.join('public/uploads/full', artwork.image_filename));
+      await fs.unlink(path.join(dataPath, 'uploads/full', artwork.image_filename));
       console.log('Deleted image:', artwork.image_filename);
     } catch (err) {
       console.log('Error deleting image:', err);
     }
 
     try {
-      await fs.unlink(path.join('public/uploads/thumbs', artwork.thumbnail_filename));
+      await fs.unlink(path.join(dataPath, 'uploads/thumbs', artwork.thumbnail_filename));
       console.log('Deleted thumbnail:', artwork.thumbnail_filename);
     } catch (err) {
       console.log('Error deleting thumbnail:', err);
@@ -508,7 +525,7 @@ app.post('/admin/delete/:id', requireAuth, async (req, res) => {
     // Delete metadata file
     try {
       const baseName = path.parse(artwork.image_filename).name;
-      await fs.unlink(path.join('public/uploads/full', `${baseName}.json`));
+      await fs.unlink(path.join(dataPath, 'uploads/full', `${baseName}.json`));
       console.log('Deleted metadata:', `${baseName}.json`);
     } catch (err) {
       console.log('Error deleting metadata:', err);
