@@ -38,7 +38,8 @@ In your Appwrite Console:
 ### 5. Add Platform
 In your Appwrite Console:
 - Go to Settings → Platforms
-- Add Web Platform: `localhost:5173`
+- Add Web Platform: `localhost:5173` (for development)
+- Add your production domain when deployed to Cloudflare Workers
 
 ### 6. Verify Setup
 Run the test connection page: `/test-connection.html`
@@ -87,5 +88,12 @@ This allows:
 
 ## Testing
 1. Run `/test-connection.html` to verify database/storage access
-2. Try logging in through `/admin` with your created user
-3. Test creating/updating content (requires authentication)
+2. Start development server: `pnpm run dev`
+3. Navigate to the admin section and log in with your created user
+4. Test creating/updating content (requires authentication)
+
+## Production Deployment
+The application is configured for Cloudflare Workers deployment. After Appwrite setup:
+1. Build: `pnpm run build`
+2. Deploy: `pnpm run deploy`
+3. Add your Cloudflare Workers domain to Appwrite platforms
