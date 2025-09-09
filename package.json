@@ -6,6 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
+    "deploy": "wrangler deploy",
+    "upload": "wrangler versions upload",
     "preview": "vite preview"
   },
   "devDependencies": {
