@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appwrite Connection Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .test-container {
+            background: #f5f5f5;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #output {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-line;
+            max-height: 400px;
+            overflow-y: auto;
+            min-height: 200px;
+        }
+        .success { color: #0f0; }
+        .error { color: #f00; }
+        .warning { color: #ff0; }
+        .manual-setup {
+            background: #e8f4f8;
+            padding: 2rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+        .manual-setup h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+        .manual-setup code {
+            background: #f0f0f0;
+            padding: 2px 4px;
+            border-radius: 2px;
+            font-family: monospace;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Appwrite Connection Test</h1>
+    
+    <div class="test-container">
+        <h2>Test Appwrite Connection</h2>
+        <p>This will test your connection to Appwrite and verify the setup.</p>
+        
+        <button id="testBtn" class="btn">🔍 Test Connection</button>
+        <button id="authTestBtn" class="btn">🔐 Test with Auth</button>
+        <button id="clearBtn" class="btn">Clear Output</button>
+        
+        <div style="margin: 1rem 0; padding: 1rem; background: #f0f8ff; border-radius: 4px; display: none;" id="authForm">
+            <h4>Test Authentication</h4>
+            <input type="email" id="testEmail" placeholder="Admin Email" style="margin: 0.5rem; padding: 0.5rem; width: 200px;">
+            <input type="password" id="testPassword" placeholder="Admin Password" style="margin: 0.5rem; padding: 0.5rem; width: 200px;">
+            <button id="loginBtn" class="btn" style="margin: 0.5rem;">Login & Test</button>
+        </div>
+        
+        <div id="output">Ready to test connection...</div>
+    </div>
+
+    <div class="manual-setup">
+        <h3>📋 Manual Setup Instructions</h3>
+        <p><strong>Go to your Appwrite Console and create these manually:</strong></p>
+        
+        <h4>1. Create Database</h4>
+        <ul>
+            <li>Go to Database section</li>
+            <li>Create new database with ID: <code>artsite</code></li>
+            <li>Name: "Art Gallery Database"</li>
+        </ul>
+
+        <h4>2. Create "artworks" Collection</h4>
+        <ul>
+            <li>Inside the database, create collection with ID: <code>artworks</code></li>
+            <li>Add these attributes:
+                <ul>
+                    <li><code>title</code> - String, Size: 255, Required: ✓</li>
+                    <li><code>description</code> - String, Size: 2000, Required: ✗</li>
+                    <li><code>medium</code> - String, Size: 255, Required: ✗</li>
+                    <li><code>dimensions</code> - String, Size: 255, Required: ✗</li>
+                    <li><code>year_created</code> - Integer, Required: ✗</li>
+                    <li><code>price</code> - String, Size: 255, Required: ✗</li>
+                    <li><code>tags</code> - String, Size: 1000, Required: ✗</li>
+                    <li><code>image_id</code> - String, Size: 255, Required: ✓</li>
+                    <li><code>filename</code> - String, Size: 255, Required: ✗</li>
+                    <li><code>created_at</code> - DateTime, Required: ✓</li>
+                </ul>
+            </li>
+            <li>Set permissions: Read: Any, Write: Users</li>
+        </ul>
+
+        <h4>3. Create "settings" Collection</h4>
+        <ul>
+            <li>Create collection with ID: <code>settings</code></li>
+            <li>Add these attributes:
+                <ul>
+                    <li><code>key</code> - String, Size: 255, Required: ✓</li>
+                    <li><code>value</code> - String, Size: 5000, Required: ✓</li>
+                </ul>
+            </li>
+            <li>Create index: <code>key_unique</code> on <code>key</code> field (unique)</li>
+            <li>Set permissions: Read: Any, Write: Users</li>
+        </ul>
+
+        <h4>4. Create Storage Bucket</h4>
+        <ul>
+            <li>Go to Storage section</li>
+            <li>Create bucket with ID: <code>images</code></li>
+            <li>Name: "Images"</li>
+            <li>File extensions: <code>jpg,jpeg,png,gif,webp</code></li>
+            <li>Set permissions: Read: Any, Write: Users</li>
+        </ul>
+
+        <h4>5. Platform Configuration</h4>
+        <ul>
+            <li>Go to Settings → Platforms</li>
+            <li>Add Web Platform</li>
+            <li>Name: "Art Gallery Dev"</li>
+            <li>Hostname: <code>localhost:5173</code></li>
+        </ul>
+
+        <h4>6. Create Admin User</h4>
+        <ul>
+            <li>Go to Auth → Users</li>
+            <li>Create new user with email/password</li>
+            <li>Note the credentials for testing</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        import { Client, TablesDB, Storage, Account } from 'https://cdn.skypack.dev/appwrite';
+
+        const output = document.getElementById('output');
+        const testBtn = document.getElementById('testBtn');
+        const authTestBtn = document.getElementById('authTestBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const authForm = document.getElementById('authForm');
+        const loginBtn = document.getElementById('loginBtn');
+
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : type === 'warning' ? '⚠️' : 'ℹ️';
+            output.innerHTML += `<span class="${type}">[${timestamp}] ${prefix} ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        clearBtn.addEventListener('click', () => {
+            output.innerHTML = 'Ready to test connection...\n';
+        });
+
+        authTestBtn.addEventListener('click', () => {
+            authForm.style.display = authForm.style.display === 'none' ? 'block' : 'none';
+        });
+
+        loginBtn.addEventListener('click', async () => {
+            const email = document.getElementById('testEmail').value;
+            const password = document.getElementById('testPassword').value;
+            
+            if (!email || !password) {
+                log('❌ Please enter email and password', 'error');
+                return;
+            }
+
+            loginBtn.disabled = true;
+            loginBtn.textContent = '⏳ Testing...';
+            
+            try {
+                const client = new Client()
+                    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+                    .setProject('artsite');
+
+                const account = new Account(client);
+                const tablesDB = new TablesDB(client);
+                const storage = new Storage(client);
+
+                // Constants for this test
+                const testDatabaseId = '68bfaf22002f08bd470a';
+                const testStorageBucketId = 'images';
+
+                log('🔐 Attempting login...');
+                await account.createEmailPasswordSession(email, password);
+                log('✅ Login successful!', 'success');
+
+                // Test authenticated access
+                log('🗄️ Testing authenticated database access...');
+                try {
+                    const response = await tablesDB.listRows({
+                        databaseId: testDatabaseId,
+                        tableId: 'artworks'
+                    });
+                    log(`✅ Authenticated access works - found ${response.rows.length} artworks`, 'success');
+                } catch (error) {
+                    log('❌ Authenticated access error: ' + error.message, 'error');
+                }
+
+                // Test authenticated storage access
+                log('🗄️ Testing authenticated storage access...');
+                try {
+                    const response = await storage.listFiles(testStorageBucketId);
+                    log(`✅ Authenticated storage access works - found ${response.files.length} files`, 'success');
+                } catch (error) {
+                    log('❌ Authenticated storage error: ' + error.message, 'error');
+                }
+
+                // Logout
+                await account.deleteSession('current');
+                log('🚪 Logged out successfully', 'success');
+
+            } catch (error) {
+                log('❌ Authentication failed: ' + error.message, 'error');
+            }
+            
+            loginBtn.disabled = false;
+            loginBtn.textContent = 'Login & Test';
+        });
+
+        testBtn.addEventListener('click', async () => {
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Testing...';
+            
+            try {
+                log('🚀 Starting connection test...');
+                
+                // Initialize Appwrite client
+                const client = new Client()
+                    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+                    .setProject('artsite');
+
+                const tablesDB = new TablesDB(client);
+                const storage = new Storage(client);
+                const account = new Account(client);
+
+                const DATABASE_ID = '68bfaf22002f08bd470a'; // Update to match your actual database ID
+                const ARTWORKS_TABLE_ID = 'artworks';
+                const SETTINGS_TABLE_ID = 'settings';
+                const STORAGE_BUCKET_ID = 'images';
+
+                log('🔌 Testing client connection...');
+                
+                // Test basic connection by trying to get current session (will fail but shows connection works)
+                try {
+                    await account.get();
+                    log('✅ User is logged in', 'success');
+                } catch (error) {
+                    if (error.code === 401) {
+                        log('✅ Connection successful (no user logged in)', 'success');
+                    } else {
+                        throw error;
+                    }
+                }
+
+                // Test database access
+                log('🗄️ Testing database access...');
+                log(`   Database ID: ${DATABASE_ID}`);
+                log(`   Artworks Table ID: ${ARTWORKS_TABLE_ID}`);
+                log(`   Settings Table ID: ${SETTINGS_TABLE_ID}`);
+                
+                try {
+                    const response = await tablesDB.listRows({
+                        databaseId: DATABASE_ID,
+                        tableId: ARTWORKS_TABLE_ID
+                    });
+                    log('✅ Artworks table accessible', 'success');
+                    log(`   Found ${response.rows.length} artworks`, 'info');
+                } catch (error) {
+                    log('❌ Artworks table error:', 'error');
+                    log(`   Code: ${error.code}`, 'error');
+                    log(`   Message: ${error.message}`, 'error');
+                    log(`   Type: ${error.type}`, 'error');
+                    if (error.response) {
+                        log(`   Response: ${JSON.stringify(error.response)}`, 'error');
+                    }
+                }
+
+                try {
+                    const response = await tablesDB.listRows({
+                        databaseId: DATABASE_ID,
+                        tableId: SETTINGS_TABLE_ID
+                    });
+                    log('✅ Settings table accessible', 'success');
+                    log(`   Found ${response.rows.length} settings`, 'info');
+                } catch (error) {
+                    log('❌ Settings table error:', 'error');
+                    log(`   Code: ${error.code}`, 'error');
+                    log(`   Message: ${error.message}`, 'error');
+                    log(`   Type: ${error.type}`, 'error');
+                    if (error.response) {
+                        log(`   Response: ${JSON.stringify(error.response)}`, 'error');
+                    }
+                }
+
+                // Test storage access
+                log('🗄️ Testing storage access...');
+                log(`   Storage Bucket ID: ${STORAGE_BUCKET_ID}`);
+                try {
+                    const response = await storage.listFiles(STORAGE_BUCKET_ID);
+                    log('✅ Storage bucket accessible', 'success');
+                    log(`   Found ${response.files.length} files`, 'info');
+                } catch (error) {
+                    log('❌ Storage bucket error:', 'error');
+                    log(`   Code: ${error.code}`, 'error');
+                    log(`   Message: ${error.message}`, 'error');
+                    log(`   Type: ${error.type}`, 'error');
+                    if (error.response) {
+                        log(`   Response: ${JSON.stringify(error.response)}`, 'error');
+                    }
+                }
+
+                log('\n🎉 Connection test complete!');
+                log('💡 Create missing resources manually using the instructions above.');
+
+            } catch (error) {
+                log('❌ Connection test failed: ' + error.message, 'error');
+                log('💡 Check your project ID and endpoint configuration.', 'warning');
+            }
+            
+            testBtn.disabled = false;
+            testBtn.textContent = '🔍 Test Connection';
+        });
+    </script>
+</body>
+</html>

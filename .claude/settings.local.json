@@ -12,9 +12,21 @@
       "Bash(npm install:*)",
       "Bash(node server.js)",
       "Bash(pskill:*)",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "Read(/D:\\Websites\\!Latest\\artsite\\.claude/**)",
+      "Read(/D:\\Websites\\!Latest\\artsite\\.claude/**)",
+      "Read(/D:\\Websites\\!Latest\\artsite/**)",
+      "Read(/D:\\Websites\\!Latest\\artsite\\public/**)",
+      "Read(/D:\\Websites\\!Latest\\artsite\\config/**)",
+      "WebFetch(domain:appwrite.io)",
+      "Bash(npx appwrite-cli:*)",
+      "Bash(npx appwrite login)"
     ],
     "deny": [],
-    "ask": []
+    "ask": [],
+    "additionalDirectories": [
+      "d:\\Websites\\!Latest",
+      "c:\\dev\\appurist\\artsite"
+    ]
   }
 }

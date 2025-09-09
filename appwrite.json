@@ -1,0 +1,172 @@
+{
+    "projectId": "artsite",
+    "projectName": "Art Gallery",
+    "functions": [],
+    "databases": [
+        {
+            "id": "artsite",
+            "name": "Art Gallery Database",
+            "enabled": true,
+            "documentSecurity": false,
+            "tables": [
+                {
+                    "id": "artworks",
+                    "name": "Artworks",
+                    "enabled": true,
+                    "documentSecurity": false,
+                    "permissions": [
+                        "read(\"any\")",
+                        "create(\"users\")",
+                        "update(\"users\")",
+                        "delete(\"users\")"
+                    ],
+                    "attributes": [
+                        {
+                            "key": "title",
+                            "type": "string",
+                            "status": "available",
+                            "required": true,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        },
+                        {
+                            "key": "description",
+                            "type": "string",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "size": 2000,
+                            "default": null
+                        },
+                        {
+                            "key": "medium",
+                            "type": "string",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        },
+                        {
+                            "key": "dimensions",
+                            "type": "string",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        },
+                        {
+                            "key": "year_created",
+                            "type": "integer",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "min": null,
+                            "max": null,
+                            "default": null
+                        },
+                        {
+                            "key": "price",
+                            "type": "string",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        },
+                        {
+                            "key": "tags",
+                            "type": "string",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "size": 1000,
+                            "default": null
+                        },
+                        {
+                            "key": "image_id",
+                            "type": "string",
+                            "status": "available",
+                            "required": true,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        },
+                        {
+                            "key": "filename",
+                            "type": "string",
+                            "status": "available",
+                            "required": false,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        }
+                    ],
+                    "indexes": []
+                },
+                {
+                    "id": "settings",
+                    "name": "Settings",
+                    "enabled": true,
+                    "documentSecurity": false,
+                    "permissions": [
+                        "read(\"any\")",
+                        "create(\"users\")",
+                        "update(\"users\")",
+                        "delete(\"users\")"
+                    ],
+                    "attributes": [
+                        {
+                            "key": "key",
+                            "type": "string",
+                            "status": "available",
+                            "required": true,
+                            "array": false,
+                            "size": 255,
+                            "default": null
+                        },
+                        {
+                            "key": "value",
+                            "type": "string",
+                            "status": "available",
+                            "required": true,
+                            "array": false,
+                            "size": 5000,
+                            "default": null
+                        }
+                    ],
+                    "indexes": [
+                        {
+                            "key": "key_unique",
+                            "type": "unique",
+                            "status": "available",
+                            "attributes": ["key"],
+                            "orders": ["ASC"]
+                        }
+                    ]
+                }
+            ]
+        }
+    ],
+    "buckets": [
+        {
+            "id": "images",
+            "name": "Images",
+            "permissions": [
+                "read(\"any\")",
+                "create(\"users\")",
+                "update(\"users\")",
+                "delete(\"users\")"
+            ],
+            "fileSecurity": false,
+            "enabled": true,
+            "maximumFileSize": 30000000,
+            "allowedFileExtensions": ["jpg", "jpeg", "png", "gif", "webp"],
+            "compression": "gzip",
+            "encryption": true,
+            "antivirus": true
+        }
+    ]
+}

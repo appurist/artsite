@@ -1,0 +1,728 @@
+/* Reset and base styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:root {
+  /* Primary theme colors */
+  --primary-color: #667eea;
+  --primary-hover: #5a6fd8;
+  --secondary-color: #764ba2;
+  --secondary-hover: #5a6268;
+  
+  /* Status colors */
+  --success-color: #28a745;
+  --success-bg: #d4edda;
+  --success-border: #c3e6cb;
+  --success-text: #155724;
+  
+  --warning-color: #ffc107;
+  --warning-bg: #fff3cd;
+  --warning-border: #ffeeba;
+  --warning-text: #856404;
+  
+  --error-color: #dc3545;
+  --error-hover: #c82333;
+  --error-bg: #f8d7da;
+  --error-border: #f5c6cb;
+  --error-text: #721c24;
+  
+  /* Background colors */
+  --bg-color: #f0f0f0;
+  --card-bg: #ffffff;
+  --overlay-bg: rgba(0, 0, 0, 0.7);
+  
+  /* Text colors */
+  --text-color: #333;
+  --text-muted: #666;
+  --text-light: #999;
+  --text-on-primary: #ffffff;
+  
+  /* Border and UI colors */
+  --border-color: #ddd;
+  --border-light: #e9ecef;
+  --shadow-color: rgba(0, 0, 0, 0.1);
+  
+  /* Navigation colors */
+  --nav-bg: var(--bg-color);
+  --nav-text: var(--text-color);
+  --nav-border: var(--border-color);
+  
+  /* Gallery header colors */
+  --gallery-header-bg: #fafafa;
+  --gallery-header-text: var(--text-color);
+  --gallery-header-subtitle: var(--text-muted);
+}
+
+body {
+  font-family: 'Source Sans Pro', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  line-height: 1.6;
+  color: var(--text-color);
+  background-color: var(--bg-color);
+}
+
+/* Navigation */
+#main-nav {
+  background: var(--nav-bg);
+  padding: 1rem 0;
+  border-bottom: 1px solid var(--nav-border);
+}
+
+.nav-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 2rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logo {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 200;
+  text-decoration: none;
+  color: var(--nav-text);
+}
+
+.nav-menu {
+  display: flex;
+  list-style: none;
+  gap: 2rem;
+  align-items: center;
+}
+
+.nav-menu a {
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: 200;
+  text-decoration: none;
+  color: var(--nav-text);
+  transition: opacity 0.2s;
+}
+
+.nav-menu a:hover {
+  opacity: 0.7;
+}
+
+/* Main content area */
+#app {
+  min-height: calc(100vh - 140px);
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+/* Gallery header */
+.gallery-header {
+  text-align: center;
+  padding: 3rem 0;
+  background: var(--gallery-header-bg);
+  margin: -2rem -2rem 3rem -2rem;
+}
+
+.gallery-title {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 2.5rem;
+  font-weight: 200;
+  color: var(--gallery-header-text);
+  margin-bottom: 0.5rem;
+}
+
+.gallery-subtitle {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.2rem;
+  font-weight: 200;
+  color: var(--gallery-header-subtitle);
+}
+
+/* Gallery grid */
+.gallery-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 2rem;
+  margin-bottom: 3rem;
+}
+
+.artwork-item {
+  background: transparent;
+  transition: transform 0.2s;
+}
+
+.artwork-item:hover {
+  transform: translateY(-2px);
+}
+
+.artwork-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+}
+
+.artwork-image-container {
+  position: relative;
+  width: 100%;
+  height: 250px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.artwork-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 0; /* Keep artwork edges sharp */
+}
+
+.artwork-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: var(--overlay-bg);
+  color: var(--text-on-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+
+.artwork-item:hover .artwork-overlay {
+  opacity: 1;
+}
+
+.artwork-details {
+  text-align: center;
+  background: transparent;
+  padding: 1rem 0;
+}
+
+.artwork-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.artwork-medium,
+.artwork-year,
+.artwork-price {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin-bottom: 0.25rem;
+}
+
+.artwork-price {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+/* Loading and empty states */
+.loading {
+  text-align: center;
+  padding: 4rem 2rem;
+}
+
+.empty-gallery {
+  text-align: center;
+  padding: 4rem 2rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+}
+
+.empty-gallery h2 {
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.empty-gallery p {
+  color: var(--text-muted);
+}
+
+/* Admin styles */
+.admin-container {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.admin-section {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 8px;
+  margin-bottom: 2rem;
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.admin-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.admin-header h2 {
+  margin: 0;
+  color: var(--text-color);
+}
+
+.admin-user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.admin-user-info span {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+}
+
+.admin-content {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow-color);
+}
+
+.admin-actions {
+  display: flex;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.artworks-section h3 {
+  margin-bottom: 1rem;
+  color: var(--text-color);
+}
+
+.empty-artworks {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  background: var(--bg-color);
+  border-radius: 4px;
+}
+
+.error-message {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+  padding: 0.75rem;
+  border-radius: 4px;
+  margin-top: 1rem;
+}
+
+/* Upload form styles */
+.upload-form {
+  max-width: 600px;
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.form-group small {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-light);
+}
+
+.upload-status {
+  margin-top: 1rem;
+}
+
+.settings-status {
+  margin-top: 1rem;
+}
+
+/* File input styling */
+input[type="file"] {
+  padding: 0.5rem;
+  border: 2px dashed var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-color);
+  cursor: pointer;
+  transition: border-color 0.2s;
+}
+
+input[type="file"]:hover {
+  border-color: var(--primary-color);
+}
+
+input[type="file"]:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+/* Admin artworks list */
+.admin-artworks-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.admin-artwork-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem;
+  background: var(--card-bg);
+  border-radius: 8px;
+  border: 1px solid var(--border-light);
+}
+
+.admin-artwork-preview img {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 0; /* Keep artwork edges sharp */
+}
+
+.admin-artwork-details {
+  flex: 1;
+}
+
+.admin-artwork-details h4 {
+  margin: 0 0 0.25rem 0;
+  font-size: 1rem;
+}
+
+.admin-artwork-details p {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.artwork-created {
+  font-size: 0.75rem !important;
+  color: var(--text-light) !important;
+}
+
+.admin-artwork-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.btn-sm {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.85rem;
+}
+
+/* Artwork Modal */
+.artwork-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.8);
+  cursor: pointer;
+}
+
+.modal-content {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 8px;
+  width: 95vw;
+  height: 95vh;
+  margin: 2.5vh 2.5vw;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: 1fr 2fr 1fr;
+  box-shadow: 0 4px 20px var(--shadow-color);
+}
+
+.modal-close {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  background: rgba(0, 0, 0, 0.5);
+  color: white;
+  border: none;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+  font-size: 1.2rem;
+  cursor: pointer;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+.modal-spacer {
+  /* Empty column for centering */
+}
+
+.modal-image-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 1rem;
+  box-sizing: border-box;
+}
+
+.modal-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  border-radius: 0; /* Keep artwork edges sharp */
+}
+
+.modal-details {
+  padding: 1.5rem 1rem 1.5rem 2rem;
+  border-left: 1px solid var(--border-light);
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-details h2 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+}
+
+.modal-description {
+  font-size: 1.1rem;
+  line-height: 1.6;
+  color: var(--text-color);
+  margin-bottom: 1.5rem;
+}
+
+.modal-metadata {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.5rem;
+}
+
+.modal-metadata p {
+  margin: 0;
+  color: var(--text-muted);
+}
+
+.modal-metadata strong {
+  color: var(--text-color);
+}
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+.form-group input:focus,
+.form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+}
+
+.btn {
+  display: inline-block;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 4px;
+  text-decoration: none;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.btn-primary {
+  background: var(--primary-color);
+  color: var(--text-on-primary);
+}
+
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+
+.btn-secondary {
+  background: var(--secondary-color);
+  color: var(--text-on-primary);
+}
+
+.btn-secondary:hover {
+  background: var(--secondary-hover);
+}
+
+.btn-danger {
+  background: var(--error-color);
+  color: var(--text-on-primary);
+}
+
+.btn-danger:hover {
+  background: var(--error-hover);
+}
+
+/* Messages */
+.message {
+  padding: 1rem;
+  border-radius: 4px;
+  margin-bottom: 1rem;
+}
+
+.message.success {
+  background: var(--success-bg);
+  color: var(--success-text);
+  border: 1px solid var(--success-border);
+}
+
+.message.error {
+  background: var(--error-bg);
+  color: var(--error-text);
+  border: 1px solid var(--error-border);
+}
+
+.message.warning {
+  background: var(--warning-bg);
+  color: var(--warning-text);
+  border: 1px solid var(--warning-border);
+}
+
+/* Footer */
+#main-footer {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .nav-content {
+    flex-direction: column;
+    gap: 1rem;
+    text-align: center;
+  }
+  
+  .nav-menu {
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  
+  #app {
+    padding: 1rem;
+  }
+  
+  .gallery-grid {
+    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+    gap: 1rem;
+  }
+  
+  .gallery-header {
+    margin: -1rem -1rem 2rem -1rem;
+    padding: 2rem 1rem;
+  }
+  
+  .gallery-title {
+    font-size: 2rem;
+  }
+}
+
+/* Dark theme example (can be activated by adding data-theme="dark" to <html> or <body>) */
+/*
+[data-theme="dark"] {
+  /* Primary theme colors */
+  --primary-color: #7c93f5;
+  --primary-hover: #6b82f4;
+  --secondary-color: #8a6fb0;
+  --secondary-hover: #7a5fa0;
+  
+  /* Status colors remain mostly the same but slightly adjusted */
+  --success-color: #40d963;
+  --success-bg: rgba(40, 167, 69, 0.1);
+  --success-border: rgba(40, 167, 69, 0.3);
+  --success-text: #4caf50;
+  
+  --warning-color: #ffeb3b;
+  --warning-bg: rgba(255, 193, 7, 0.1);
+  --warning-border: rgba(255, 193, 7, 0.3);
+  --warning-text: #ffc107;
+  
+  --error-color: #f44336;
+  --error-hover: #d32f2f;
+  --error-bg: rgba(220, 53, 69, 0.1);
+  --error-border: rgba(220, 53, 69, 0.3);
+  --error-text: #f44336;
+  
+  /* Background colors */
+  --bg-color: #121212;
+  --card-bg: #1e1e1e;
+  --overlay-bg: rgba(0, 0, 0, 0.8);
+  
+  /* Text colors */
+  --text-color: #e0e0e0;
+  --text-muted: #a0a0a0;
+  --text-light: #666;
+  --text-on-primary: #ffffff;
+  
+  /* Border and UI colors */
+  --border-color: #333;
+  --border-light: #2a2a2a;
+  --shadow-color: rgba(0, 0, 0, 0.3);
+  
+  /* Navigation colors */
+  --nav-bg: var(--card-bg);
+  --nav-text: var(--text-color);
+  --nav-border: var(--border-color);
+  
+  /* Gallery header colors */
+  --gallery-header-bg: #2a2a2a;
+  --gallery-header-text: var(--text-color);
+  --gallery-header-subtitle: var(--text-muted);
+}
+*/

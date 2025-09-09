@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Appwrite Setup</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 2rem auto;
+            padding: 2rem;
+            line-height: 1.6;
+        }
+        .setup-container {
+            background: #f5f5f5;
+            padding: 2rem;
+            border-radius: 8px;
+            margin-bottom: 2rem;
+        }
+        .btn {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+        .btn:hover {
+            background: #5a6fd8;
+        }
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        #output {
+            background: #000;
+            color: #0f0;
+            padding: 1rem;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-line;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .warning {
+            background: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
+            padding: 1rem;
+            border-radius: 4px;
+            margin-bottom: 1rem;
+        }
+    </style>
+</head>
+<body>
+    <h1>🎨 Art Gallery Appwrite Setup</h1>
+    
+    <div class="warning">
+        <strong>⚠️ Prerequisites:</strong>
+        <ul>
+            <li>Make sure you have created an Appwrite project with ID "artsite"</li>
+            <li>Add your domain (http://localhost:5173) to the allowed origins in your Appwrite console</li>
+            <li>You need admin/API key access to create database collections</li>
+        </ul>
+    </div>
+
+    <div class="setup-container">
+        <h2>Database & Storage Setup</h2>
+        <p>This will create the necessary database collections and storage bucket for your art gallery.</p>
+        
+        <button id="testBtn" class="btn">🔍 Test Connection</button>
+        <button id="clearBtn" class="btn">Clear Output</button>
+        
+        <h3>Output:</h3>
+        <div id="output"></div>
+    </div>
+
+    <div class="setup-container">
+        <h2>Manual Setup Instructions</h2>
+        <p>If the automated setup doesn't work, you can manually create these in your Appwrite console:</p>
+        
+        <h3>1. Database: "artgallery"</h3>
+        <h4>Collection: "artworks"</h4>
+        <ul>
+            <li><code>title</code> - String (255 chars, required)</li>
+            <li><code>description</code> - String (2000 chars, optional)</li>
+            <li><code>medium</code> - String (255 chars, optional)</li>
+            <li><code>dimensions</code> - String (255 chars, optional)</li>
+            <li><code>year_created</code> - Integer (optional)</li>
+            <li><code>price</code> - String (255 chars, optional)</li>
+            <li><code>tags</code> - String (1000 chars, optional)</li>
+            <li><code>image_id</code> - String (255 chars, required)</li>
+            <li><code>filename</code> - String (255 chars, optional)</li>
+            <li><code>created_at</code> - DateTime (required)</li>
+        </ul>
+        
+        <h4>Collection: "settings"</h4>
+        <ul>
+            <li><code>key</code> - String (255 chars, required, unique index)</li>
+            <li><code>value</code> - String (5000 chars, required)</li>
+        </ul>
+        
+        <h3>2. Storage Bucket: "images"</h3>
+        <ul>
+            <li>Allowed extensions: jpg, jpeg, png, gif, webp</li>
+            <li>Read permissions: Any</li>
+            <li>Write permissions: Users</li>
+        </ul>
+    </div>
+
+    <script type="module">
+        import { Client, Databases, Storage } from 'https://cdn.skypack.dev/appwrite';
+
+        const output = document.getElementById('output');
+        const testBtn = document.getElementById('testBtn');
+        const clearBtn = document.getElementById('clearBtn');
+
+        function log(message) {
+            output.textContent += message + '\n';
+            output.scrollTop = output.scrollHeight;
+        }
+
+        clearBtn.addEventListener('click', () => {
+            output.textContent = '';
+        });
+
+        testBtn.addEventListener('click', async () => {
+            testBtn.disabled = true;
+            testBtn.textContent = '⏳ Testing...';
+            
+            try {
+                log('🔍 Testing Appwrite connection...');
+                
+                // Initialize Appwrite client
+                const client = new Client()
+                    .setEndpoint('https://nyc.cloud.appwrite.io/v1')
+                    .setProject('artsite');
+
+                const databases = new Databases(client);
+                const storage = new Storage(client);
+
+                const DATABASE_ID = 'artsite';
+                const ARTWORKS_COLLECTION_ID = 'artworks';
+                const SETTINGS_COLLECTION_ID = 'settings';
+                const STORAGE_BUCKET_ID = 'images';
+
+                // Test database connections
+                try {
+                    await databases.listDocuments(DATABASE_ID, ARTWORKS_COLLECTION_ID);
+                    log('✅ Artworks collection accessible');
+                } catch (error) {
+                    log('❌ Artworks collection: ' + error.message);
+                }
+
+                try {
+                    await databases.listDocuments(DATABASE_ID, SETTINGS_COLLECTION_ID);
+                    log('✅ Settings collection accessible');
+                } catch (error) {
+                    log('❌ Settings collection: ' + error.message);
+                }
+
+                try {
+                    await storage.listFiles(STORAGE_BUCKET_ID);
+                    log('✅ Storage bucket accessible');
+                } catch (error) {
+                    log('❌ Storage bucket: ' + error.message);
+                }
+
+                log('\n💡 Use the manual setup instructions below to create missing resources.');
+
+            } catch (error) {
+                log('❌ Connection test failed: ' + error.message);
+                log('💡 Check your Appwrite configuration.');
+            }
+            
+            testBtn.disabled = false;
+            testBtn.textContent = '🔍 Test Connection';
+        });
+    </script>
+</body>
+</html>
