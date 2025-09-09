@@ -20,6 +20,7 @@ primary_region = 'yyz'
 [mounts]
   source = "artsite_data"
   destination = "/app/data"
+  processes = ['app']
 
 [[vm]]
   memory = '1gb'
