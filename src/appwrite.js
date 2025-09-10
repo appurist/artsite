@@ -1,4 +1,4 @@
-import { Client, TablesDB, Storage, Account } from 'appwrite';
+import { Client, TablesDB, Storage, Account, Query } from 'appwrite';
 
 const APPWRITE_ENDPOINT = "https://nyc.cloud.appwrite.io/v1"
 const APPWRITE_PROJECT_ID = "artsite"
@@ -48,7 +48,8 @@ export const getArtworks = async (userId = null) => {
 
         // If userId is provided, filter by that user
         if (userId) {
-            queries.push('equal("user_id", "' + userId + '")');
+            // Use Query.equal syntax for Appwrite
+            queries.push(Query.equal('user_id', userId));
         }
 
         const response = await tablesDB.listRows({
@@ -140,7 +141,7 @@ export const getSetting = async (key) => {
         const response = await tablesDB.listRows({
             databaseId: DATABASE_ID,
             tableId: SETTINGS_TABLE_ID,
-            queries: [`equal("key", "${key}")`]
+            queries: [Query.equal('key', key)]
         });
         return response.rows[0]?.value || null;
     } catch (error) {
@@ -155,7 +156,7 @@ export const setSetting = async (key, value) => {
         const response = await tablesDB.listRows({
             databaseId: DATABASE_ID,
             tableId: SETTINGS_TABLE_ID,
-            queries: [`equal("key", "${key}")`]
+            queries: [Query.equal('key', key)]
         });
 
         if (response.rows.length > 0) {
