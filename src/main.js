@@ -16,28 +16,62 @@ document.addEventListener('DOMContentLoaded', async () => {
     console.log('No user logged in');
   }
   
-  // Load initial page
-  loadGalleryPage();
-  
   // Set up navigation
   setupNavigation();
+  
+  // Handle browser back/forward
+  window.addEventListener('popstate', handleRoute);
+  
+  // Load the initial page based on URL
+  handleRoute();
 });
+
+// Simple client-side router
+function navigateTo(path) {
+  history.pushState({}, '', path);
+  handleRoute();
+}
+
+function handleRoute() {
+  const path = window.location.pathname;
+  
+  if (path.startsWith('/@')) {
+    // User gallery route: /@userid
+    const userId = path.slice(2); // Remove /@
+    if (userId) {
+      loadUserGallery(userId);
+    } else {
+      loadGalleryPage('vikki'); // Default user
+    }
+  } else if (path === '/admin') {
+    // Admin route
+    loadAdminPage();
+  } else {
+    // Default route (home)
+    loadGalleryPage('vikki');
+  }
+}
 
 // Navigation setup
 function setupNavigation() {
   document.getElementById('nav-gallery').addEventListener('click', (e) => {
     e.preventDefault();
-    loadGalleryPage();
+    navigateTo('/');
   });
   
   document.getElementById('nav-admin').addEventListener('click', (e) => {
     e.preventDefault();
-    loadAdminPage();
+    navigateTo('/admin');
+  });
+  
+  document.getElementById('site-title').addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo('/');
   });
 }
 
 // Load gallery page
-async function loadGalleryPage() {
+async function loadGalleryPage(userId = 'vikki') {
   const app = document.getElementById('app');
   
   // Show initial loading state
@@ -53,8 +87,8 @@ async function loadGalleryPage() {
   `;
   
   try {
-    // Fetch artworks from Appwrite (public gallery shows 'vikki' user's artworks)
-    const artworks = await getArtworks('vikki');
+    // Fetch artworks from Appwrite for the specified user
+    const artworks = await getArtworks(userId);
     
     if (artworks.length === 0) {
       // Show empty state
@@ -97,6 +131,67 @@ async function loadGalleryPage() {
       <div class="empty-gallery">
         <h2>Unable to load gallery</h2>
         <p>There was an error loading the artworks. Please try again later.</p>
+      </div>
+    `;
+  }
+}
+
+// Load user-specific gallery page
+async function loadUserGallery(userId) {
+  const app = document.getElementById('app');
+  
+  // Show initial loading state
+  app.innerHTML = `
+    <div class="gallery-header">
+      <h1 class="gallery-title">@${userId}</h1>
+      <p class="gallery-subtitle">Art Gallery</p>
+    </div>
+    <div class="loading">
+      <p>Loading gallery...</p>
+    </div>
+  `;
+  
+  try {
+    // Fetch artworks from Appwrite for the specified user
+    const artworks = await getArtworks(userId);
+    
+    if (artworks.length === 0) {
+      // Show empty state
+      app.innerHTML = `
+        <div class="gallery-header">
+          <h1 class="gallery-title">@${userId}</h1>
+          <p class="gallery-subtitle">Art Gallery</p>
+        </div>
+        <div class="gallery-grid">
+          <div class="empty-gallery">
+            <p>No artworks available yet.</p>
+          </div>
+        </div>
+      `;
+    } else {
+      // Show artworks grid
+      const artworkCards = artworks.map(artwork => createArtworkCard(artwork)).join('');
+      app.innerHTML = `
+        <div class="gallery-header">
+          <h1 class="gallery-title">@${userId}</h1>
+          <p class="gallery-subtitle">Art Gallery</p>
+        </div>
+        <div class="gallery-grid">
+          ${artworkCards}
+        </div>
+      `;
+    }
+  } catch (error) {
+    console.error('Error loading user gallery:', error);
+    app.innerHTML = `
+      <div class="gallery-header">
+        <h1 class="gallery-title">@${userId}</h1>
+        <p class="gallery-subtitle">Art Gallery</p>
+      </div>
+      <div class="gallery-grid">
+        <div class="empty-gallery">
+          <p>Error loading gallery. Please try again later.</p>
+        </div>
       </div>
     `;
   }
