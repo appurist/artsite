@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Art Gallery</title>
+    <title>artsite.ca</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Source+Sans+Pro:wght@300;400;600&display=swap" rel="stylesheet">
@@ -12,13 +12,16 @@
   <body>
     <nav id="main-nav">
       <div class="nav-content">
-        <a href="#" class="logo" id="site-title">Art Gallery</a>
+        <a href="#" class="logo" id="site-title">artsite.ca</a>
         <ul class="nav-menu">
-          <li><a href="#" id="nav-gallery">Gallery</a></li>
           <li><a href="#" id="nav-about" style="display:none">About</a></li>
           <li><a href="#" id="nav-contact" style="display:none">Contact</a></li>
           <li><a href="#" id="nav-admin">Admin</a></li>
         </ul>
+        <div class="nav-user" id="nav-user" style="display:none">
+          <span class="nav-user-name" id="nav-user-name"></span>
+          <button class="btn btn-sm" id="nav-logout">Logout</button>
+        </div>
       </div>
     </nav>
 
@@ -27,7 +30,7 @@
     </main>
 
     <footer id="main-footer">
-      <p>&copy; <span id="current-year"></span> Art Gallery. All rights reserved.</p>
+      <p>Copyright &copy; <span id="current-year"></span> artsite.ca. All rights reserved.</p>
     </footer>
 
     <script type="module" src="/src/main.js"></script>

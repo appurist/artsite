@@ -1,23 +1,19 @@
 import './style.css'
-import { getCurrentUser, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting } from './appwrite.js'
+import { getCurrentUser, hasActiveSession, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting } from './appwrite.js'
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
   // Set current year in footer
   document.getElementById('current-year').textContent = new Date().getFullYear();
   
-  // Check authentication status
-  try {
-    const user = await getCurrentUser();
-    if (user) {
-      console.log('User logged in:', user.email);
-    }
-  } catch (error) {
-    console.log('No user logged in');
-  }
+  // Set hostname as site title
+  document.getElementById('site-title').textContent = window.location.hostname;
   
   // Set up navigation
   setupNavigation();
+  
+  // Check authentication status and update navigation
+  await updateNavigationAuth();
   
   // Handle browser back/forward
   window.addEventListener('popstate', handleRoute);
@@ -32,7 +28,7 @@ function navigateTo(path) {
   handleRoute();
 }
 
-function handleRoute() {
+async function handleRoute() {
   const path = window.location.pathname;
   
   if (path.startsWith('/@')) {
@@ -50,24 +46,88 @@ function handleRoute() {
     // Default route (home)
     loadGalleryPage('vikki');
   }
+  
+  // Update navigation for current route
+  await updateNavigationAuth();
 }
 
 // Navigation setup
 function setupNavigation() {
-  document.getElementById('nav-gallery').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('/');
-  });
-  
   document.getElementById('nav-admin').addEventListener('click', (e) => {
     e.preventDefault();
-    navigateTo('/admin');
+    const currentPath = window.location.pathname;
+    if (currentPath === '/admin') {
+      // On admin page, clicking Gallery goes to home
+      navigateTo('/');
+    } else {
+      // Otherwise, clicking Login/Admin goes to admin
+      navigateTo('/admin');
+    }
   });
   
   document.getElementById('site-title').addEventListener('click', (e) => {
     e.preventDefault();
     navigateTo('/');
   });
+}
+
+// Update navigation based on authentication status
+async function updateNavigationAuth() {
+  const navUser = document.getElementById('nav-user');
+  const navUserName = document.getElementById('nav-user-name');
+  const navLogout = document.getElementById('nav-logout');
+  const navAdmin = document.getElementById('nav-admin');
+  
+  try {
+    // Check if there's an active session
+    const hasSession = await hasActiveSession();
+    if (hasSession) {
+      // Get user details
+      const user = await getCurrentUser();
+      if (user) {
+        // Show user info in navigation
+        navUserName.innerHTML = `<span class="user-icon">👤</span> ${user.name || user.email}`;
+        navUser.style.display = 'flex';
+        navAdmin.textContent = 'Admin';
+        
+        // Set up logout handler
+        navLogout.onclick = async () => {
+          try {
+            await logout();
+            // Refresh navigation and reload page
+            await updateNavigationAuth();
+            navigateTo('/');
+          } catch (error) {
+            console.error('Logout error:', error);
+          }
+        };
+        return;
+      }
+    }
+    
+    // No session or user - hide user nav, toggle admin/login text based on page
+    navUser.style.display = 'none';
+    
+    const currentPath = window.location.pathname;
+    if (currentPath === '/' || currentPath.startsWith('/@')) {
+      // On gallery pages - show Login
+      navAdmin.textContent = 'Login';
+    } else {
+      // On admin/login pages - show Gallery
+      navAdmin.textContent = 'Gallery';
+    }
+    
+  } catch (error) {
+    console.error('Error checking auth for navigation:', error);
+    navUser.style.display = 'none';
+    
+    const currentPath = window.location.pathname;
+    if (currentPath === '/' || currentPath.startsWith('/@')) {
+      navAdmin.textContent = 'Login';
+    } else {
+      navAdmin.textContent = 'Gallery';
+    }
+  }
 }
 
 // Load gallery page
@@ -77,7 +137,7 @@ async function loadGalleryPage(userId = 'vikki') {
   // Show initial loading state
   app.innerHTML = `
     <div class="gallery-header">
-      <h1 class="gallery-title">Art Gallery</h1>
+      <h1 class="gallery-title">${window.location.hostname}</h1>
       <p class="gallery-subtitle">Original paintings and artwork</p>
     </div>
     
@@ -94,7 +154,7 @@ async function loadGalleryPage(userId = 'vikki') {
       // Show empty state
       app.innerHTML = `
         <div class="gallery-header">
-          <h1 class="gallery-title">Art Gallery</h1>
+          <h1 class="gallery-title">${window.location.hostname}</h1>
           <p class="gallery-subtitle">Original paintings and artwork</p>
         </div>
         
@@ -109,7 +169,7 @@ async function loadGalleryPage(userId = 'vikki') {
       
       app.innerHTML = `
         <div class="gallery-header">
-          <h1 class="gallery-title">Art Gallery</h1>
+          <h1 class="gallery-title">${window.location.hostname}</h1>
           <p class="gallery-subtitle">Original paintings and artwork</p>
         </div>
         
@@ -300,14 +360,19 @@ async function loadAdminPage() {
   const app = document.getElementById('app');
   
   try {
-    const user = await getCurrentUser();
-    if (user) {
-      // User is logged in - show admin dashboard
-      showAdminDashboard(user);
-    } else {
-      // User is not logged in - show login form
-      showLoginForm();
+    // First check if there's an active session (lighter call)
+    const hasSession = await hasActiveSession();
+    if (hasSession) {
+      // Only get user details if we know there's a session
+      const user = await getCurrentUser();
+      if (user) {
+        showAdminDashboard(user);
+        return;
+      }
     }
+    
+    // No session or user - show login form
+    showLoginForm();
   } catch (error) {
     console.error('Error checking authentication:', error);
     showLoginForm();
@@ -319,12 +384,7 @@ function showLoginForm() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="admin-container">
-      <div class="admin-section">
-        <div class="auth-toggle">
-          <button id="login-tab" class="btn btn-secondary active">Login</button>
-          <button id="register-tab" class="btn btn-secondary">Register</button>
-        </div>
-        
+      <div class="admin-section">        
         <div id="login-section" class="auth-section">
           <h2>Admin Login</h2>
           <form id="login-form">
@@ -336,9 +396,14 @@ function showLoginForm() {
               <label for="login-password">Password:</label>
               <input type="password" id="login-password" required>
             </div>
-            <button type="submit" class="btn btn-primary">Login</button>
+            <div id="login-error" class="error-message" style="display: none;"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Login</button>
+            </div>
           </form>
-          <div id="login-error" class="error-message" style="display: none;"></div>
+          <div class="auth-switch">
+            <a href="#" id="show-register">Don't have an account yet?</a>
+          </div>
         </div>
         
         <div id="register-section" class="auth-section" style="display: none;">
@@ -360,9 +425,14 @@ function showLoginForm() {
               <label for="register-confirm">Confirm Password:</label>
               <input type="password" id="register-confirm" required minlength="8">
             </div>
-            <button type="submit" class="btn btn-primary">Create Account</button>
+            <div id="register-error" class="error-message" style="display: none;"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Create Account</button>
+            </div>
           </form>
-          <div id="register-error" class="error-message" style="display: none;"></div>
+          <div class="auth-switch">
+            <a href="#" id="show-login">Already have an account?</a>
+          </div>
         </div>
       </div>
     </div>
@@ -374,24 +444,22 @@ function showLoginForm() {
 
 // Set up authentication form handlers and toggle functionality
 function setupAuthForms() {
-  const loginTab = document.getElementById('login-tab');
-  const registerTab = document.getElementById('register-tab');
   const loginSection = document.getElementById('login-section');
   const registerSection = document.getElementById('register-section');
+  const showRegisterLink = document.getElementById('show-register');
+  const showLoginLink = document.getElementById('show-login');
   
   // Toggle between login and register
-  loginTab.addEventListener('click', () => {
-    loginTab.classList.add('active');
-    registerTab.classList.remove('active');
-    loginSection.style.display = 'block';
-    registerSection.style.display = 'none';
-  });
-  
-  registerTab.addEventListener('click', () => {
-    registerTab.classList.add('active');
-    loginTab.classList.remove('active');
+  showRegisterLink.addEventListener('click', (e) => {
+    e.preventDefault();
     loginSection.style.display = 'none';
     registerSection.style.display = 'block';
+  });
+  
+  showLoginLink.addEventListener('click', (e) => {
+    e.preventDefault();
+    loginSection.style.display = 'block';
+    registerSection.style.display = 'none';
   });
   
   // Set up form handlers
@@ -509,6 +577,8 @@ async function handleLogin(e) {
   
   try {
     await login(email, password);
+    // Update navigation to show logged in user
+    await updateNavigationAuth();
     // Reload admin page to show dashboard
     loadAdminPage();
   } catch (error) {
@@ -553,6 +623,9 @@ async function handleRegister(e) {
     
     // Auto-login after successful registration
     await login(email, password);
+    
+    // Update navigation to show logged in user
+    await updateNavigationAuth();
     
     // Redirect to admin dashboard
     loadAdminPage();

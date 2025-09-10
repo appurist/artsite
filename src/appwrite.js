@@ -21,6 +21,15 @@ export const SETTINGS_TABLE_ID = 'settings';
 export const STORAGE_BUCKET_ID = 'images';
 
 // Helper functions
+export const hasActiveSession = async () => {
+    try {
+        await account.getSession('current');
+        return true;
+    } catch (error) {
+        return false;
+    }
+};
+
 export const getCurrentUser = async () => {
     try {
         return await account.get();
