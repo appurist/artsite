@@ -256,6 +256,28 @@ body {
   box-shadow: 0 2px 4px var(--shadow-color);
 }
 
+/* Authentication toggle */
+.auth-toggle {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 2rem;
+  justify-content: center;
+}
+
+.auth-toggle .btn {
+  min-width: 120px;
+}
+
+.auth-toggle .btn.active {
+  background: var(--primary-color);
+  color: white;
+  border-color: var(--primary-color);
+}
+
+.auth-section {
+  transition: opacity 0.2s ease;
+}
+
 .admin-header {
   display: flex;
   justify-content: space-between;

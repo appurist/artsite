@@ -29,6 +29,10 @@ export const getCurrentUser = async () => {
     }
 };
 
+export const register = async (email, password, name) => {
+    return await account.create('unique()', email, password, name);
+};
+
 export const login = async (email, password) => {
     return await account.createEmailPasswordSession(email, password);
 };

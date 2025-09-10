@@ -1,5 +1,5 @@
 import './style.css'
-import { getCurrentUser, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView } from './appwrite.js'
+import { getCurrentUser, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView } from './appwrite.js'
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
@@ -225,26 +225,83 @@ function showLoginForm() {
   app.innerHTML = `
     <div class="admin-container">
       <div class="admin-section">
-        <h2>Admin Login</h2>
-        <form id="login-form">
-          <div class="form-group">
-            <label for="email">Email:</label>
-            <input type="email" id="email" required>
-          </div>
-          <div class="form-group">
-            <label for="password">Password:</label>
-            <input type="password" id="password" required>
-          </div>
-          <button type="submit" class="btn btn-primary">Login</button>
-        </form>
-        <div id="login-error" class="error-message" style="display: none;"></div>
+        <div class="auth-toggle">
+          <button id="login-tab" class="btn btn-secondary active">Login</button>
+          <button id="register-tab" class="btn btn-secondary">Register</button>
+        </div>
+        
+        <div id="login-section" class="auth-section">
+          <h2>Admin Login</h2>
+          <form id="login-form">
+            <div class="form-group">
+              <label for="login-email">Email:</label>
+              <input type="email" id="login-email" required>
+            </div>
+            <div class="form-group">
+              <label for="login-password">Password:</label>
+              <input type="password" id="login-password" required>
+            </div>
+            <button type="submit" class="btn btn-primary">Login</button>
+          </form>
+          <div id="login-error" class="error-message" style="display: none;"></div>
+        </div>
+        
+        <div id="register-section" class="auth-section" style="display: none;">
+          <h2>Create Admin Account</h2>
+          <form id="register-form">
+            <div class="form-group">
+              <label for="register-name">Name:</label>
+              <input type="text" id="register-name" required>
+            </div>
+            <div class="form-group">
+              <label for="register-email">Email:</label>
+              <input type="email" id="register-email" required>
+            </div>
+            <div class="form-group">
+              <label for="register-password">Password:</label>
+              <input type="password" id="register-password" required minlength="8">
+            </div>
+            <div class="form-group">
+              <label for="register-confirm">Confirm Password:</label>
+              <input type="password" id="register-confirm" required minlength="8">
+            </div>
+            <button type="submit" class="btn btn-primary">Create Account</button>
+          </form>
+          <div id="register-error" class="error-message" style="display: none;"></div>
+        </div>
       </div>
     </div>
   `;
   
-  // Set up login form handler
-  const loginForm = document.getElementById('login-form');
-  loginForm.addEventListener('submit', handleLogin);
+  // Set up form handlers and toggle functionality
+  setupAuthForms();
+}
+
+// Set up authentication form handlers and toggle functionality
+function setupAuthForms() {
+  const loginTab = document.getElementById('login-tab');
+  const registerTab = document.getElementById('register-tab');
+  const loginSection = document.getElementById('login-section');
+  const registerSection = document.getElementById('register-section');
+  
+  // Toggle between login and register
+  loginTab.addEventListener('click', () => {
+    loginTab.classList.add('active');
+    registerTab.classList.remove('active');
+    loginSection.style.display = 'block';
+    registerSection.style.display = 'none';
+  });
+  
+  registerTab.addEventListener('click', () => {
+    registerTab.classList.add('active');
+    loginTab.classList.remove('active');
+    loginSection.style.display = 'none';
+    registerSection.style.display = 'block';
+  });
+  
+  // Set up form handlers
+  document.getElementById('login-form').addEventListener('submit', handleLogin);
+  document.getElementById('register-form').addEventListener('submit', handleRegister);
 }
 
 // Show admin dashboard
@@ -338,8 +395,8 @@ async function loadAdminArtworksList() {
 async function handleLogin(e) {
   e.preventDefault();
   
-  const email = document.getElementById('email').value;
-  const password = document.getElementById('password').value;
+  const email = document.getElementById('login-email').value;
+  const password = document.getElementById('login-password').value;
   const errorDiv = document.getElementById('login-error');
   const submitBtn = e.target.querySelector('button[type="submit"]');
   
@@ -360,6 +417,52 @@ async function handleLogin(e) {
     // Reset form state
     submitBtn.disabled = false;
     submitBtn.textContent = 'Login';
+  }
+}
+
+// Handle registration form submission
+async function handleRegister(e) {
+  e.preventDefault();
+  
+  const name = document.getElementById('register-name').value;
+  const email = document.getElementById('register-email').value;
+  const password = document.getElementById('register-password').value;
+  const confirmPassword = document.getElementById('register-confirm').value;
+  const errorDiv = document.getElementById('register-error');
+  const submitBtn = e.target.querySelector('button[type="submit"]');
+  
+  // Clear previous errors
+  errorDiv.style.display = 'none';
+  
+  // Validate password match
+  if (password !== confirmPassword) {
+    errorDiv.textContent = 'Passwords do not match.';
+    errorDiv.style.display = 'block';
+    return;
+  }
+  
+  // Show loading state
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Creating Account...';
+  
+  try {
+    // Create account
+    await register(email, password, name);
+    
+    // Auto-login after successful registration
+    await login(email, password);
+    
+    // Redirect to admin dashboard
+    loadAdminPage();
+    
+  } catch (error) {
+    console.error('Registration error:', error);
+    errorDiv.textContent = 'Registration failed. ' + (error.message || 'Please try again.');
+    errorDiv.style.display = 'block';
+  } finally {
+    // Reset button state
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Create Account';
   }
 }
 

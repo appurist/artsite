@@ -5,7 +5,8 @@ A modern, responsive art gallery website built with Vite and Appwrite, deployed 
 ## Features
 
 - **Public Gallery**: Browse artworks in a responsive grid layout
-- **Modal Viewer**: Click any artwork to view in full-screen modal with metadata
+- **Modal Viewer**: Click any artwork to view in full-screen 3-column modal with metadata sidebar
+- **User Registration**: Create admin accounts with email/password authentication
 - **Admin Dashboard**: Secure login to manage artworks and site settings
 - **Upload System**: Upload artworks with metadata (title, description, medium, etc.)
 - **Site Settings**: Configure gallery title, artist bio, contact information
@@ -74,9 +75,16 @@ const APPWRITE_DATABASE_ID = "68bfaf22002f08bd470a"
   - `artworks` - Stores artwork metadata
   - `settings` - Stores site configuration
 - **Storage**: `images` bucket for artwork files
-- **Auth**: Email/password authentication for admin access
+- **Auth**: Email/password authentication with user registration support
 
 See `APPWRITE_SETUP.md` for detailed setup instructions.
+
+## Getting Started
+
+1. **Setup Appwrite backend** following the instructions in `APPWRITE_SETUP.md`
+2. **Start development server**: `pnpm run dev`
+3. **Navigate to Admin section** and create your first admin account using the registration form
+4. **Upload artworks** and configure site settings through the admin dashboard
 
 ## Project Structure
 
