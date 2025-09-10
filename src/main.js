@@ -1,5 +1,5 @@
 import './style.css'
-import { getCurrentUser, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView } from './appwrite.js'
+import { getCurrentUser, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting } from './appwrite.js'
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
@@ -53,8 +53,8 @@ async function loadGalleryPage() {
   `;
   
   try {
-    // Fetch artworks from Appwrite
-    const artworks = await getArtworks();
+    // Fetch artworks from Appwrite (public gallery shows 'vikki' user's artworks)
+    const artworks = await getArtworks('vikki');
     
     if (artworks.length === 0) {
       // Show empty state
@@ -349,7 +349,14 @@ async function loadAdminArtworksList() {
   try {
     artworksListDiv.innerHTML = '<div class="loading"><p>Loading artworks...</p></div>';
     
-    const artworks = await getArtworks(true); // Only get current user's artworks
+    // Get current user and fetch their artworks
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      artworksListDiv.innerHTML = '<div class="empty-artworks"><p>Please log in to manage artworks.</p></div>';
+      return;
+    }
+    
+    const artworks = await getArtworks(currentUser.$id); // Only get current user's artworks
     
     if (artworks.length === 0) {
       artworksListDiv.innerHTML = `

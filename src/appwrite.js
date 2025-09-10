@@ -42,20 +42,13 @@ export const logout = async () => {
 };
 
 // Database helpers
-export const getArtworks = async (userFilter = false) => {
+export const getArtworks = async (userId = null) => {
     try {
         const queries = [];
 
-        // If userFilter is requested, only get current user's artworks
-        if (userFilter) {
-            const user = await getCurrentUser();
-            if (user) {
-                const userId = user.$id;
-                queries.push('equal("user_id", "' + userId + '")');
-            } else {
-                // No user authenticated, return empty array for user-filtered requests
-                return [];
-            }
+        // If userId is provided, filter by that user
+        if (userId) {
+            queries.push('equal("user_id", "' + userId + '")');
         }
 
         const response = await tablesDB.listRows({
