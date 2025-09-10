@@ -20,7 +20,9 @@
       "Read(/D:\\Websites\\!Latest\\artsite\\config/**)",
       "WebFetch(domain:appwrite.io)",
       "Bash(npx appwrite-cli:*)",
-      "Bash(npx appwrite login)"
+      "Bash(npx appwrite login)",
+      "mcp__appwrite-docs__searchDocs",
+      "mcp__appwrite-docs__getFeatureExamples"
     ],
     "deny": [],
     "ask": [],

@@ -228,8 +228,8 @@ function showLoginForm() {
         <h2>Admin Login</h2>
         <form id="login-form">
           <div class="form-group">
-            <label for="userid">Username:</label>
-            <input type="text" id="userid" required>
+            <label for="email">Email:</label>
+            <input type="email" id="email" required>
           </div>
           <div class="form-group">
             <label for="password">Password:</label>
@@ -338,7 +338,7 @@ async function loadAdminArtworksList() {
 async function handleLogin(e) {
   e.preventDefault();
   
-  const email = document.getElementById('userid').value;
+  const email = document.getElementById('email').value;
   const password = document.getElementById('password').value;
   const errorDiv = document.getElementById('login-error');
   const submitBtn = e.target.querySelector('button[type="submit"]');
