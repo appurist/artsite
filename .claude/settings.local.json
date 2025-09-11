@@ -25,7 +25,8 @@
       "mcp__appwrite-docs__getFeatureExamples",
       "Bash(setup-appwrite.bat)",
       "Bash(./setup-appwrite.bat)",
-      "WebFetch(domain:pictogrammers.com)"
+      "WebFetch(domain:pictogrammers.com)",
+      "Bash(npx:*)"
     ],
     "deny": [],
     "ask": [],

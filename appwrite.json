@@ -1,7 +1,15 @@
 {
     "projectId": "artsite",
-    "projectName": "Art Gallery",
-    "functions": [],
+    "projectName": "Art Site",
+    "functions": [
+        {
+            "functionId": "secure-create",
+            "name": "Secure Create",
+            "runtime": "node-20.0",
+            "path": "functions/secure-create",
+            "entrypoint": "index.js"
+        }
+    ],
     "databases": [
         {
             "id": "artsite",
@@ -142,8 +150,12 @@
                             "key": "key_unique",
                             "type": "unique",
                             "status": "available",
-                            "attributes": ["key"],
-                            "orders": ["ASC"]
+                            "attributes": [
+                                "key"
+                            ],
+                            "orders": [
+                                "ASC"
+                            ]
                         }
                     ]
                 }
@@ -163,7 +175,13 @@
             "fileSecurity": false,
             "enabled": true,
             "maximumFileSize": 30000000,
-            "allowedFileExtensions": ["jpg", "jpeg", "png", "gif", "webp"],
+            "allowedFileExtensions": [
+                "jpg",
+                "jpeg",
+                "png",
+                "gif",
+                "webp"
+            ],
             "compression": "gzip",
             "encryption": true,
             "antivirus": true
