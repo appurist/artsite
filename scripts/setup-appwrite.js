@@ -1,4 +1,7 @@
-import { Client, Databases, Storage } from 'node-appwrite';
+import { Client, Databases, Storage, Functions } from 'node-appwrite';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 // Initialize Appwrite client with your credentials
 const client = new Client()
@@ -8,6 +11,7 @@ const client = new Client()
 
 const databases = new Databases(client);
 const storage = new Storage(client);
+const functions = new Functions(client);
 
 const DATABASE_ID = '68bfaf22002f08bd470a';
 const ARTWORKS_COLLECTION_ID = 'artworks';
@@ -27,8 +31,8 @@ async function setupDatabase() {
                 databaseId: DATABASE_ID,
                 collectionId: ARTWORKS_COLLECTION_ID,
                 name: 'Artworks',
-                permissions: ['read("any")', 'write("users")'],
-                documentSecurity: false
+                permissions: [],
+                documentSecurity: true
             });
             console.log('✅ Artworks collection created');
 
@@ -99,8 +103,8 @@ async function setupDatabase() {
                 databaseId: DATABASE_ID,
                 collectionId: SETTINGS_COLLECTION_ID,
                 name: 'Settings',
-                permissions: ['read("any")', 'write("users")'],
-                documentSecurity: false
+                permissions: [],
+                documentSecurity: true
             });
             console.log('✅ Settings collection created');
 
@@ -164,7 +168,7 @@ async function setupDatabase() {
                 databaseId: DATABASE_ID,
                 collectionId: DOMAINS_COLLECTION_ID,
                 name: 'domains',
-                permissions: ['read("any")', 'write("users")'],
+                permissions: ['read("any")'],
                 documentSecurity: false
             });
             console.log('✅ Domains collection created');
@@ -319,6 +323,60 @@ async function seedDomainConfig() {
     }
 }
 
+async function setupSecureCreateFunction() {
+    try {
+        console.log('⚡ Setting up secure create function...');
+        
+        // Get the directory path for this script
+        const __filename = fileURLToPath(import.meta.url);
+        const __dirname = path.dirname(__filename);
+        const projectRoot = path.dirname(__dirname);
+        const functionDir = path.join(projectRoot, 'functions', 'secure-create');
+        
+        // Read function files
+        const indexPath = path.join(functionDir, 'index.js');
+        const packagePath = path.join(functionDir, 'package.json');
+        
+        if (!fs.existsSync(indexPath)) {
+            throw new Error(`Function file not found: ${indexPath}`);
+        }
+        
+        const functionCode = fs.readFileSync(indexPath, 'utf8');
+        const packageJson = fs.existsSync(packagePath) ? 
+            fs.readFileSync(packagePath, 'utf8') : 
+            '{"name":"secure-create","version":"1.0.0","type":"module","dependencies":{"node-appwrite":"^13.0.0"}}';
+        
+        console.log('📁 Function files loaded from:', functionDir);
+        
+        // Create the universal create function
+        const functionData = await functions.create(
+            'secure-create', // Function ID
+            'Secure Create', // Function name
+            'node-18.0', // Runtime
+            ['any'], // Execute permissions (authenticated users only)
+            [], // Events (none - will be called directly)
+            '', // Schedule (none)
+            15, // Timeout in seconds
+            true, // Enabled
+            true, // Logging enabled
+            'index.js', // Entrypoint
+            'npm install' // Commands
+        );
+        
+        console.log('✅ Secure create function created:', functionData.$id);
+        console.log('📝 Function code loaded from file system');
+        console.log('   Next step: Deploy function code manually or via CLI');
+        console.log('   Function directory:', functionDir);
+        
+    } catch (error) {
+        if (error.code === 409) {
+            console.log('✅ Secure create function already exists');
+        } else {
+            console.error('❌ Error creating secure function:', error.message);
+        }
+    }
+}
+
 async function main() {
     console.log('🎨 Art Gallery Appwrite Setup');
     console.log('================================');
@@ -327,6 +385,7 @@ async function main() {
     await setupStorage();
     await seedInitialSettings();
     await seedDomainConfig();
+    await setupSecureCreateFunction();
     
     console.log('\n🎉 Setup complete!');
     console.log('\nNext steps:');

@@ -1,4 +1,4 @@
-import { Client, TablesDB, Storage, Account, Query, Avatars } from 'appwrite';
+import { Client, TablesDB, Storage, Account, Query, Avatars, Functions } from 'appwrite';
 
 const APPWRITE_ENDPOINT = "https://nyc.cloud.appwrite.io/v1"
 const APPWRITE_PROJECT_ID = "artsite"
@@ -14,6 +14,7 @@ export const tablesDB = new TablesDB(client);
 export const storage = new Storage(client);
 export const account = new Account(client);
 export const avatars = new Avatars(client);
+export const functions = new Functions(client);
 
 // Configuration constants
 export const DATABASE_ID = APPWRITE_DATABASE_ID;
@@ -99,14 +100,41 @@ export const getArtwork = async (id) => {
     }
 };
 
+// Secure database operations - uses server-side validation
+export const secureOperation = async (mode, table, data, docId = null) => {
+    try {
+        const payload = { mode, table, data };
+        if (docId) payload.docId = docId;
+        
+        const result = await functions.createExecution(
+            'secure-create',
+            JSON.stringify(payload)
+        );
+        
+        if (result.responseStatusCode !== 200) {
+            const error = JSON.parse(result.responseBody).error;
+            throw new Error(error || `Failed to ${mode} document`);
+        }
+        
+        return JSON.parse(result.responseBody);
+    } catch (error) {
+        console.error(`Error in secure ${mode}:`, error);
+        throw error;
+    }
+};
+
+export const secureCreate = async (table, data) => {
+    return await secureOperation('create', table, data);
+};
+
+export const secureUpdate = async (table, docId, data) => {
+    return await secureOperation('update', table, data, docId);
+};
+
 export const createArtwork = async (data) => {
     try {
-        return await tablesDB.createRow({
-            databaseId: DATABASE_ID,
-            tableId: ARTWORKS_TABLE_ID,
-            rowId: 'unique()',
-            data: data
-        });
+        // Use secure server-side create function
+        return await secureCreate(ARTWORKS_TABLE_ID, data);
     } catch (error) {
         console.error('Error creating artwork:', error);
         throw error;
@@ -115,12 +143,8 @@ export const createArtwork = async (data) => {
 
 export const updateArtwork = async (id, data) => {
     try {
-        return await tablesDB.updateRow({
-            databaseId: DATABASE_ID,
-            tableId: ARTWORKS_TABLE_ID,
-            rowId: id,
-            data: data
-        });
+        // Use secure server-side update function
+        return await secureUpdate(ARTWORKS_TABLE_ID, id, data);
     } catch (error) {
         console.error('Error updating artwork:', error);
         throw error;
@@ -190,13 +214,8 @@ export const setSetting = async (key, value) => {
                 data: { value }
             });
         } else {
-            // Create new
-            return await tablesDB.createRow({
-                databaseId: DATABASE_ID,
-                tableId: SETTINGS_TABLE_ID,
-                rowId: 'unique()',
-                data: { key, value }
-            });
+            // Create new using secure function
+            return await secureCreate(SETTINGS_TABLE_ID, { key, value });
         }
     } catch (error) {
         console.error('Error setting value:', error);

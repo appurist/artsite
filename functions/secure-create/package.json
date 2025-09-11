@@ -1,0 +1,13 @@
+{
+  "name": "secure-create",
+  "version": "1.0.0",
+  "description": "Universal secure create function for Appwrite",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "node-appwrite": "^13.0.0"
+  },
+  "scripts": {
+    "start": "node index.js"
+  }
+}
