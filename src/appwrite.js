@@ -125,13 +125,21 @@ export const secureOperation = async (mode, table, data, docId = null) => {
             JSON.stringify(payload)
         );
         
-        // Check for any 2xx success status code
+        // Check if function execution failed
         if (result.responseStatusCode < 200 || result.responseStatusCode >= 300) {
             const error = JSON.parse(result.responseBody).error;
             throw new Error(error || `Failed to ${mode} document`);
         }
         
-        return JSON.parse(result.responseBody);
+        // Parse the function's response
+        const functionResponse = JSON.parse(result.responseBody);
+        
+        // Check if the function itself returned an error (even with 201 execution status)
+        if (functionResponse.error) {
+            throw new Error(functionResponse.error);
+        }
+        
+        return functionResponse;
     } catch (error) {
         console.error(`Error in secure ${mode}:`, error);
         throw error;
