@@ -125,7 +125,8 @@ export const secureOperation = async (mode, table, data, docId = null) => {
             JSON.stringify(payload)
         );
         
-        if (result.responseStatusCode !== 200) {
+        // Check for any 2xx success status code
+        if (result.responseStatusCode < 200 || result.responseStatusCode >= 300) {
             const error = JSON.parse(result.responseBody).error;
             throw new Error(error || `Failed to ${mode} document`);
         }
