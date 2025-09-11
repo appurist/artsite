@@ -267,8 +267,10 @@ async function loadGalleryPage(focusUser = '*') {
       <p class="gallery-subtitle">${gallerySubtitle}</p>
     </div>
     
-    <div class="loading">
-      <p>Loading gallery...</p>
+    <div class="content-container">
+      <div class="loading">
+        <p>Loading gallery...</p>
+      </div>
     </div>
   `;
   
@@ -284,9 +286,11 @@ async function loadGalleryPage(focusUser = '*') {
           <p class="gallery-subtitle">${gallerySubtitle}</p>
         </div>
         
-        <div class="empty-gallery">
-          <h2>No artworks yet</h2>
-          <p>The gallery is empty. Please use the admin panel to add some artwork.</p>
+        <div class="content-container">
+          <div class="empty-gallery">
+            <h2>No artworks yet</h2>
+            <p>The gallery is empty. Please use the admin panel to add some artwork.</p>
+          </div>
         </div>
       `;
     } else {
@@ -299,8 +303,10 @@ async function loadGalleryPage(focusUser = '*') {
           <p class="gallery-subtitle">${gallerySubtitle}</p>
         </div>
         
-        <div class="gallery-grid">
-          ${galleryGrid}
+        <div class="content-container">
+          <div class="gallery-grid">
+            ${galleryGrid}
+          </div>
         </div>
       `;
     }
@@ -314,9 +320,11 @@ async function loadGalleryPage(focusUser = '*') {
         <p class="gallery-subtitle">Original paintings and artwork</p>
       </div>
       
-      <div class="empty-gallery">
-        <h2>Unable to load gallery</h2>
-        <p>There was an error loading the artworks. Please try again later.</p>
+      <div class="content-container">
+        <div class="empty-gallery">
+          <h2>Unable to load gallery</h2>
+          <p>There was an error loading the artworks. Please try again later.</p>
+        </div>
       </div>
     `;
   }
@@ -375,12 +383,13 @@ async function loadProfilePage() {
     const avatarUrl = getUserAvatarInitials(user.name || user.email, 80, 80);
     
     app.innerHTML = `
-      <div class="profile-container">
-        <div class="profile-header">
-          <h1>User Profile</h1>
-        </div>
-        
-        <div class="profile-content">
+      <div class="content-container">
+        <div class="profile-container">
+          <div class="profile-header">
+            <h1>User Profile</h1>
+          </div>
+          
+          <div class="profile-content">
           <div class="profile-avatar">
             <img src="${avatarUrl}" alt="${user.name || user.email}" class="profile-avatar-img">
           </div>
@@ -433,6 +442,7 @@ async function loadProfilePage() {
             </svg>
             Back to Gallery
           </button>
+        </div>
         </div>
       </div>
     `;

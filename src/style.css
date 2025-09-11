@@ -68,6 +68,7 @@ body {
   background: var(--nav-bg);
   padding: 0;
   border-bottom: 1px solid var(--nav-border);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .nav-content {
@@ -351,6 +352,9 @@ body {
 /* Main content area */
 #app {
   min-height: calc(100vh - 140px);
+}
+
+.content-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 2rem;
@@ -359,9 +363,10 @@ body {
 /* Gallery header */
 .gallery-header {
   text-align: center;
-  padding: 3rem 0;
+  padding: 3rem 2rem;
   background: var(--gallery-header-bg);
-  margin: -2rem -2rem 3rem -2rem;
+  width: 100%;
+  margin-bottom: 3rem;
 }
 
 .gallery-title {
