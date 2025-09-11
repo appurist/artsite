@@ -1379,7 +1379,13 @@ async function loadCurrentSettings() {
   try {
     showSettingsStatus('Loading current settings...', 'info');
     
-    const settings = await getSettings();
+    // Get current user for settings
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+    
+    const settings = await getSettings(currentUser.$id);
     
     // Populate form fields
     const fields = ['site_title', 'artist_name', 'artist_bio', 'contact_email', 'contact_phone', 'gallery_description', 'primary_color', 'secondary_color'];
@@ -1416,12 +1422,18 @@ async function handleSettingsSubmit(e) {
   try {
     showSettingsStatus('Saving settings...', 'info');
     
+    // Get current user for settings
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+    
     // Save each setting
     const settings = Object.fromEntries(formData.entries());
     
     for (const [key, value] of Object.entries(settings)) {
       if (value.trim()) { // Only save non-empty values
-        await setSetting(key, value);
+        await setSetting(currentUser.$id, key, value);
       }
     }
     

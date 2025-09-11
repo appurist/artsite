@@ -26,8 +26,17 @@ export default async ({ req, res, log, error }) => {
         const databases = new Databases(serverClient);
         const DATABASE_ID = '68bfaf22002f08bd470a';
 
-        // Parse request data
-        const { mode, table, data, docId } = req.bodyJson;
+        // Parse request data - handle both direct JSON and wrapped body
+        let requestData;
+        if (req.bodyJson.body) {
+            // Body is wrapped in a "body" field (from createExecution)
+            requestData = JSON.parse(req.bodyJson.body);
+        } else {
+            // Direct JSON body
+            requestData = req.bodyJson;
+        }
+        
+        const { mode, table, data, docId } = requestData;
         if (!table || !data) {
             return res.json({ error: 'Table and data required' }, 400);
         }
