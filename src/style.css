@@ -282,12 +282,7 @@ body {
   margin-bottom: 1rem;
 }
 
-/* Site settings page styling */
-.site-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 2rem;
-}
+/* Site settings page styling - now using page-container */
 
 .site-header {
   display: flex;
@@ -480,8 +475,8 @@ body {
   color: var(--text-muted);
 }
 
-/* Admin styles */
-.admin-container {
+/* Page container styles */
+.page-container {
   max-width: 800px;
   margin: 0 auto;
 }
