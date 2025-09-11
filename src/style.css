@@ -66,7 +66,7 @@ body {
 /* Navigation */
 #main-nav {
   background: var(--nav-bg);
-  padding: 1rem 0 0 0;
+  padding: 0;
   border-bottom: 1px solid var(--nav-border);
 }
 
@@ -81,10 +81,19 @@ body {
 
 .logo {
   font-family: 'Segoe UI', sans-serif;
-  font-size: 1.5rem;
+  font-size: 1.2rem;
   font-weight: 200;
   text-decoration: none;
   color: var(--nav-text);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.site-icon {
+  width: 24px;
+  height: 24px;
+  filter: brightness(0) opacity(0.7);
 }
 
 .nav-menu {
@@ -456,7 +465,7 @@ body {
 /* Loading and empty states */
 .loading {
   text-align: center;
-  padding: 4rem 2rem;
+  padding: 1rem;
 }
 
 .empty-gallery {
@@ -565,7 +574,7 @@ body {
 
 .admin-content {
   background: var(--card-bg);
-  padding: 2rem;
+  padding: 1.5rem;
   border-radius: 8px;
   box-shadow: 0 2px 4px var(--shadow-color);
 }
@@ -576,8 +585,15 @@ body {
   margin-bottom: 2rem;
 }
 
-.artworks-section h3 {
+.artworks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 1rem;
+}
+
+.artworks-header h3 {
+  margin: 0;
   color: var(--text-color);
 }
 
@@ -864,7 +880,9 @@ input[type="file"]:focus {
 }
 
 .btn {
-  display: inline-block;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
   padding: 0.75rem 1.5rem;
   border: none;
   border-radius: 4px;
@@ -872,6 +890,25 @@ input[type="file"]:focus {
   font-size: 1rem;
   cursor: pointer;
   transition: background-color 0.2s;
+}
+
+.btn .nav-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+}
+
+.btn .icon {
+  width: 24px;
+  height: 24px;
+}
+
+/* Make icons visible on colored button backgrounds */
+.btn-primary .icon,
+.btn-secondary .icon, 
+.btn-success .icon,
+.btn-danger .icon {
+  filter: brightness(0) invert(1);
 }
 
 .btn-primary {
@@ -890,6 +927,15 @@ input[type="file"]:focus {
 
 .btn-secondary:hover {
   background: var(--secondary-hover);
+}
+
+.btn-success {
+  background: var(--success-color);
+  color: var(--text-on-primary);
+}
+
+.btn-success:hover {
+  background: #218838;
 }
 
 .btn-danger {

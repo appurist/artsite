@@ -6,8 +6,12 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Set current year in footer
   document.getElementById('current-year').textContent = new Date().getFullYear();
   
-  // Set hostname as site title
-  document.getElementById('site-title').textContent = window.location.hostname;
+  // Set hostname as site title (preserving the icon)
+  const siteTitle = document.getElementById('site-title');
+  const iconElement = siteTitle.querySelector('.site-icon');
+  siteTitle.innerHTML = '';
+  siteTitle.appendChild(iconElement);
+  siteTitle.appendChild(document.createTextNode(window.location.hostname));
   
   // Set up navigation
   setupNavigation();
@@ -120,6 +124,9 @@ async function updateNavigationAuth() {
   const navUserName = document.getElementById('nav-user-name');
   const navAuthIcon = document.getElementById('nav-auth-icon');
   const navAuthText = document.getElementById('nav-auth-text');
+  const navHome = document.getElementById('nav-home');
+  const navArt = document.getElementById('nav-art');
+  const navSite = document.getElementById('nav-site');
   
   try {
     // Check if there's an active session
@@ -132,6 +139,11 @@ async function updateNavigationAuth() {
         const defaultIcon = `<svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>`;
         navUserName.innerHTML = `${defaultIcon} ${user.name || user.email}`;
         navUserInfo.style.display = 'list-item';
+        
+        // Show Home, My Art and My Site for authenticated users
+        navHome.parentElement.style.display = 'list-item';
+        navArt.parentElement.style.display = 'list-item';
+        navSite.parentElement.style.display = 'list-item';
         
         // Asynchronously load avatar initials
         loadUserAvatar(user, navUserName);
@@ -152,6 +164,12 @@ async function updateNavigationAuth() {
     
     // No session - show login option
     navUserInfo.style.display = 'none';
+    
+    // Hide Home, My Art and My Site for unauthenticated users
+    navHome.parentElement.style.display = 'none';
+    navArt.parentElement.style.display = 'none';
+    navSite.parentElement.style.display = 'none';
+    
     navAuthIcon.innerHTML = '<path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />';
     navAuthText.textContent = 'Login';
     
@@ -162,6 +180,12 @@ async function updateNavigationAuth() {
     
     // Hide user info on error
     navUserInfo.style.display = 'none';
+    
+    // Hide Home, My Art and My Site on error (treat as unauthenticated)
+    navHome.parentElement.style.display = 'none';
+    navArt.parentElement.style.display = 'none';
+    navSite.parentElement.style.display = 'none';
+    
     navAuthIcon.innerHTML = '<path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />';
     navAuthText.textContent = 'Login';
     
@@ -335,7 +359,12 @@ async function loadProfilePage() {
           <div class="profile-error">
             <h2>Unable to load profile</h2>
             <p>Please try logging in again.</p>
-            <button class="btn btn-primary" onclick="navigateTo('/art')">Go to Login</button>
+            <button class="btn btn-primary" onclick="navigateTo('/art')">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />
+              </svg>
+              Go to Login
+            </button>
           </div>
         </div>
       `;
@@ -349,12 +378,6 @@ async function loadProfilePage() {
       <div class="profile-container">
         <div class="profile-header">
           <h1>User Profile</h1>
-          <button class="btn btn-secondary" onclick="navigateTo('/art')">
-            <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
-            </svg>
-            Manage My Art
-          </button>
         </div>
         
         <div class="profile-content">
@@ -405,7 +428,7 @@ async function loadProfilePage() {
         
         <div class="profile-actions">
           <button class="btn btn-primary" onclick="navigateTo('/')">
-            <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
               <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
             </svg>
             Back to Gallery
@@ -424,7 +447,12 @@ async function loadProfilePage() {
         <div class="profile-error">
           <h2>Error loading profile</h2>
           <p>There was an error loading your profile information.</p>
-          <button class="btn btn-primary" onclick="navigateTo('/')">Back to Gallery</button>
+          <button class="btn btn-primary" onclick="navigateTo('/')">
+            <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+            </svg>
+            Back to Gallery
+          </button>
         </div>
       </div>
     `;
@@ -709,21 +737,13 @@ function showAdminDashboard(user) {
     <div class="page-container">
       <div class="site-header">
         <h1>My Art</h1>
-        <button class="btn btn-secondary" onclick="navigateTo('/site')">
-          <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M16.36,14C16.44,13.34 16.5,12.68 16.5,12C16.5,11.32 16.44,10.66 16.36,10H19.74C19.9,10.64 20,11.31 20,12C20,12.69 19.9,13.36 19.74,14M14.59,19.56C15.19,18.45 15.65,17.25 15.97,16H18.92C17.96,17.65 16.43,18.93 14.59,19.56M14.34,14H9.66C9.56,13.34 9.5,12.68 9.5,12C9.5,11.32 9.56,10.65 9.66,10H14.34C14.43,10.65 14.5,11.32 14.5,12C14.5,12.68 14.43,13.34 14.34,14M12,19.96C11.17,18.76 10.5,17.43 10.09,16H13.91C13.5,17.43 12.83,18.76 12,19.96M8,8H5.08C6.03,6.34 7.57,5.06 9.4,4.44C8.8,5.55 8.35,6.75 8,8M5.08,16H8C8.35,17.25 8.8,18.45 9.4,19.56C7.57,18.93 6.03,17.65 5.08,16M4.26,14C4.1,13.36 4,12.69 4,12C4,11.31 4.1,10.64 4.26,10H7.64C7.56,10.66 7.5,11.32 7.5,12C7.5,12.68 7.56,13.34 7.64,14M12,4.03C12.83,5.23 13.5,6.57 13.91,8H10.09C10.5,6.57 11.17,5.23 12,4.03M18.92,8H15.97C15.65,6.75 15.19,5.55 14.59,4.44C16.43,5.07 17.96,6.34 18.92,8M12,2C6.47,2 2,6.5 2,12A10,10 0 0,0 12,22A10,10 0 0,0 22,12A10,10 0 0,0 12,2Z" />
-          </svg>
-          Go to My Site
-        </button>
       </div>
       
       <div class="admin-content">
-        <div class="admin-actions">
-          <button id="upload-btn" class="btn btn-primary">Upload Artwork</button>
-        </div>
-        
         <div class="artworks-section">
-          <h3>Manage Artworks</h3>
+          <div class="artworks-header">
+            <h3>Manage Artworks</h3>
+          </div>
           <div id="artworks-list" class="loading">
             <p>Loading artworks...</p>
           </div>
@@ -733,7 +753,7 @@ function showAdminDashboard(user) {
   `;
   
   // Set up dashboard event handlers
-  document.getElementById('upload-btn').addEventListener('click', showUploadForm);
+  // Upload functionality can be accessed via URL /art/upload if needed
   
   // Load artworks list
   loadAdminArtworksList();
@@ -773,8 +793,14 @@ async function loadAdminArtworksList() {
             <p class="artwork-created">Uploaded: ${new Date(artwork.$createdAt).toLocaleDateString()}</p>
           </div>
           <div class="admin-artwork-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editArtwork('${artwork.$id}')">Edit</button>
-            <button class="btn btn-danger btn-sm" onclick="deleteArtwork('${artwork.$id}')">Delete</button>
+            <button class="btn btn-secondary btn-sm" onclick="editArtwork('${artwork.$id}')">
+              <img src="/src/assets/icons/pencil.svg" alt="Edit" class="icon" aria-hidden="true" />
+              Edit
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="deleteArtwork('${artwork.$id}')">
+              <img src="/src/assets/icons/delete.svg" alt="Delete" class="icon" aria-hidden="true" />
+              Delete
+            </button>
           </div>
         </div>
       `).join('');
@@ -893,7 +919,12 @@ function showUploadForm() {
     <div class="page-container">
       <div class="admin-header">
         <h2>Upload Artwork</h2>
-        <button id="back-to-dashboard" class="btn btn-secondary">← Back to Dashboard</button>
+        <button id="back-to-dashboard" class="btn btn-secondary">
+          <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
+          </svg>
+          Back to Dashboard
+        </button>
       </div>
       
       <div class="admin-content">
@@ -944,8 +975,18 @@ function showUploadForm() {
           </div>
           
           <div class="form-actions">
-            <button type="submit" class="btn btn-primary" id="upload-submit">Upload Artwork</button>
-            <button type="button" class="btn btn-secondary" id="upload-cancel">Cancel</button>
+            <button type="submit" class="btn btn-primary" id="upload-submit">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M18 15V18H15V20H18V23H20V20H23V18H20V15H18M13.3 21H5C3.9 21 3 20.1 3 19V5C3 3.9 3.9 3 5 3H19C20.1 3 21 3.9 21 5V13.3C20.4 13.1 19.7 13 19 13C17.9 13 16.8 13.3 15.9 13.9L14.5 12L11 16.5L8.5 13.5L5 18H13.1C13 18.3 13 18.7 13 19C13 19.7 13.1 20.4 13.3 21Z" />
+              </svg>
+              Upload Artwork
+            </button>
+            <button type="button" class="btn btn-secondary" id="upload-cancel">
+              <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z" />
+              </svg>
+              Cancel
+            </button>
           </div>
         </form>
         
@@ -1084,12 +1125,6 @@ async function loadSitePage() {
       <div class="page-container">
         <div class="site-header">
           <h1>My Site Settings</h1>
-          <button class="btn btn-secondary" onclick="navigateTo('/art')">
-            <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
-            </svg>
-            Go to My Art
-          </button>
         </div>
         
         <div class="site-content">
@@ -1140,8 +1175,14 @@ async function loadSitePage() {
             <div id="settings-status" class="settings-status"></div>
             
             <div class="form-actions">
-              <button type="button" id="settings-cancel" class="btn btn-secondary">Cancel</button>
-              <button type="submit" class="btn btn-primary">Save Settings</button>
+              <button type="button" id="settings-cancel" class="btn btn-secondary">
+                <img src="/src/assets/icons/cancel.svg" alt="Cancel" class="icon" aria-hidden="true" />
+                Cancel
+              </button>
+              <button type="submit" class="btn btn-primary">
+                <img src="/src/assets/icons/content-save.svg" alt="Save" class="icon" aria-hidden="true" />
+                Save Settings
+              </button>
             </div>
           </form>
         </div>
@@ -1165,7 +1206,12 @@ async function loadSitePage() {
         <div class="profile-error">
           <h2>Error loading settings</h2>
           <p>There was an error loading the site settings page.</p>
-          <button class="btn btn-primary" onclick="navigateTo('/art')">Go to My Art</button>
+          <button class="btn btn-primary" onclick="navigateTo('/art')">
+            <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
+            </svg>
+            Go to My Art
+          </button>
         </div>
       </div>
     `;
@@ -1297,9 +1343,13 @@ async function handleSettingsSubmit(e) {
     
     showSettingsStatus('Settings saved successfully!', 'success');
     
-    // Update site title in navigation if changed
+    // Update site title in navigation if changed (preserving the icon)
     if (settings.site_title) {
-      document.getElementById('site-title').textContent = settings.site_title;
+      const siteTitle = document.getElementById('site-title');
+      const iconElement = siteTitle.querySelector('.site-icon');
+      siteTitle.innerHTML = '';
+      siteTitle.appendChild(iconElement);
+      siteTitle.appendChild(document.createTextNode(settings.site_title));
     }
     
     // Redirect after delay
