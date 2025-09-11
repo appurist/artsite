@@ -1,4 +1,4 @@
-import { Client, TablesDB, Storage, Account, Query } from 'appwrite';
+import { Client, TablesDB, Storage, Account, Query, Avatars } from 'appwrite';
 
 const APPWRITE_ENDPOINT = "https://nyc.cloud.appwrite.io/v1"
 const APPWRITE_PROJECT_ID = "artsite"
@@ -13,11 +13,13 @@ const client = new Client()
 export const tablesDB = new TablesDB(client);
 export const storage = new Storage(client);
 export const account = new Account(client);
+export const avatars = new Avatars(client);
 
 // Configuration constants
 export const DATABASE_ID = APPWRITE_DATABASE_ID;
 export const ARTWORKS_TABLE_ID = 'artworks';
 export const SETTINGS_TABLE_ID = 'settings';
+export const DOMAINS_TABLE_ID = 'domains';
 export const STORAGE_BUCKET_ID = 'images';
 
 // Helper functions
@@ -34,6 +36,16 @@ export const getCurrentUser = async () => {
     try {
         return await account.get();
     } catch (error) {
+        return null;
+    }
+};
+
+export const getUserAvatarInitials = (name, width = 24, height = 24, background = '667eea') => {
+    try {
+        // Use Appwrite's avatar initials service with our primary color
+        return avatars.getInitials(name, width, height, background);
+    } catch (error) {
+        console.error('Error getting avatar initials:', error);
         return null;
     }
 };
@@ -55,8 +67,9 @@ export const getArtworks = async (userId = null) => {
     try {
         const queries = [];
 
-        // If userId is provided, filter by that user
-        if (userId) {
+        // If userId is provided and not '*', filter by that user
+        // If userId is '*', show all artworks (no filter)
+        if (userId && userId !== '*') {
             // Use Query.equal syntax for Appwrite
             queries.push(Query.equal('user_id', userId));
         }
@@ -188,6 +201,34 @@ export const setSetting = async (key, value) => {
     } catch (error) {
         console.error('Error setting value:', error);
         throw error;
+    }
+};
+
+// Domain helpers
+export const getDomainConfig = async (hostname) => {
+    try {
+        const response = await tablesDB.listRows({
+            databaseId: DATABASE_ID,
+            tableId: DOMAINS_TABLE_ID,
+            queries: [Query.equal('hostname', hostname)]
+        });
+        return response.rows[0] || null;
+    } catch (error) {
+        console.error('Error fetching domain config:', error);
+        return null;
+    }
+};
+
+export const getDefaultFocusUser = async () => {
+    try {
+        const hostname = window.location.hostname;
+        const domainConfig = await getDomainConfig(hostname);
+        
+        // Return the focus_user from domain config, or '*' as default
+        return domainConfig?.focus_user || '*';
+    } catch (error) {
+        console.error('Error getting default focus user:', error);
+        return '*';
     }
 };
 

@@ -15,6 +15,7 @@
     "wrangler": "^4.35.0"
   },
   "dependencies": {
-    "appwrite": "^20.0.0"
+    "appwrite": "^20.0.0",
+    "node-appwrite": "^19.0.0"
   }
 }

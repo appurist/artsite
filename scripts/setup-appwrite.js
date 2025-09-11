@@ -1,45 +1,35 @@
-import { Client, Databases, Storage } from 'appwrite';
+import { Client, Databases, Storage } from 'node-appwrite';
 
 // Initialize Appwrite client with your credentials
 const client = new Client()
     .setEndpoint('https://nyc.cloud.appwrite.io/v1') // Your API Endpoint
-    .setProject('artsite'); // Your project ID
+    .setProject('artsite') // Your project ID
+    .setKey(process.env.APPWRITE_API_KEY); // Your API key from environment variable
 
 const databases = new Databases(client);
 const storage = new Storage(client);
 
-const DATABASE_ID = 'artgallery';
+const DATABASE_ID = '68bfaf22002f08bd470a';
 const ARTWORKS_COLLECTION_ID = 'artworks';
 const SETTINGS_COLLECTION_ID = 'settings';
+const DOMAINS_COLLECTION_ID = 'domains';
 const STORAGE_BUCKET_ID = 'images';
 
 async function setupDatabase() {
     try {
-        console.log('🚀 Setting up Appwrite database and collections...');
-        
-        // Create database
-        console.log('📁 Creating database...');
-        try {
-            await databases.create(DATABASE_ID, 'Art Gallery Database');
-            console.log('✅ Database created successfully');
-        } catch (error) {
-            if (error.code === 409) {
-                console.log('✅ Database already exists');
-            } else {
-                throw error;
-            }
-        }
+        console.log('🚀 Setting up Appwrite database collections...');
+        console.log('✅ Using existing database: ' + DATABASE_ID);
 
         // Create artworks collection
         console.log('🎨 Creating artworks collection...');
         try {
-            await databases.createCollection(
-                DATABASE_ID,
-                ARTWORKS_COLLECTION_ID,
-                'Artworks',
-                ['read("any")'], // Anyone can read
-                ['write("users")'] // Only authenticated users can write
-            );
+            await databases.createCollection({
+                databaseId: DATABASE_ID,
+                collectionId: ARTWORKS_COLLECTION_ID,
+                name: 'Artworks',
+                permissions: ['read("any")', 'write("users")'],
+                documentSecurity: false
+            });
             console.log('✅ Artworks collection created');
 
             // Add attributes to artworks collection
@@ -54,8 +44,9 @@ async function setupDatabase() {
                 { key: 'price', type: 'string', size: 255, required: false },
                 { key: 'tags', type: 'string', size: 1000, required: false },
                 { key: 'image_id', type: 'string', size: 255, required: true },
-                { key: 'filename', type: 'string', size: 255, required: false },
-                { key: 'created_at', type: 'datetime', required: true }
+                { key: 'user_id', type: 'string', size: 255, required: true },
+                { key: 'storage_path', type: 'string', size: 500, required: false },
+                { key: 'original_filename', type: 'string', size: 255, required: false }
             ];
 
             for (const attr of artworkAttributes) {
@@ -104,13 +95,13 @@ async function setupDatabase() {
         // Create settings collection
         console.log('⚙️ Creating settings collection...');
         try {
-            await databases.createCollection(
-                DATABASE_ID,
-                SETTINGS_COLLECTION_ID,
-                'Settings',
-                ['read("any")'], // Anyone can read settings
-                ['write("users")'] // Only authenticated users can write
-            );
+            await databases.createCollection({
+                databaseId: DATABASE_ID,
+                collectionId: SETTINGS_COLLECTION_ID,
+                name: 'Settings',
+                permissions: ['read("any")', 'write("users")'],
+                documentSecurity: false
+            });
             console.log('✅ Settings collection created');
 
             // Add attributes to settings collection
@@ -166,6 +157,71 @@ async function setupDatabase() {
             }
         }
 
+        // Create domains collection
+        console.log('🌐 Creating domains collection...');
+        try {
+            await databases.createCollection({
+                databaseId: DATABASE_ID,
+                collectionId: DOMAINS_COLLECTION_ID,
+                name: 'domains',
+                permissions: ['read("any")', 'write("users")'],
+                documentSecurity: false
+            });
+            console.log('✅ Domains collection created');
+
+            // Add attributes to domains collection
+            console.log('📝 Adding attributes to domains collection...');
+            
+            const domainAttributes = [
+                { key: 'hostname', type: 'string', size: 255, required: true },
+                { key: 'focus_user', type: 'string', size: 50, required: true }
+            ];
+
+            for (const attr of domainAttributes) {
+                try {
+                    await databases.createStringAttribute(
+                        DATABASE_ID,
+                        DOMAINS_COLLECTION_ID,
+                        attr.key,
+                        attr.size,
+                        attr.required
+                    );
+                    console.log(`  ✅ Added ${attr.key} attribute`);
+                } catch (error) {
+                    if (error.code === 409) {
+                        console.log(`  ✅ ${attr.key} attribute already exists`);
+                    } else {
+                        console.log(`  ❌ Error adding ${attr.key}:`, error.message);
+                    }
+                }
+            }
+
+            // Create unique index on hostname field
+            try {
+                await databases.createIndex(
+                    DATABASE_ID,
+                    DOMAINS_COLLECTION_ID,
+                    'hostname_unique',
+                    'unique',
+                    ['hostname']
+                );
+                console.log('  ✅ Added unique index on hostname field');
+            } catch (error) {
+                if (error.code === 409) {
+                    console.log('  ✅ Unique index already exists');
+                } else {
+                    console.log('  ❌ Error creating index:', error.message);
+                }
+            }
+            
+        } catch (error) {
+            if (error.code === 409) {
+                console.log('✅ Domains collection already exists');
+            } else {
+                throw error;
+            }
+        }
+
     } catch (error) {
         console.error('❌ Error setting up database:', error);
     }
@@ -173,28 +229,13 @@ async function setupDatabase() {
 
 async function setupStorage() {
     try {
-        console.log('🗄️ Creating storage bucket...');
+        console.log('🗄️ Checking storage bucket...');
+        console.log('✅ Storage bucket already exists');
         
-        await storage.createBucket(
-            STORAGE_BUCKET_ID,
-            'Images',
-            ['read("any")'], // Anyone can read images
-            ['write("users")'], // Only authenticated users can upload
-            true, // Enabled
-            undefined, // No max file size limit
-            ['jpg', 'jpeg', 'png', 'gif', 'webp'], // Allowed file extensions
-            'gzip', // Compression
-            true, // Encryption
-            true // Antivirus
-        );
-        console.log('✅ Storage bucket created successfully');
+        // Skip creating bucket due to plan limits - using existing 'images' bucket
         
     } catch (error) {
-        if (error.code === 409) {
-            console.log('✅ Storage bucket already exists');
-        } else {
-            console.error('❌ Error creating storage bucket:', error);
-        }
+        console.error('❌ Error checking storage bucket:', error);
     }
 }
 
@@ -247,6 +288,37 @@ async function seedInitialSettings() {
     }
 }
 
+async function seedDomainConfig() {
+    try {
+        console.log('🌐 Seeding domain configuration...');
+        
+        const domainConfigs = [
+            { hostname: 'viktoriasart.ca', focus_user: 'vikki' }
+        ];
+
+        for (const config of domainConfigs) {
+            try {
+                await databases.createDocument(
+                    DATABASE_ID,
+                    DOMAINS_COLLECTION_ID,
+                    'unique()',
+                    config
+                );
+                console.log(`  ✅ Added domain config: ${config.hostname} → ${config.focus_user}`);
+            } catch (error) {
+                if (error.code === 409) {
+                    console.log(`  ✅ Domain config already exists: ${config.hostname}`);
+                } else {
+                    console.log(`  ❌ Error adding domain config ${config.hostname}:`, error.message);
+                }
+            }
+        }
+        
+    } catch (error) {
+        console.error('❌ Error seeding domain configs:', error);
+    }
+}
+
 async function main() {
     console.log('🎨 Art Gallery Appwrite Setup');
     console.log('================================');
@@ -254,12 +326,14 @@ async function main() {
     await setupDatabase();
     await setupStorage();
     await seedInitialSettings();
+    await seedDomainConfig();
     
     console.log('\n🎉 Setup complete!');
     console.log('\nNext steps:');
     console.log('1. Create an admin user in your Appwrite console');
     console.log('2. Make sure your platform has the correct allowed origins');
     console.log('3. Test the login functionality');
+    console.log('4. Domain viktoriasart.ca will show vikki\'s artworks by default');
 }
 
 main().catch(console.error);

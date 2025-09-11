@@ -22,7 +22,10 @@
       "Bash(npx appwrite-cli:*)",
       "Bash(npx appwrite login)",
       "mcp__appwrite-docs__searchDocs",
-      "mcp__appwrite-docs__getFeatureExamples"
+      "mcp__appwrite-docs__getFeatureExamples",
+      "Bash(setup-appwrite.bat)",
+      "Bash(./setup-appwrite.bat)",
+      "WebFetch(domain:pictogrammers.com)"
     ],
     "deny": [],
     "ask": [],

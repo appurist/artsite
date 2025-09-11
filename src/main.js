@@ -1,5 +1,5 @@
 import './style.css'
-import { getCurrentUser, hasActiveSession, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting } from './appwrite.js'
+import { getCurrentUser, hasActiveSession, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting, getDefaultFocusUser, getUserAvatarInitials } from './appwrite.js'
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
@@ -28,6 +28,9 @@ function navigateTo(path) {
   handleRoute();
 }
 
+// Make navigateTo globally accessible
+window.navigateTo = navigateTo;
+
 async function handleRoute() {
   const path = window.location.pathname;
   
@@ -37,14 +40,23 @@ async function handleRoute() {
     if (userId) {
       loadUserGallery(userId);
     } else {
-      loadGalleryPage('vikki'); // Default user
+      // Get default focus user for this domain
+      const focusUser = await getDefaultFocusUser();
+      loadGalleryPage(focusUser);
     }
-  } else if (path === '/admin') {
-    // Admin route
-    loadAdminPage();
+  } else if (path === '/art') {
+    // Art management route
+    loadArtPage();
+  } else if (path === '/site') {
+    // Site settings route
+    loadSitePage();
+  } else if (path === '/profile') {
+    // Profile route
+    loadProfilePage();
   } else {
-    // Default route (home)
-    loadGalleryPage('vikki');
+    // Default route (home) - use domain's focus user
+    const focusUser = await getDefaultFocusUser();
+    loadGalleryPage(focusUser);
   }
   
   // Update navigation for current route
@@ -53,16 +65,28 @@ async function handleRoute() {
 
 // Navigation setup
 function setupNavigation() {
-  document.getElementById('nav-admin').addEventListener('click', (e) => {
+  // Home link
+  document.getElementById('nav-home').addEventListener('click', (e) => {
     e.preventDefault();
-    const currentPath = window.location.pathname;
-    if (currentPath === '/admin') {
-      // On admin page, clicking Gallery goes to home
-      navigateTo('/');
-    } else {
-      // Otherwise, clicking Login/Admin goes to admin
-      navigateTo('/admin');
-    }
+    navigateTo('/');
+  });
+  
+  // Art link (My Art)
+  document.getElementById('nav-art').addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo('/art');
+  });
+  
+  // Site link (My Site)
+  document.getElementById('nav-site').addEventListener('click', (e) => {
+    e.preventDefault();
+    navigateTo('/site');
+  });
+  
+  // Auth link (login/logout)
+  document.getElementById('nav-auth').addEventListener('click', (e) => {
+    e.preventDefault();
+    handleAuthClick();
   });
   
   document.getElementById('site-title').addEventListener('click', (e) => {
@@ -71,12 +95,31 @@ function setupNavigation() {
   });
 }
 
+// Handle auth link click (login or logout)
+async function handleAuthClick() {
+  try {
+    const hasSession = await hasActiveSession();
+    if (hasSession) {
+      // User is logged in, perform logout
+      await logout();
+      await updateNavigationAuth();
+      navigateTo('/');
+    } else {
+      // User is not logged in, go to login
+      navigateTo('/art');
+    }
+  } catch (error) {
+    console.error('Auth click error:', error);
+    navigateTo('/art');
+  }
+}
+
 // Update navigation based on authentication status
 async function updateNavigationAuth() {
-  const navUser = document.getElementById('nav-user');
+  const navUserInfo = document.getElementById('nav-user-info');
   const navUserName = document.getElementById('nav-user-name');
-  const navLogout = document.getElementById('nav-logout');
-  const navAdmin = document.getElementById('nav-admin');
+  const navAuthIcon = document.getElementById('nav-auth-icon');
+  const navAuthText = document.getElementById('nav-auth-text');
   
   try {
     // Check if there's an active session
@@ -85,60 +128,119 @@ async function updateNavigationAuth() {
       // Get user details
       const user = await getCurrentUser();
       if (user) {
-        // Show user info in navigation
-        navUserName.innerHTML = `<span class="user-icon">👤</span> ${user.name || user.email}`;
-        navUser.style.display = 'flex';
-        navAdmin.textContent = 'Admin';
+        // Show user info in navigation with default icon
+        const defaultIcon = `<svg class="user-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>`;
+        navUserName.innerHTML = `${defaultIcon} ${user.name || user.email}`;
+        navUserInfo.style.display = 'list-item';
         
-        // Set up logout handler
-        navLogout.onclick = async () => {
-          try {
-            await logout();
-            // Refresh navigation and reload page
-            await updateNavigationAuth();
-            navigateTo('/');
-          } catch (error) {
-            console.error('Logout error:', error);
-          }
+        // Asynchronously load avatar initials
+        loadUserAvatar(user, navUserName);
+        
+        // Show logout option
+        navAuthIcon.innerHTML = '<path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z" />';
+        navAuthText.textContent = 'Logout';
+        
+        // Make user name clickable to go to profile
+        navUserName.onclick = () => {
+          navigateTo('/profile');
         };
+        
+        updateActiveNavigation();
         return;
       }
     }
     
-    // No session or user - hide user nav, toggle admin/login text based on page
-    navUser.style.display = 'none';
+    // No session - show login option
+    navUserInfo.style.display = 'none';
+    navAuthIcon.innerHTML = '<path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />';
+    navAuthText.textContent = 'Login';
     
-    const currentPath = window.location.pathname;
-    if (currentPath === '/' || currentPath.startsWith('/@')) {
-      // On gallery pages - show Login
-      navAdmin.textContent = 'Login';
-    } else {
-      // On admin/login pages - show Gallery
-      navAdmin.textContent = 'Gallery';
-    }
+    updateActiveNavigation();
     
   } catch (error) {
     console.error('Error checking auth for navigation:', error);
-    navUser.style.display = 'none';
     
-    const currentPath = window.location.pathname;
-    if (currentPath === '/' || currentPath.startsWith('/@')) {
-      navAdmin.textContent = 'Login';
-    } else {
-      navAdmin.textContent = 'Gallery';
+    // Hide user info on error
+    navUserInfo.style.display = 'none';
+    navAuthIcon.innerHTML = '<path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />';
+    navAuthText.textContent = 'Login';
+    
+    updateActiveNavigation();
+  }
+}
+
+// Load user avatar asynchronously
+async function loadUserAvatar(user, navUserNameElement) {
+  try {
+    // Get user name for initials
+    const userName = user.name || user.email;
+    
+    // Get avatar initials URL from Appwrite
+    const avatarUrl = getUserAvatarInitials(userName, 24, 24);
+    
+    if (avatarUrl) {
+      // Replace the default icon with avatar image
+      const avatarImg = `<img class="user-avatar" src="${avatarUrl}" alt="${userName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">`;
+      const fallbackIcon = `<svg class="user-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>`;
+      
+      navUserNameElement.innerHTML = `${avatarImg}${fallbackIcon} ${userName}`;
+    }
+  } catch (error) {
+    console.error('Error loading user avatar:', error);
+    // Keep the default icon on error
+  }
+}
+
+// Update active navigation highlighting
+function updateActiveNavigation() {
+  // Remove active class from all nav links and user info
+  document.querySelectorAll('.nav-link').forEach(link => {
+    link.classList.remove('active');
+  });
+  const navUserInfo = document.getElementById('nav-user-info');
+  if (navUserInfo) {
+    navUserInfo.classList.remove('active');
+  }
+  
+  // Add active class based on current page
+  const currentPath = window.location.pathname;
+  
+  if (currentPath === '/' || currentPath.startsWith('/@')) {
+    // Home page
+    document.getElementById('nav-home').classList.add('active');
+  } else if (currentPath === '/art') {
+    // Art management page
+    document.getElementById('nav-art').classList.add('active');
+  } else if (currentPath === '/site') {
+    // Site settings page
+    document.getElementById('nav-site').classList.add('active');
+  } else if (currentPath === '/profile') {
+    // Profile page - highlight user name area
+    const navUserInfo = document.getElementById('nav-user-info');
+    if (navUserInfo && navUserInfo.style.display !== 'none') {
+      navUserInfo.classList.add('active');
     }
   }
 }
 
 // Load gallery page
-async function loadGalleryPage(userId = 'vikki') {
+async function loadGalleryPage(focusUser = '*') {
   const app = document.getElementById('app');
+  
+  // Determine gallery title based on focus user
+  let galleryTitle = window.location.hostname;
+  let gallerySubtitle = 'Original paintings and artwork';
+  
+  if (focusUser !== '*') {
+    galleryTitle = `@${focusUser}`;
+    gallerySubtitle = 'Art Gallery';
+  }
   
   // Show initial loading state
   app.innerHTML = `
     <div class="gallery-header">
-      <h1 class="gallery-title">${window.location.hostname}</h1>
-      <p class="gallery-subtitle">Original paintings and artwork</p>
+      <h1 class="gallery-title">${galleryTitle}</h1>
+      <p class="gallery-subtitle">${gallerySubtitle}</p>
     </div>
     
     <div class="loading">
@@ -147,15 +249,15 @@ async function loadGalleryPage(userId = 'vikki') {
   `;
   
   try {
-    // Fetch artworks from Appwrite for the specified user
-    const artworks = await getArtworks(userId);
+    // Fetch artworks from Appwrite for the focus user
+    const artworks = await getArtworks(focusUser);
     
     if (artworks.length === 0) {
       // Show empty state
       app.innerHTML = `
         <div class="gallery-header">
-          <h1 class="gallery-title">${window.location.hostname}</h1>
-          <p class="gallery-subtitle">Original paintings and artwork</p>
+          <h1 class="gallery-title">${galleryTitle}</h1>
+          <p class="gallery-subtitle">${gallerySubtitle}</p>
         </div>
         
         <div class="empty-gallery">
@@ -169,8 +271,8 @@ async function loadGalleryPage(userId = 'vikki') {
       
       app.innerHTML = `
         <div class="gallery-header">
-          <h1 class="gallery-title">${window.location.hostname}</h1>
-          <p class="gallery-subtitle">Original paintings and artwork</p>
+          <h1 class="gallery-title">${galleryTitle}</h1>
+          <p class="gallery-subtitle">${gallerySubtitle}</p>
         </div>
         
         <div class="gallery-grid">
@@ -191,6 +293,139 @@ async function loadGalleryPage(userId = 'vikki') {
       <div class="empty-gallery">
         <h2>Unable to load gallery</h2>
         <p>There was an error loading the artworks. Please try again later.</p>
+      </div>
+    `;
+  }
+}
+
+// Load profile page
+async function loadProfilePage() {
+  const app = document.getElementById('app');
+  
+  try {
+    // Check authentication first
+    const hasSession = await hasActiveSession();
+    if (!hasSession) {
+      // Redirect to login if not authenticated
+      navigateTo('/art');
+      return;
+    }
+    
+    // Show loading state
+    app.innerHTML = `
+      <div class="profile-container">
+        <div class="profile-header">
+          <h1>User Profile</h1>
+        </div>
+        <div class="loading">
+          <p>Loading profile...</p>
+        </div>
+      </div>
+    `;
+    
+    // Get current user details
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      app.innerHTML = `
+        <div class="profile-container">
+          <div class="profile-header">
+            <h1>User Profile</h1>
+          </div>
+          <div class="profile-error">
+            <h2>Unable to load profile</h2>
+            <p>Please try logging in again.</p>
+            <button class="btn btn-primary" onclick="navigateTo('/art')">Go to Login</button>
+          </div>
+        </div>
+      `;
+      return;
+    }
+    
+    // Format user data for display
+    const avatarUrl = getUserAvatarInitials(user.name || user.email, 80, 80);
+    
+    app.innerHTML = `
+      <div class="profile-container">
+        <div class="profile-header">
+          <h1>User Profile</h1>
+          <button class="btn btn-secondary" onclick="navigateTo('/art')">
+            <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
+            </svg>
+            Manage My Art
+          </button>
+        </div>
+        
+        <div class="profile-content">
+          <div class="profile-avatar">
+            <img src="${avatarUrl}" alt="${user.name || user.email}" class="profile-avatar-img">
+          </div>
+          
+          <div class="profile-info">
+            <h2>${user.name || 'No name set'}</h2>
+            
+            <div class="profile-details">
+              <div class="profile-field">
+                <label>User ID:</label>
+                <span>${user.$id}</span>
+              </div>
+              
+              <div class="profile-field">
+                <label>Email:</label>
+                <span class="verification-status ${user.email ? (user.emailVerification ? 'verified' : 'unverified') : 'not-provided'}">
+                  ${user.email || 'Not provided'} ${user.email ? (user.emailVerification ? '(Verified)' : '(Not Verified)') : ''}
+                </span>
+              </div>
+              
+              <div class="profile-field">
+                <label>Phone:</label>
+                <span class="verification-status ${user.phone ? (user.phoneVerification ? 'verified' : 'unverified') : 'not-provided'}">
+                  ${user.phone ? `${user.phone} ${user.phoneVerification ? '(Verified)' : '(Not Verified)'}` : 'Not provided'}
+                </span>
+              </div>
+              
+              <div class="profile-field">
+                <label>Account Created:</label>
+                <span>${new Date(user.$createdAt).toLocaleDateString()}</span>
+              </div>
+              
+              <div class="profile-field">
+                <label>Password Updated:</label>
+                <span>${new Date(user.passwordUpdate).toLocaleDateString()}</span>
+              </div>
+              
+              <div class="profile-field">
+                <label>Last Updated:</label>
+                <span>${new Date(user.$updatedAt).toLocaleDateString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="profile-actions">
+          <button class="btn btn-primary" onclick="navigateTo('/')">
+            <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
+            </svg>
+            Back to Gallery
+          </button>
+        </div>
+      </div>
+    `;
+    
+  } catch (error) {
+    console.error('Error loading profile:', error);
+    app.innerHTML = `
+      <div class="profile-container">
+        <div class="profile-header">
+          <h1>User Profile</h1>
+        </div>
+        <div class="profile-error">
+          <h2>Error loading profile</h2>
+          <p>There was an error loading your profile information.</p>
+          <button class="btn btn-primary" onclick="navigateTo('/')">Back to Gallery</button>
+        </div>
       </div>
     `;
   }
@@ -355,8 +590,8 @@ function handleModalKeydown(e) {
   }
 }
 
-// Load admin page
-async function loadAdminPage() {
+// Load art management page
+async function loadArtPage() {
   const app = document.getElementById('app');
   
   try {
@@ -499,7 +734,7 @@ function showAdminDashboard(user) {
   // Set up dashboard event handlers
   document.getElementById('logout-btn').addEventListener('click', handleLogout);
   document.getElementById('upload-btn').addEventListener('click', showUploadForm);
-  document.getElementById('settings-btn').addEventListener('click', showSettingsForm);
+  document.getElementById('settings-btn').addEventListener('click', () => navigateTo('/site'));
   
   // Load artworks list
   loadAdminArtworksList();
@@ -580,7 +815,7 @@ async function handleLogin(e) {
     // Update navigation to show logged in user
     await updateNavigationAuth();
     // Reload admin page to show dashboard
-    loadAdminPage();
+    loadArtPage();
   } catch (error) {
     console.error('Login error:', error);
     errorDiv.textContent = 'Login failed. Please check your credentials and try again.';
@@ -628,7 +863,7 @@ async function handleRegister(e) {
     await updateNavigationAuth();
     
     // Redirect to admin dashboard
-    loadAdminPage();
+    loadArtPage();
     
   } catch (error) {
     console.error('Registration error:', error);
@@ -646,7 +881,7 @@ async function handleLogout() {
   try {
     await logout();
     // Reload admin page to show login form
-    loadAdminPage();
+    loadArtPage();
   } catch (error) {
     console.error('Logout error:', error);
   }
@@ -721,8 +956,8 @@ function showUploadForm() {
   `;
   
   // Set up form event handlers
-  document.getElementById('back-to-dashboard').addEventListener('click', loadAdminPage);
-  document.getElementById('upload-cancel').addEventListener('click', loadAdminPage);
+  document.getElementById('back-to-dashboard').addEventListener('click', loadArtPage);
+  document.getElementById('upload-cancel').addEventListener('click', loadArtPage);
   document.getElementById('upload-form').addEventListener('submit', handleUploadSubmit);
 }
 
@@ -794,7 +1029,7 @@ async function handleUploadSubmit(e) {
     // Reset form and redirect after delay
     form.reset();
     setTimeout(() => {
-      loadAdminPage();
+      loadArtPage();
     }, 2000);
     
   } catch (error) {
@@ -826,7 +1061,119 @@ function deleteArtwork(artworkId) {
   // TODO: Implement delete functionality
 }
 
-// Show settings form
+// Load site settings page
+async function loadSitePage() {
+  const app = document.getElementById('app');
+  
+  try {
+    // Check authentication first
+    const hasSession = await hasActiveSession();
+    if (!hasSession) {
+      // Redirect to login if not authenticated
+      navigateTo('/art');
+      return;
+    }
+    
+    // Get current user
+    const user = await getCurrentUser();
+    if (!user) {
+      navigateTo('/art');
+      return;
+    }
+    
+    app.innerHTML = `
+      <div class="site-container">
+        <div class="site-header">
+          <h1>My Site Settings</h1>
+          <button class="btn btn-secondary" onclick="navigateTo('/art')">
+            <svg class="nav-icon" style="width: 18px; height: 18px;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+              <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
+            </svg>
+            Back to My Art
+          </button>
+        </div>
+        
+        <div class="site-content">
+          <form id="settings-form">
+            <div class="form-group">
+              <label for="site-title-setting">Site Title</label>
+              <input type="text" id="site-title-setting" name="site_title" placeholder="Art Gallery">
+            </div>
+            
+            <div class="form-group">
+              <label for="artist-name">Artist Name</label>
+              <input type="text" id="artist-name" name="artist_name" placeholder="Your Name">
+            </div>
+            
+            <div class="form-group">
+              <label for="artist-bio">Artist Bio</label>
+              <textarea id="artist-bio" name="artist_bio" rows="4" placeholder="Tell visitors about yourself and your art..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <label for="gallery-description">Gallery Description</label>
+              <textarea id="gallery-description" name="gallery_description" rows="3" placeholder="Describe your gallery and artistic focus..."></textarea>
+            </div>
+            
+            <div class="form-group">
+              <div class="color-controls">
+                <div class="color-input-group">
+                  <label for="primary-color">Primary Color:</label>
+                  <input type="color" id="primary-color" name="primary_color" value="#667eea" class="color-swatch" title="Primary theme color used for navigation and accents">
+                </div>
+                <div class="color-input-group">
+                  <label for="secondary-color">Secondary Color:</label>
+                  <input type="color" id="secondary-color" name="secondary_color" value="#764ba2" class="color-swatch" title="Secondary theme color used for gradients and highlights">
+                </div>
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="contact-email">Contact Email</label>
+              <input type="email" id="contact-email" name="contact_email" placeholder="your.email@example.com">
+            </div>
+            
+            <div class="form-group">
+              <label for="contact-phone">Contact Phone</label>
+              <input type="tel" id="contact-phone" name="contact_phone" placeholder="+1 (555) 123-4567">
+            </div>
+            
+            <div id="settings-status" class="settings-status"></div>
+            
+            <div class="form-actions">
+              <button type="button" id="settings-cancel" class="btn btn-secondary">Cancel</button>
+              <button type="submit" class="btn btn-primary">Save Settings</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    `;
+    
+    // Set up event handlers
+    document.getElementById('settings-cancel').addEventListener('click', () => navigateTo('/art'));
+    document.getElementById('settings-form').addEventListener('submit', handleSettingsSubmit);
+    
+    // Load current settings
+    loadCurrentSettings();
+    
+  } catch (error) {
+    console.error('Error loading site page:', error);
+    app.innerHTML = `
+      <div class="site-container">
+        <div class="site-header">
+          <h1>My Site Settings</h1>
+        </div>
+        <div class="profile-error">
+          <h2>Error loading settings</h2>
+          <p>There was an error loading the site settings page.</p>
+          <button class="btn btn-primary" onclick="navigateTo('/art')">Back to My Art</button>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Show settings form (deprecated - kept for compatibility)
 function showSettingsForm() {
   const app = document.getElementById('app');
   
@@ -866,6 +1213,19 @@ function showSettingsForm() {
             <textarea id="gallery-description" name="gallery_description" rows="3" placeholder="Describe your gallery and artistic focus..."></textarea>
           </div>
           
+          <div class="form-group">
+            <div class="color-controls">
+              <div class="color-input-group">
+                <label for="primary-color">Primary Color:</label>
+                <input type="color" id="primary-color" name="primary_color" value="#667eea" class="color-swatch" title="Primary theme color used for navigation and accents">
+              </div>
+              <div class="color-input-group">
+                <label for="secondary-color">Secondary Color:</label>
+                <input type="color" id="secondary-color" name="secondary_color" value="#764ba2" class="color-swatch" title="Secondary theme color used for gradients and highlights">
+              </div>
+            </div>
+          </div>
+          
           <div id="settings-status" class="settings-status"></div>
           
           <div class="form-actions">
@@ -878,7 +1238,7 @@ function showSettingsForm() {
   `;
   
   // Set up event handlers
-  document.getElementById('settings-cancel').addEventListener('click', loadAdminPage);
+  document.getElementById('settings-cancel').addEventListener('click', loadArtPage);
   document.getElementById('settings-form').addEventListener('submit', handleSettingsSubmit);
   
   // Load current settings
@@ -893,7 +1253,7 @@ async function loadCurrentSettings() {
     const settings = await getSettings();
     
     // Populate form fields
-    const fields = ['site_title', 'artist_name', 'artist_bio', 'contact_email', 'contact_phone', 'gallery_description'];
+    const fields = ['site_title', 'artist_name', 'artist_bio', 'contact_email', 'contact_phone', 'gallery_description', 'primary_color', 'secondary_color'];
     fields.forEach(field => {
       const element = document.getElementById(field.replace('_', '-'));
       if (element && settings[field]) {
@@ -904,7 +1264,7 @@ async function loadCurrentSettings() {
     showSettingsStatus('Settings loaded', 'success');
     setTimeout(() => {
       document.getElementById('settings-status').innerHTML = '';
-    }, 2000);
+    }, 1000);
     
   } catch (error) {
     console.error('Error loading settings:', error);
@@ -945,7 +1305,7 @@ async function handleSettingsSubmit(e) {
     
     // Redirect after delay
     setTimeout(() => {
-      loadAdminPage();
+      navigateTo('/art');
     }, 1500);
     
   } catch (error) {

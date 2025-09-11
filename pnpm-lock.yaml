@@ -11,6 +11,9 @@ importers:
       appwrite:
         specifier: ^20.0.0
         version: 20.0.0
+      node-appwrite:
+        specifier: ^19.0.0
+        version: 19.0.0
     devDependencies:
       vite:
         specifier: ^7.1.2
@@ -715,6 +718,12 @@ packages:
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
 
+  node-appwrite@19.0.0:
+    resolution: {integrity: sha512-Uk55z9OBRiI04GTo+WA5UsHzohtTmWUgzut5Q5lK4n5gWDC1H5HhSJdGJ0qk5RpW1OVvzU6RU9LNnZ4UWpiY+Q==}
+
+  node-fetch-native-with-agent@1.7.2:
+    resolution: {integrity: sha512-5MaOOCuJEvcckoz7/tjdx1M6OusOY6Xc5f459IaruGStWnKzlI1qpNgaAwmn4LmFYcsSlj+jBMk84wmmRxfk5g==}
+
   ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
 
@@ -1338,6 +1347,12 @@ snapshots:
       - utf-8-validate
 
   nanoid@3.3.11: {}
+
+  node-appwrite@19.0.0:
+    dependencies:
+      node-fetch-native-with-agent: 1.7.2
+
+  node-fetch-native-with-agent@1.7.2: {}
 
   ohash@2.0.11: {}
 

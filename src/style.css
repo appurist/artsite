@@ -66,7 +66,7 @@ body {
 /* Navigation */
 #main-nav {
   background: var(--nav-bg);
-  padding: 1rem 0;
+  padding: 1rem 0 0 0;
   border-bottom: 1px solid var(--nav-border);
 }
 
@@ -89,40 +89,259 @@ body {
 
 .nav-menu {
   display: flex;
-  list-style: none;
-  gap: 2rem;
   align-items: center;
+  gap: 1.5rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
 }
 
-.nav-menu a {
-  font-family: 'Segoe UI', sans-serif;
-  font-weight: 200;
+.nav-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   text-decoration: none;
   color: var(--nav-text);
-  transition: opacity 0.2s;
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  transition: all 0.2s;
 }
 
-.nav-menu a:hover {
-  opacity: 0.7;
+.nav-link:hover {
+  background-color: var(--border-light);
+  color: var(--primary-color);
+}
+
+.nav-link.active {
+  color: var(--primary-color);
+  border-bottom: 2px solid var(--primary-color);
+  border-radius: 0;
+}
+
+.nav-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
 }
 
 /* Navigation user section */
-.nav-user {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
 
 .nav-user-name {
   font-family: 'Segoe UI', sans-serif;
   font-weight: 200;
   color: var(--nav-text);
   font-size: 0.9rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.nav-user-name:hover {
+  background-color: var(--border-light);
+  color: var(--primary-color);
+}
+
+.user-icon {
+  width: 24px;
+  height: 24px;
+  fill: currentColor;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.user-avatar {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* Color control styling */
+.color-controls {
+  display: flex;
+  gap: 2rem;
+  align-items: center;
+}
+
+.color-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.color-input-group label {
+  margin: 0;
+  font-weight: 500;
+}
+
+.color-swatch {
+  width: 40px;
+  height: 40px;
+  border: 2px solid var(--border-color);
+  border-radius: 4px;
+  cursor: pointer;
+  padding: 0;
+}
+
+/* Profile page styling */
+.profile-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.profile-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.profile-content {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 2rem;
+}
+
+.profile-avatar {
+  flex-shrink: 0;
+}
+
+.profile-avatar-img {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  border: 3px solid var(--border-color);
+}
+
+.profile-info {
+  flex: 1;
+}
+
+.profile-info h2 {
+  margin-bottom: 1.5rem;
+  color: var(--text-color);
+}
+
+.profile-details {
+  display: grid;
+  gap: 1rem;
+}
+
+.profile-field {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.profile-field label {
+  font-weight: 600;
+  min-width: 140px;
+  color: var(--text-muted);
+}
+
+.profile-field span {
+  color: var(--text-color);
+}
+
+.verification-status.verified {
+  color: var(--success-color);
+  font-weight: 500;
+}
+
+.verification-status.unverified {
+  color: var(--error-color);
+  font-weight: 500;
+}
+
+.verification-status.not-provided {
+  color: var(--warning-text);
+  font-weight: 500;
+}
+
+.profile-actions {
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+.profile-error {
+  text-align: center;
+  padding: 2rem;
+}
+
+.profile-error h2 {
+  color: var(--error-color);
+  margin-bottom: 1rem;
+}
+
+/* Site settings page styling */
+.site-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.site-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.site-content {
+  background: var(--card-bg);
+  padding: 2rem;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px var(--shadow-color);
 }
 
 .nav-user .btn {
   font-size: 0.85rem;
   padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.logout-icon {
+  font-size: 0.9rem;
+}
+
+.nav-admin-link {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  color: var(--nav-text);
+  font-family: 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-size: 0.9rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+}
+
+.nav-admin-link:hover {
+  background-color: var(--border-light);
+  color: var(--primary-color);
+}
+
+.admin-icon {
+  font-size: 1rem;
+}
+
+.admin-text {
+  font-size: 0.9rem;
 }
 
 /* Main content area */
