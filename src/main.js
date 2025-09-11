@@ -821,6 +821,12 @@ function showAdminDashboard(user) {
         <div class="artworks-section">
           <div class="artworks-header">
             <h3>Manage Artworks</h3>
+            <button id="upload-artwork-btn" class="btn btn-success">
+              <svg class="icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                <path d="M14,2H6A2,2 0 0,0 4,4V20A2,2 0 0,0 6,22H18A2,2 0 0,0 20,20V8L14,2M18,20H6V4H13V9H18V20Z" />
+              </svg>
+              Upload Artwork
+            </button>
           </div>
           <div id="artworks-list" class="loading">
             <p>Loading artworks...</p>
@@ -831,7 +837,7 @@ function showAdminDashboard(user) {
   `;
   
   // Set up dashboard event handlers
-  // Upload functionality can be accessed via URL /art/upload if needed
+  document.getElementById('upload-artwork-btn').addEventListener('click', showUploadForm);
   
   // Load artworks list
   loadAdminArtworksList();
