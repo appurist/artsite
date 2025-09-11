@@ -1,7 +1,4 @@
-import { Client, Databases, Storage, Functions } from 'node-appwrite';
-import fs from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
+import { Client, Databases, Storage, Query } from 'node-appwrite';
 
 // Initialize Appwrite client with your credentials
 const client = new Client()
@@ -11,12 +8,12 @@ const client = new Client()
 
 const databases = new Databases(client);
 const storage = new Storage(client);
-const functions = new Functions(client);
 
 const DATABASE_ID = '68bfaf22002f08bd470a';
 const ARTWORKS_COLLECTION_ID = 'artworks';
 const SETTINGS_COLLECTION_ID = 'settings';
 const DOMAINS_COLLECTION_ID = 'domains';
+const PROFILES_COLLECTION_ID = 'profiles';
 const STORAGE_BUCKET_ID = 'images';
 
 async function setupDatabase() {
@@ -30,7 +27,7 @@ async function setupDatabase() {
             await databases.createCollection({
                 databaseId: DATABASE_ID,
                 collectionId: ARTWORKS_COLLECTION_ID,
-                name: 'Artworks',
+                name: ARTWORKS_COLLECTION_ID,
                 permissions: [],
                 documentSecurity: true
             });
@@ -102,7 +99,7 @@ async function setupDatabase() {
             await databases.createCollection({
                 databaseId: DATABASE_ID,
                 collectionId: SETTINGS_COLLECTION_ID,
-                name: 'Settings',
+                name: SETTINGS_COLLECTION_ID,
                 permissions: [],
                 documentSecurity: true
             });
@@ -112,8 +109,8 @@ async function setupDatabase() {
             console.log('📝 Adding attributes to settings collection...');
             
             const settingAttributes = [
-                { key: 'key', type: 'string', size: 255, required: true },
-                { key: 'value', type: 'string', size: 5000, required: true }
+                { key: 'user_id', type: 'string', size: 255, required: true },
+                { key: 'settings', type: 'string', size: 10000, required: true }  // JSON string
             ];
 
             for (const attr of settingAttributes) {
@@ -135,16 +132,16 @@ async function setupDatabase() {
                 }
             }
 
-            // Create unique index on key field
+            // Create unique index on user_id field
             try {
                 await databases.createIndex(
                     DATABASE_ID,
                     SETTINGS_COLLECTION_ID,
-                    'key_unique',
+                    'user_id_unique',
                     'unique',
-                    ['key']
+                    ['user_id']
                 );
-                console.log('  ✅ Added unique index on key field');
+                console.log('  ✅ Added unique index on user_id field');
             } catch (error) {
                 if (error.code === 409) {
                     console.log('  ✅ Unique index already exists');
@@ -167,7 +164,7 @@ async function setupDatabase() {
             await databases.createCollection({
                 databaseId: DATABASE_ID,
                 collectionId: DOMAINS_COLLECTION_ID,
-                name: 'domains',
+                name: DOMAINS_COLLECTION_ID,
                 permissions: ['read("any")'],
                 documentSecurity: false
             });
@@ -226,6 +223,98 @@ async function setupDatabase() {
             }
         }
 
+        // Create profiles collection
+        console.log('👤 Creating profiles collection...');
+        try {
+            await databases.createCollection({
+                databaseId: DATABASE_ID,
+                collectionId: PROFILES_COLLECTION_ID,
+                name: PROFILES_COLLECTION_ID,
+                permissions: ['read("any")'],
+                documentSecurity: true
+            });
+            console.log('✅ Profiles collection created');
+
+            // Add attributes to profiles collection
+            console.log('📝 Adding attributes to profiles collection...');
+            
+            const profileAttributes = [
+                { key: 'user_id', type: 'string', size: 255, required: true },
+                { key: 'display_name', type: 'string', size: 255, required: true },
+                { key: 'bio', type: 'string', size: 2000, required: false },
+                { key: 'statement', type: 'string', size: 2000, required: false },
+                { key: 'website', type: 'string', size: 500, required: false },
+                { key: 'email', type: 'string', size: 255, required: false },
+                { key: 'phone', type: 'string', size: 50, required: false },
+                { key: 'is_public', type: 'boolean', required: false, default: true },
+                { key: 'show_in_directory', type: 'boolean', required: false, default: true },
+                { key: 'avatar_url', type: 'string', size: 500, required: false },
+                { key: 'created_at', type: 'datetime', required: false },
+                { key: 'updated_at', type: 'datetime', required: false }
+            ];
+
+            for (const attr of profileAttributes) {
+                try {
+                    if (attr.type === 'string') {
+                        await databases.createStringAttribute(
+                            DATABASE_ID,
+                            PROFILES_COLLECTION_ID,
+                            attr.key,
+                            attr.size,
+                            attr.required
+                        );
+                    } else if (attr.type === 'boolean') {
+                        await databases.createBooleanAttribute(
+                            DATABASE_ID,
+                            PROFILES_COLLECTION_ID,
+                            attr.key,
+                            attr.required,
+                            attr.default
+                        );
+                    } else if (attr.type === 'datetime') {
+                        await databases.createDatetimeAttribute(
+                            DATABASE_ID,
+                            PROFILES_COLLECTION_ID,
+                            attr.key,
+                            attr.required
+                        );
+                    }
+                    console.log(`  ✅ Added ${attr.key} attribute`);
+                } catch (error) {
+                    if (error.code === 409) {
+                        console.log(`  ✅ ${attr.key} attribute already exists`);
+                    } else {
+                        console.log(`  ❌ Error adding ${attr.key}:`, error.message);
+                    }
+                }
+            }
+
+            // Create unique index on user_id field
+            try {
+                await databases.createIndex(
+                    DATABASE_ID,
+                    PROFILES_COLLECTION_ID,
+                    'user_id_unique',
+                    'unique',
+                    ['user_id']
+                );
+                console.log('  ✅ Added unique index on user_id field');
+            } catch (error) {
+                if (error.code === 409) {
+                    console.log('  ✅ Unique index already exists');
+                } else {
+                    console.log('  ❌ Error creating index:', error.message);
+                }
+            }
+            
+        } catch (error) {
+            if (error.code === 409) {
+                console.log('✅ Profiles collection already exists');
+            } else {
+                throw error;
+            }
+        }
+
     } catch (error) {
         console.error('❌ Error setting up database:', error);
     }
@@ -243,54 +332,6 @@ async function setupStorage() {
     }
 }
 
-async function seedInitialSettings() {
-    try {
-        console.log('🌱 Seeding initial settings...');
-        
-        const initialSettings = {
-            'site.title': 'Art Gallery',
-            'site.subtitle': 'Original paintings and artwork', 
-            'site.description': 'A collection of original artwork and paintings.',
-            'theme.primaryColor': '#667eea',
-            'theme.secondaryColor': '#764ba2',
-            'artist.name': '',
-            'artist.bio': '',
-            'artist.statement': '',
-            'artist.email': '',
-            'artist.phone': '',
-            'artist.website': '',
-            'pages.about.enabled': 'true',
-            'pages.about.title': 'About the Artist',
-            'pages.about.content': '',
-            'pages.contact.enabled': 'true',
-            'pages.contact.title': 'Contact',
-            'pages.contact.content': '',
-            'pages.blog.enabled': 'false',
-            'pages.blog.title': 'Blog'
-        };
-
-        for (const [key, value] of Object.entries(initialSettings)) {
-            try {
-                await databases.createDocument(
-                    DATABASE_ID,
-                    SETTINGS_COLLECTION_ID,
-                    'unique()',
-                    { key, value }
-                );
-                console.log(`  ✅ Added setting: ${key}`);
-            } catch (error) {
-                if (error.code === 409) {
-                    console.log(`  ✅ Setting already exists: ${key}`);
-                } else {
-                    console.log(`  ❌ Error adding setting ${key}:`, error.message);
-                }
-            }
-        }
-        
-    } catch (error) {
-        console.error('❌ Error seeding settings:', error);
-    }
-}
 
 async function seedDomainConfig() {
     try {
@@ -302,6 +343,19 @@ async function seedDomainConfig() {
 
         for (const config of domainConfigs) {
             try {
+                // Check if domain config already exists
+                const existingDomains = await databases.listDocuments(
+                    DATABASE_ID,
+                    DOMAINS_COLLECTION_ID,
+                    [Query.equal("hostname", config.hostname)]
+                );
+                
+                if (existingDomains.documents.length > 0) {
+                    console.log(`  ✅ Domain config already exists: ${config.hostname}`);
+                    continue;
+                }
+                
+                // Create new domain config if it doesn't exist
                 await databases.createDocument(
                     DATABASE_ID,
                     DOMAINS_COLLECTION_ID,
@@ -310,11 +364,7 @@ async function seedDomainConfig() {
                 );
                 console.log(`  ✅ Added domain config: ${config.hostname} → ${config.focus_user}`);
             } catch (error) {
-                if (error.code === 409) {
-                    console.log(`  ✅ Domain config already exists: ${config.hostname}`);
-                } else {
-                    console.log(`  ❌ Error adding domain config ${config.hostname}:`, error.message);
-                }
+                console.log(`  ❌ Error with domain config ${config.hostname}:`, error.message);
             }
         }
         
@@ -323,59 +373,6 @@ async function seedDomainConfig() {
     }
 }
 
-async function setupSecureCreateFunction() {
-    try {
-        console.log('⚡ Setting up secure create function...');
-        
-        // Get the directory path for this script
-        const __filename = fileURLToPath(import.meta.url);
-        const __dirname = path.dirname(__filename);
-        const projectRoot = path.dirname(__dirname);
-        const functionDir = path.join(projectRoot, 'functions', 'secure-create');
-        
-        // Read function files
-        const indexPath = path.join(functionDir, 'index.js');
-        const packagePath = path.join(functionDir, 'package.json');
-        
-        if (!fs.existsSync(indexPath)) {
-            throw new Error(`Function file not found: ${indexPath}`);
-        }
-        
-        const functionCode = fs.readFileSync(indexPath, 'utf8');
-        const packageJson = fs.existsSync(packagePath) ? 
-            fs.readFileSync(packagePath, 'utf8') : 
-            '{"name":"secure-create","version":"1.0.0","type":"module","dependencies":{"node-appwrite":"^13.0.0"}}';
-        
-        console.log('📁 Function files loaded from:', functionDir);
-        
-        // Create the universal create function
-        const functionData = await functions.create(
-            'secure-create', // Function ID
-            'Secure Create', // Function name
-            'node-18.0', // Runtime
-            ['any'], // Execute permissions (authenticated users only)
-            [], // Events (none - will be called directly)
-            '', // Schedule (none)
-            15, // Timeout in seconds
-            true, // Enabled
-            true, // Logging enabled
-            'index.js', // Entrypoint
-            'npm install' // Commands
-        );
-        
-        console.log('✅ Secure create function created:', functionData.$id);
-        console.log('📝 Function code loaded from file system');
-        console.log('   Next step: Deploy function code manually or via CLI');
-        console.log('   Function directory:', functionDir);
-        
-    } catch (error) {
-        if (error.code === 409) {
-            console.log('✅ Secure create function already exists');
-        } else {
-            console.error('❌ Error creating secure function:', error.message);
-        }
-    }
-}
 
 async function main() {
     console.log('🎨 Art Gallery Appwrite Setup');
@@ -383,9 +380,7 @@ async function main() {
     
     await setupDatabase();
     await setupStorage();
-    await seedInitialSettings();
     await seedDomainConfig();
-    await setupSecureCreateFunction();
     
     console.log('\n🎉 Setup complete!');
     console.log('\nNext steps:');
