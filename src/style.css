@@ -384,6 +384,34 @@ body {
   color: var(--gallery-header-subtitle);
 }
 
+.gallery-filter {
+  text-align: center;
+  margin: 2rem 0;
+}
+
+.gallery-filter label {
+  display: inline-block;
+  margin-right: 0.5rem;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.gallery-filter select {
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  font-size: 1rem;
+  min-width: 200px;
+}
+
+.gallery-filter select:focus {
+  outline: none;
+  border-color: var(--primary-color);
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
 /* Gallery grid */
 .gallery-grid {
   display: grid;
@@ -453,6 +481,13 @@ body {
   font-weight: 600;
   margin-bottom: 0.5rem;
   color: var(--primary-color);
+}
+
+.artwork-artist {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  font-style: italic;
+  margin-bottom: 0.25rem;
 }
 
 .artwork-medium,

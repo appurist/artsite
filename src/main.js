@@ -1,5 +1,5 @@
 import './style.css'
-import { getCurrentUser, hasActiveSession, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting, getDefaultFocusUser, getUserAvatarInitials } from './appwrite.js'
+import { getCurrentUser, hasActiveSession, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting, getDefaultFocusUser, getUserAvatarInitials, getProfiles, getArtistProfiles } from './appwrite.js'
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
@@ -295,12 +295,46 @@ async function loadGalleryPage(focusUser = '*') {
       `;
     } else {
       // Show gallery with artworks
-      const galleryGrid = artworks.map(artwork => createArtworkCard(artwork)).join('');
+      // Fetch profiles for artist names when displaying all artists (no focus user)
+      let profileMap = {};
+      if (focusUser === '*') {
+        // Get unique user IDs from artworks
+        const userIds = [...new Set(artworks.map(artwork => artwork.user_id))];
+        const profiles = await getProfiles(userIds);
+        profileMap = Object.fromEntries(profiles.map(profile => [profile.user_id, profile]));
+      }
+      
+      const galleryGrid = artworks.map(artwork => {
+        const profile = focusUser === '*' ? profileMap[artwork.user_id] : null;
+        return createArtworkCard(artwork, profile);
+      }).join('');
+      
+      // Build artist filter dropdown for multi-artist galleries
+      let artistFilter = '';
+      if (focusUser === '*') {
+        const artistProfiles = await getArtistProfiles();
+        if (artistProfiles.length > 1) {
+          const artistOptions = artistProfiles.map(profile => 
+            `<option value="${profile.user_id}">${profile.display_name}</option>`
+          ).join('');
+          
+          artistFilter = `
+            <div class="gallery-filter">
+              <label for="artist-filter">Filter by Artist:</label>
+              <select id="artist-filter" onchange="filterArtworksByArtist(this.value)">
+                <option value="*">All Artists</option>
+                ${artistOptions}
+              </select>
+            </div>
+          `;
+        }
+      }
       
       app.innerHTML = `
         <div class="gallery-header">
           <h1 class="gallery-title">${galleryTitle}</h1>
           <p class="gallery-subtitle">${gallerySubtitle}</p>
+          ${artistFilter}
         </div>
         
         <div class="content-container">
@@ -531,7 +565,7 @@ async function loadUserGallery(userId) {
 }
 
 // Create artwork card HTML
-function createArtworkCard(artwork) {
+function createArtworkCard(artwork, profile = null) {
   // Get the thumbnail URL
   const thumbnailUrl = artwork.image_id ? getFilePreview(artwork.image_id, 400, 300) : '/placeholder.jpg';
   
@@ -549,6 +583,7 @@ function createArtworkCard(artwork) {
         </div>
         <div class="artwork-details">
           <h3 class="artwork-title">${artwork.title}</h3>
+          ${profile && profile.display_name ? `<p class="artwork-artist">by ${profile.display_name}</p>` : ''}
           ${artwork.medium ? `<p class="artwork-medium">${artwork.medium}</p>` : ''}
           ${artwork.year_created ? `<p class="artwork-year">${artwork.year_created}</p>` : ''}
           ${artwork.price ? `<p class="artwork-price">${artwork.price}</p>` : ''}
@@ -557,6 +592,39 @@ function createArtworkCard(artwork) {
     </div>
   `;
 }
+
+// Filter artworks by artist (globally accessible)
+window.filterArtworksByArtist = async function(userId) {
+  try {
+    console.log('Filtering by artist:', userId);
+    
+    // Get current focus user from the URL or default
+    const path = window.location.pathname;
+    let focusUser = '*';
+    
+    if (path.startsWith('/@')) {
+      focusUser = path.slice(2);
+    } else {
+      focusUser = await getDefaultFocusUser();
+    }
+    
+    // If filtering by specific user, redirect to their gallery page
+    if (userId !== '*') {
+      navigateTo(`/@${userId}`);
+      return;
+    }
+    
+    // If showing all artists, reload the current gallery page
+    if (focusUser === '*') {
+      loadGalleryPage('*');
+    } else {
+      navigateTo('/');  // Go to home page to show all artists
+    }
+    
+  } catch (error) {
+    console.error('Error filtering artworks by artist:', error);
+  }
+};
 
 // Show artwork modal (globally accessible)
 window.showArtworkModal = async function(artworkId) {

@@ -21,22 +21,36 @@ export const DATABASE_ID = APPWRITE_DATABASE_ID;
 export const ARTWORKS_TABLE_ID = 'artworks';
 export const SETTINGS_TABLE_ID = 'settings';
 export const DOMAINS_TABLE_ID = 'domains';
+export const PROFILES_TABLE_ID = 'profiles';
 export const STORAGE_BUCKET_ID = 'images';
 
-// Helper functions
+// Helper functions  
 export const hasActiveSession = async () => {
     try {
-        await account.getSession('current');
-        return true;
+        const user = await account.get();
+        return user !== null;
     } catch (error) {
+        // Only return false for authentication errors, rethrow other errors
+        if (error.code === 401 && error.type === 'general_unauthorized_scope') {
+            return false; // Not logged in - this is expected
+        }
+        // Rethrow other errors (network issues, etc.)
+        console.error('Unexpected error checking session:', error);
         return false;
     }
 };
 
 export const getCurrentUser = async () => {
     try {
-        return await account.get();
+        const user = await account.get();
+        return user;
     } catch (error) {
+        // Only return null for authentication errors, rethrow other errors
+        if (error.code === 401 && error.type === 'general_unauthorized_scope') {
+            return null; // Not logged in - this is expected
+        }
+        // Log other errors but still return null to avoid breaking the app
+        console.error('Unexpected error getting user:', error);
         return null;
     }
 };
@@ -165,58 +179,93 @@ export const deleteArtwork = async (id) => {
 };
 
 // Settings helpers
-export const getSettings = async () => {
+export const getSettings = async (userId) => {
     try {
         const response = await tablesDB.listRows({
             databaseId: DATABASE_ID,
-            tableId: SETTINGS_TABLE_ID
+            tableId: SETTINGS_TABLE_ID,
+            queries: [Query.equal('user_id', userId)]
         });
-        const settings = {};
-        response.rows.forEach(row => {
-            settings[row.key] = row.value;
-        });
-        return settings;
+        
+        if (response.rows.length > 0) {
+            return JSON.parse(response.rows[0].settings);
+        }
+        
+        // Return default settings if none exist
+        return {
+            'site.title': 'Art Gallery',
+            'site.subtitle': 'Original paintings and artwork', 
+            'site.description': 'A collection of original artwork and paintings.',
+            'theme.primaryColor': '#667eea',
+            'theme.secondaryColor': '#764ba2',
+            'artist.name': '',
+            'artist.bio': '',
+            'artist.statement': '',
+            'artist.email': '',
+            'artist.phone': '',
+            'artist.website': '',
+            'pages.about.enabled': 'true',
+            'pages.about.title': 'About the Artist',
+            'pages.about.content': '',
+            'pages.contact.enabled': 'true',
+            'pages.contact.title': 'Contact',
+            'pages.contact.content': '',
+            'pages.blog.enabled': 'false',
+            'pages.blog.title': 'Blog'
+        };
     } catch (error) {
         console.error('Error fetching settings:', error);
         return {};
     }
 };
 
-export const getSetting = async (key) => {
+export const getSetting = async (userId, key) => {
     try {
-        const response = await tablesDB.listRows({
-            databaseId: DATABASE_ID,
-            tableId: SETTINGS_TABLE_ID,
-            queries: [Query.equal('key', key)]
-        });
-        return response.rows[0]?.value || null;
+        const settings = await getSettings(userId);
+        return settings[key] || null;
     } catch (error) {
         console.error('Error fetching setting:', error);
         return null;
     }
 };
 
-export const setSetting = async (key, value) => {
+export const updateSettings = async (userId, settingsObj) => {
     try {
-        // Try to find existing setting
+        // Check if user settings already exist
         const response = await tablesDB.listRows({
             databaseId: DATABASE_ID,
             tableId: SETTINGS_TABLE_ID,
-            queries: [Query.equal('key', key)]
+            queries: [Query.equal('user_id', userId)]
         });
 
         if (response.rows.length > 0) {
-            // Update existing
-            return await tablesDB.updateRow({
-                databaseId: DATABASE_ID,
-                tableId: SETTINGS_TABLE_ID,
-                rowId: response.rows[0].$id,
-                data: { value }
+            // Update existing settings
+            return await secureUpdate(SETTINGS_TABLE_ID, response.rows[0].$id, {
+                settings: JSON.stringify(settingsObj)
             });
         } else {
-            // Create new using secure function
-            return await secureCreate(SETTINGS_TABLE_ID, { key, value });
+            // Create new settings record
+            return await secureCreate(SETTINGS_TABLE_ID, {
+                user_id: userId,
+                settings: JSON.stringify(settingsObj)
+            });
         }
+    } catch (error) {
+        console.error('Error updating settings:', error);
+        throw error;
+    }
+};
+
+export const setSetting = async (userId, key, value) => {
+    try {
+        // Get current settings
+        const currentSettings = await getSettings(userId);
+        
+        // Update the specific setting
+        currentSettings[key] = value;
+        
+        // Save back the entire settings object
+        return await updateSettings(userId, currentSettings);
     } catch (error) {
         console.error('Error setting value:', error);
         throw error;
@@ -248,6 +297,111 @@ export const getDefaultFocusUser = async () => {
     } catch (error) {
         console.error('Error getting default focus user:', error);
         return '*';
+    }
+};
+
+// Profile helpers
+export const getProfile = async (userId) => {
+    try {
+        const response = await tablesDB.listRows({
+            databaseId: DATABASE_ID,
+            tableId: PROFILES_TABLE_ID,
+            queries: [Query.equal('user_id', userId)]
+        });
+        return response.rows[0] || null;
+    } catch (error) {
+        console.error('Error fetching profile:', error);
+        return null;
+    }
+};
+
+export const getProfiles = async (userIds) => {
+    try {
+        if (!userIds || userIds.length === 0) return [];
+        
+        // For multiple user IDs, we need to fetch all profiles and filter client-side
+        // or make individual queries. Let's fetch all public profiles for now.
+        const response = await tablesDB.listRows({
+            databaseId: DATABASE_ID,
+            tableId: PROFILES_TABLE_ID
+        });
+        
+        // Filter to only the requested user IDs
+        return response.rows.filter(profile => userIds.includes(profile.user_id));
+    } catch (error) {
+        console.error('Error fetching profiles:', error);
+        return [];
+    }
+};
+
+export const getPublicProfiles = async () => {
+    try {
+        const response = await tablesDB.listRows({
+            databaseId: DATABASE_ID,
+            tableId: PROFILES_TABLE_ID,
+            queries: [Query.equal('is_public', true)]
+        });
+        return response.rows;
+    } catch (error) {
+        console.error('Error fetching public profiles:', error);
+        return [];
+    }
+};
+
+export const getArtistProfiles = async () => {
+    try {
+        // Since we might not have boolean fields yet, let's just get all profiles for now
+        const response = await tablesDB.listRows({
+            databaseId: DATABASE_ID,
+            tableId: PROFILES_TABLE_ID
+        });
+        return response.rows;
+    } catch (error) {
+        console.error('Error fetching artist profiles:', error);
+        return [];
+    }
+};
+
+export const createProfile = async (data) => {
+    try {
+        // Use secure server-side create function
+        return await secureCreate(PROFILES_TABLE_ID, data);
+    } catch (error) {
+        console.error('Error creating profile:', error);
+        throw error;
+    }
+};
+
+export const updateProfile = async (id, data) => {
+    try {
+        // Use secure server-side update function
+        return await secureUpdate(PROFILES_TABLE_ID, id, data);
+    } catch (error) {
+        console.error('Error updating profile:', error);
+        throw error;
+    }
+};
+
+export const getOrCreateProfile = async (userId, displayName) => {
+    try {
+        let profile = await getProfile(userId);
+        
+        if (!profile) {
+            // Create basic profile with display name
+            profile = await createProfile({
+                user_id: userId,
+                display_name: displayName,
+                is_public: true,
+                show_in_directory: true,
+                created_at: new Date().toISOString(),
+                updated_at: new Date().toISOString()
+            });
+        }
+        
+        return profile;
+    } catch (error) {
+        console.error('Error getting or creating profile:', error);
+        throw error;
     }
 };
 
