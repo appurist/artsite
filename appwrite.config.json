@@ -3,21 +3,21 @@
     "projectId": "artsite",
     "projectName": "Art Site",
     "functions": [
-      {
-        "$id": "secure-create",
-        "name": "Secure Create",
-        "specification": "s-1vcpu-512mb",
-        "runtime": "node-20.0",
-        "path": "functions/secure-create",
-        "entrypoint": "index.js",
-        "commands": "npm install",
-        "execute": [
-          "any"
-        ],
-        "timeout": 15,
-        "logging": true,
-        "enabled": true
-      }
+        {
+            "$id": "secure-create",
+            "name": "Secure Create",
+            "specification": "s-1vcpu-512mb",
+            "runtime": "node-20.0",
+            "path": "functions/secure-create",
+            "entrypoint": "index.js",
+            "commands": "npm install",
+            "execute": [
+                "any"
+            ],
+            "timeout": 15,
+            "logging": true,
+            "enabled": true
+        }
     ],
     "databases": [
         {

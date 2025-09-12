@@ -1,6 +1,6 @@
-import { Client, Databases, Account, Permission, Role } from 'node-appwrite';
+const { Client, Databases, Account, Permission, Role } = require('node-appwrite');
 
-export default async ({ req, res, log, error }) => {
+module.exports = async ({ req, res, log, error }) => {
     try {
         // 1) Validate caller using JWT (more secure than user-id header)
         const userJwt = req.headers['x-appwrite-user-jwt'];

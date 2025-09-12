@@ -26,7 +26,8 @@
       "Bash(setup-appwrite.bat)",
       "Bash(./setup-appwrite.bat)",
       "WebFetch(domain:pictogrammers.com)",
-      "Bash(npx:*)"
+      "Bash(npx:*)",
+      "Bash(timeout 30 npx appwrite push function --functionId=secure-create)"
     ],
     "deny": [],
     "ask": [],
