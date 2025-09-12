@@ -24,7 +24,7 @@ export const DOMAINS_TABLE_ID = 'domains';
 export const PROFILES_TABLE_ID = 'profiles';
 export const STORAGE_BUCKET_ID = 'images';
 
-// Helper functions  
+// Helper functions
 export const hasActiveSession = async () => {
     try {
         const user = await account.get();
@@ -119,30 +119,30 @@ export const secureOperation = async (mode, table, data, docId = null) => {
     try {
         const payload = { mode, table, data };
         if (docId) payload.docId = docId;
-        
+
         const result = await functions.createExecution(
             'secure-create',
             JSON.stringify(payload)
         );
-        
+
         // Check if function execution failed
         if (result.responseStatusCode < 200 || result.responseStatusCode >= 300) {
             const error = JSON.parse(result.responseBody).error;
-            throw new Error(error || `Failed to ${mode} document`);
+            throw new Error(error || `Failed to ${mode} document`, { });
         }
-        
+
         // Parse the function's response
         const functionResponse = JSON.parse(result.responseBody);
-        
+
         // Check if the function itself returned an error (even with 201 execution status)
         if (functionResponse.error) {
             throw new Error(functionResponse.error);
         }
-        
+
         return functionResponse;
     } catch (error) {
-        console.error(`Error in secure ${mode}:`, error);
-        throw error;
+        console.error(`Error in secure ${mode}:`, error.message);
+        throw new Error("Error invoking secure server operation:", { cause: error });
     }
 };
 
@@ -195,15 +195,15 @@ export const getSettings = async (userId) => {
             tableId: SETTINGS_TABLE_ID,
             queries: [Query.equal('user_id', userId)]
         });
-        
+
         if (response.rows.length > 0) {
             return JSON.parse(response.rows[0].settings);
         }
-        
+
         // Return default settings if none exist
         return {
             'site.title': 'Art Gallery',
-            'site.subtitle': 'Original paintings and artwork', 
+            'site.subtitle': 'Original paintings and artwork',
             'site.description': 'A collection of original artwork and paintings.',
             'theme.primaryColor': '#667eea',
             'theme.secondaryColor': '#764ba2',
@@ -269,10 +269,10 @@ export const setSetting = async (userId, key, value) => {
     try {
         // Get current settings
         const currentSettings = await getSettings(userId);
-        
+
         // Update the specific setting
         currentSettings[key] = value;
-        
+
         // Save back the entire settings object
         return await updateSettings(userId, currentSettings);
     } catch (error) {
@@ -300,7 +300,7 @@ export const getDefaultFocusUser = async () => {
     try {
         const hostname = window.location.hostname;
         const domainConfig = await getDomainConfig(hostname);
-        
+
         // Return the focus_user from domain config, or '*' as default
         return domainConfig?.focus_user || '*';
     } catch (error) {
@@ -327,14 +327,14 @@ export const getProfile = async (userId) => {
 export const getProfiles = async (userIds) => {
     try {
         if (!userIds || userIds.length === 0) return [];
-        
+
         // For multiple user IDs, we need to fetch all profiles and filter client-side
         // or make individual queries. Let's fetch all public profiles for now.
         const response = await tablesDB.listRows({
             databaseId: DATABASE_ID,
             tableId: PROFILES_TABLE_ID
         });
-        
+
         // Filter to only the requested user IDs
         return response.rows.filter(profile => userIds.includes(profile.user_id));
     } catch (error) {
@@ -394,7 +394,7 @@ export const updateProfile = async (id, data) => {
 export const getOrCreateProfile = async (userId, displayName) => {
     try {
         let profile = await getProfile(userId);
-        
+
         if (!profile) {
             // Create basic profile with display name
             profile = await createProfile({
@@ -406,7 +406,7 @@ export const getOrCreateProfile = async (userId, displayName) => {
                 updated_at: new Date().toISOString()
             });
         }
-        
+
         return profile;
     } catch (error) {
         console.error('Error getting or creating profile:', error);
