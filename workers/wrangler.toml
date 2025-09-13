@@ -4,30 +4,55 @@ name = "artsite-api"
 main = "index.js"
 compatibility_date = "2024-12-01"
 
+# Static assets configuration
+[assets]
+directory = "../dist"  # Built frontend files
+
 # Worker configuration
 [env.production]
 workers_dev = false
-route = { pattern = "artsite.ca/api/*", zone_name = "artsite.ca" }
+route = { pattern = "artsite.ca/*", zone_name = "artsite.ca" }  # Handle all routes
 
 [env.development]
 workers_dev = true
+
+# D1 Database bindings for development
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "artsite-db"
+database_id = "6be83113-9018-49bc-a0a4-60a795b6b50f"
+
+# R2 Storage bindings for development
+[[env.development.r2_buckets]]
+binding = "ARTWORK_IMAGES"
+bucket_name = "artsite-images"
+
+# Environment variables for development
+[env.development.vars]
+FRONTEND_URL = "https://artsite-api-development.appurist.workers.dev"
+EMAIL_FROM = "noreply@artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "images.artsite.ca"
+
+# Assets are served in development
+[env.development.assets]
+directory = "../dist"
 
 # D1 Database bindings
 [[d1_databases]]
 binding = "DB"
 database_name = "artsite-db"
-database_id = "your-database-id"  # Will be updated after creating database
+database_id = "6be83113-9018-49bc-a0a4-60a795b6b50f"
 
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "ARTWORK_IMAGES"
 bucket_name = "artsite-images"
 
-# KV namespaces (for caching if needed)
-[[kv_namespaces]]
-binding = "CACHE"
-id = "your-kv-id"  # Will be updated after creating namespace
-preview_id = "your-preview-kv-id"
+# KV namespaces (for caching if needed - uncomment when ready)
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = "your-kv-id"  # Will be updated after creating namespace
+# preview_id = "your-preview-kv-id"
 
 # Environment variables
 [vars]
