@@ -4,18 +4,18 @@ This document describes the database schema for artsite.ca using Cloudflare D1 (
 
 ## Core Tables
 
-### `users`
-User authentication and account information stored as JSON documents.
+### `accounts`
+Account authentication and login information stored as JSON documents.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | TEXT | PRIMARY KEY | Unique user identifier (UUID) |
-| `record` | TEXT | NOT NULL | JSON object containing all user data |
+| `id` | TEXT | PRIMARY KEY | Unique account identifier (UUID) |
+| `record` | TEXT | NOT NULL | JSON object containing all account data |
 
 **JSON Indexes:**
-- `idx_users_email` on `json_extract(record, '$.email')`
-- `idx_users_verification_token` on `json_extract(record, '$.email_verification_token')`
-- `idx_users_reset_token` on `json_extract(record, '$.password_reset_token')`
+- `idx_accounts_email` on `json_extract(record, '$.email')`
+- `idx_accounts_verification_token` on `json_extract(record, '$.email_verification_token')`
+- `idx_accounts_reset_token` on `json_extract(record, '$.password_reset_token')`
 
 ---
 
@@ -24,11 +24,11 @@ Extended user profile information for artist pages stored as JSON documents.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `id` | TEXT | PRIMARY KEY | User identifier (same as users.id) |
+| `id` | TEXT | PRIMARY KEY | Account identifier (same as accounts.id) |
 | `record` | TEXT | NOT NULL | JSON object containing all profile data |
 
 **Relationship:**
-- `profiles.id` logically references `users.id` (enforced at application level)
+- `profiles.id` logically references `accounts.id` (enforced at application level)
 
 ---
 
@@ -38,7 +38,7 @@ Individual artwork records with metadata and file references.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | TEXT | PRIMARY KEY | Unique artwork identifier (UUID) |
-| `user_id` | TEXT | NOT NULL, FK → users.id | Artist/owner of the artwork |
+| `account_id` | TEXT | NOT NULL | Artist/owner of the artwork (references accounts.id) |
 | `title` | TEXT | NOT NULL | Artwork title |
 | `description` | TEXT | | Detailed artwork description |
 | `medium` | TEXT | | Medium used (oil on canvas, watercolor, etc.) |
@@ -58,11 +58,10 @@ Individual artwork records with metadata and file references.
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Upload timestamp |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last update timestamp |
 
-**Foreign Keys:**
-- `user_id` REFERENCES `users(id)` ON DELETE CASCADE
+**Note:** Referential integrity enforced at application level.
 
 **Indexes:**
-- `idx_artworks_user_id` on `user_id`
+- `idx_artworks_account_id` on `account_id`
 - `idx_artworks_status` on `status`
 - `idx_artworks_featured` on `featured`
 - `idx_artworks_created_at` on `created_at`
@@ -74,12 +73,11 @@ User-specific site configuration stored as JSON.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `user_id` | TEXT | PRIMARY KEY, FK → users.id | User these settings belong to |
+| `account_id` | TEXT | PRIMARY KEY, FK → accounts.id | User these settings belong to |
 | `settings` | TEXT | NOT NULL | JSON object containing all settings |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last settings update timestamp |
 
-**Foreign Keys:**
-- `user_id` REFERENCES `users(id)` ON DELETE CASCADE
+**Note:** Referential integrity enforced at application level.
 
 ---
 
@@ -148,7 +146,7 @@ User comments on artworks (not yet implemented).
 |--------|------|-------------|-------------|
 | `id` | TEXT | PRIMARY KEY | Unique comment identifier |
 | `artwork_id` | TEXT | NOT NULL, FK → artworks.id | Artwork being commented on |
-| `user_id` | TEXT | FK → users.id | Registered user who commented (optional) |
+| `account_id` | TEXT | FK → accounts.id | Registered user who commented (optional) |
 | `author_name` | TEXT | | Display name for the comment |
 | `author_email` | TEXT | | Contact email (not displayed publicly) |
 | `content` | TEXT | NOT NULL | Comment content |
@@ -157,7 +155,7 @@ User comments on artworks (not yet implemented).
 
 **Foreign Keys:**
 - `artwork_id` REFERENCES `artworks(id)` ON DELETE CASCADE
-- `user_id` REFERENCES `users(id)` ON DELETE SET NULL
+- `account_id` REFERENCES `users(id)` ON DELETE SET NULL
 
 **Indexes:**
 - `idx_comments_artwork_id` on `artwork_id`
@@ -167,8 +165,8 @@ User comments on artworks (not yet implemented).
 
 ## JSON Object Types
 
-### User Record Object
-Stored in `users.record` as JSON text:
+### Account Record Object
+Stored in `accounts.record` as JSON text:
 
 ```json
 {
@@ -184,7 +182,7 @@ Stored in `users.record` as JSON text:
 }
 ```
 
-**User Record Fields:**
+**Account Record Fields:**
 - `email` (string, required): User's email address (used for login)
 - `password_hash` (string, required): Hashed password using bcrypt
 - `name` (string, optional): User's full name
@@ -219,7 +217,7 @@ Stored in `profiles.record` as JSON text:
 ```
 
 **Profile Record Fields:**
-- `display_name` (string, optional): Public display name (overrides user.name)
+- `display_name` (string, optional): Public display name (overrides account.name)
 - `bio` (string, optional): Artist biography/description
 - `statement` (string, optional): Artist statement or philosophy
 - `avatar_url` (string, optional): URL to user's uploaded profile picture
@@ -268,10 +266,10 @@ All settings fields are optional and can be empty strings or omitted entirely.
 ## Data Relationships
 
 ```
-users (1) ←→ (0..1) profiles
-users (1) ←→ (0..1) settings  
-users (1) ←→ (*) artworks
-users (0..1) ←→ (*) comments
+accounts (1) ←→ (0..1) profiles
+accounts (1) ←→ (0..1) settings  
+accounts (1) ←→ (*) artworks
+accounts (0..1) ←→ (*) comments
 
 artworks (*) ←→ (*) categories (via artwork_categories)
 artworks (1) ←→ (*) artwork_views
@@ -280,8 +278,8 @@ artworks (1) ←→ (*) comments
 
 ## Privacy Considerations
 
-- User email addresses are never exposed in public APIs
-- Display names from profiles take precedence over user names
+- Account email addresses are never exposed in public APIs
+- Display names from profiles take precedence over account names
 - IP addresses in analytics should be hashed for privacy
 - Comments include moderation system for content safety
 
