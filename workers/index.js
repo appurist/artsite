@@ -60,28 +60,10 @@ export default {
         
         return response;
       } else {
-        // Debug: Log available bindings
         // ASSETS binding not available
-        console.error('ASSETS binding not available. Available env keys:', Object.keys(env));
-        // For SPA routes, serve a minimal HTML that shows debug info
-        const basicHTML = `<!DOCTYPE html>
-<html>
-<head>
-  <title>artsite.ca</title>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-</head>
-<body>
-  <div id="app">
-    <p>Assets binding not configured</p>
-    <p>Available bindings: ${Object.keys(env).join(', ')}</p>
-  </div>
-</body>
-</html>`;
-        
-        return new Response(basicHTML, {
-          status: 200,
-          headers: { 'Content-Type': 'text/html' }
+        return new Response('Not Found', {
+          status: 404,
+          headers: { 'Content-Type': 'text/plain' }
         });
       }
       
