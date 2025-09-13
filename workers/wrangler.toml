@@ -70,15 +70,15 @@ command = ""
 cwd = ""
 watch_dir = ""
 
-# Triggers
-[[triggers]]
-crons = ["0 0 * * *"]  # Daily cleanup if needed
+# Triggers (uncomment when needed)
+# [[triggers]]
+# crons = ["0 0 * * *"]  # Daily cleanup if needed
 
 # Durable Objects (if needed for real-time features)
 # [[durable_objects.bindings]]
 # name = "GALLERY_SESSIONS"
 # class_name = "GallerySession"
 
-# Analytics
-[analytics_engine_datasets]
+# Analytics (uncomment when needed)
+# [[analytics_engine_datasets]]
 # binding = "ANALYTICS"

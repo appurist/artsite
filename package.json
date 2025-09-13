@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "wrangler deploy",
+    "deploy": "pnpm build && cd workers && wrangler deploy",
+    "deploy:dev": "pnpm build && cd workers && wrangler deploy --env development",
     "upload": "wrangler versions upload",
     "preview": "vite preview"
   },
