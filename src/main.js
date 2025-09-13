@@ -1,5 +1,51 @@
 import './style.css'
-import { getCurrentUser, hasActiveSession, register, login, logout, getArtworks, getFilePreview, createArtwork, uploadFile, getArtwork, getFileView, getSettings, setSetting, getDefaultFocusUser, getUserAvatarInitials, getProfiles, getArtistProfiles } from './appwrite.js'
+import { 
+  getCurrentUser, 
+  register, 
+  login, 
+  logout, 
+  getArtworks, 
+  createArtwork, 
+  uploadFile, 
+  getArtwork, 
+  getSettings, 
+  updateSettings,
+  getProfiles, 
+  getProfile,
+  updateProfile,
+  deleteArtwork,
+  updateArtwork
+} from './api.js'
+
+// Compatibility functions for Appwrite migration
+async function hasActiveSession() {
+  try {
+    const user = await getCurrentUser();
+    return !!user;
+  } catch (error) {
+    return false;
+  }
+}
+
+function getFilePreview(fileId, width = 400, height = 400) {
+  // For new API, the image URL is stored directly in artwork data
+  return fileId; // fileId is now the full URL from R2/Cloudflare
+}
+
+function getFileView(fileId) {
+  // For new API, return the full image URL
+  return fileId; // fileId is now the full URL from R2/Cloudflare
+}
+
+function getUserAvatarInitials(user) {
+  if (!user || !user.name) return '';
+  return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+}
+
+function getDefaultFocusUser() {
+  // This was Appwrite-specific, return null for new API
+  return null;
+}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1422,20 +1468,18 @@ async function handleSettingsSubmit(e) {
   try {
     showSettingsStatus('Saving settings...', 'info');
     
-    // Get current user for settings
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-    
-    // Save each setting
+    // Save all settings as one JSON object
     const settings = Object.fromEntries(formData.entries());
     
+    // Filter out empty values
+    const filteredSettings = {};
     for (const [key, value] of Object.entries(settings)) {
-      if (value.trim()) { // Only save non-empty values
-        await setSetting(currentUser.$id, key, value);
+      if (value && value.trim()) {
+        filteredSettings[key] = value.trim();
       }
     }
+    
+    await updateSettings(filteredSettings);
     
     showSettingsStatus('Settings saved successfully!', 'success');
     
