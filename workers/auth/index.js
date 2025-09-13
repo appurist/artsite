@@ -18,6 +18,10 @@ import {
   executeQuery,
   queryFirst 
 } from '../shared/db.js';
+import { 
+  sendVerificationEmail, 
+  sendPasswordResetEmail 
+} from '../shared/email.js';
 
 export async function handleAuth(request, env, ctx) {
   const url = new URL(request.url);
@@ -123,8 +127,14 @@ async function register(request, env) {
       env.JWT_SECRET
     );
     
-    // TODO: Send verification email
-    console.log(`Verification token for ${email}: ${verificationToken}`);
+    // Send verification email
+    try {
+      await sendVerificationEmail(env, email, verificationToken, name);
+      console.log(`Verification email sent to ${email}`);
+    } catch (emailError) {
+      console.error('Failed to send verification email:', emailError);
+      // Continue with registration even if email fails
+    }
     
     return withCors(new Response(JSON.stringify({
       message: 'User registered successfully',
@@ -361,8 +371,14 @@ async function forgotPassword(request, env) {
       [resetToken, resetExpires, new Date().toISOString(), user.id]
     );
     
-    // TODO: Send password reset email
-    console.log(`Password reset token for ${email}: ${resetToken}`);
+    // Send password reset email
+    try {
+      await sendPasswordResetEmail(env, email, resetToken, user.name);
+      console.log(`Password reset email sent to ${email}`);
+    } catch (emailError) {
+      console.error('Failed to send password reset email:', emailError);
+      // Don't reveal email send failure to prevent email enumeration
+    }
     
     return withCors(new Response(JSON.stringify({
       message: 'Password reset email sent if user exists'

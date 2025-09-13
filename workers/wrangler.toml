@@ -32,13 +32,12 @@ preview_id = "your-preview-kv-id"
 # Environment variables
 [vars]
 FRONTEND_URL = "https://artsite.ca"
-JWT_SECRET = "your-jwt-secret-here"  # Will be moved to secrets
 EMAIL_FROM = "noreply@artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "images.artsite.ca"
 
 # Secrets (to be set via CLI)
 # wrangler secret put JWT_SECRET
 # wrangler secret put EMAIL_API_KEY
-# wrangler secret put DATABASE_URL (if needed)
 
 # Build configuration
 [build]
