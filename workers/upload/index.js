@@ -130,11 +130,12 @@ async function uploadImage(request, env) {
       });
     }
 
-    // Generate public URLs - use local R2 endpoint for development
-    const isLocal = !env.ARTWORK_IMAGES_DOMAIN || env.ARTWORK_IMAGES_DOMAIN === 'images.artsite.ca';
+    // Generate public URLs - detect local development by hostname
+    const requestUrl = new URL(request.url);
+    const isLocal = requestUrl.hostname === '127.0.0.1' || requestUrl.hostname === 'localhost';
     const baseUrl = isLocal 
-      ? 'http://127.0.0.1:8787/api/images'  // Local development endpoint
-      : `https://${env.ARTWORK_IMAGES_DOMAIN}`;
+      ? `http://${requestUrl.host}/api/images`  // Local development endpoint (preserves port)
+      : `https://${env.ARTWORK_IMAGES_DOMAIN || 'r2.artsite.ca'}`;
     const imageUrl = displayImage ? `${baseUrl}/${displayPath}` : `${baseUrl}/${originalPath}`;
     const thumbnailUrl = thumbnailImage ? `${baseUrl}/${thumbPath}` : imageUrl;
 

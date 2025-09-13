@@ -1,7 +1,7 @@
 {
   "name": "artsite-workers",
   "version": "1.0.0",
-  "description": "Cloudflare Workers for Art Gallery API",
+  "description": "Cloudflare Workers for artsite API",
   "main": "index.js",
   "type": "module",
   "scripts": {

@@ -38,7 +38,8 @@
       "Bash(wrangler dev:*)",
       "Bash(pnpm dev:*)",
       "Bash(pslist:*)",
-      "Bash(curl:*)"
+      "Bash(curl:*)",
+      "Bash(robocopy:*)"
     ],
     "deny": [],
     "ask": [],

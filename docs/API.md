@@ -384,7 +384,7 @@ Authorization: Bearer <jwt-token>
 **Response:**
 ```json
 {
-  "site_title": "My Art Gallery",
+  "site_title": "My Art Site",
   "artist_name": "Artist Name",
   "artist_bio": "Artist biography",
   "contact_email": "contact@example.com",

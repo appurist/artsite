@@ -70,34 +70,34 @@
 </head>
 <body>
     <h1>🎨 Appwrite Connection Test</h1>
-    
+
     <div class="test-container">
         <h2>Test Appwrite Connection</h2>
         <p>This will test your connection to Appwrite and verify the setup.</p>
-        
+
         <button id="testBtn" class="btn">🔍 Test Connection</button>
         <button id="authTestBtn" class="btn">🔐 Test with Auth</button>
         <button id="clearBtn" class="btn">Clear Output</button>
-        
+
         <div style="margin: 1rem 0; padding: 1rem; background: #f0f8ff; border-radius: 4px; display: none;" id="authForm">
             <h4>Test Authentication</h4>
             <input type="email" id="testEmail" placeholder="Admin Email" style="margin: 0.5rem; padding: 0.5rem; width: 200px;">
             <input type="password" id="testPassword" placeholder="Admin Password" style="margin: 0.5rem; padding: 0.5rem; width: 200px;">
             <button id="loginBtn" class="btn" style="margin: 0.5rem;">Login & Test</button>
         </div>
-        
+
         <div id="output">Ready to test connection...</div>
     </div>
 
     <div class="manual-setup">
         <h3>📋 Manual Setup Instructions</h3>
         <p><strong>Go to your Appwrite Console and create these manually:</strong></p>
-        
+
         <h4>1. Create Database</h4>
         <ul>
             <li>Go to Database section</li>
             <li>Create new database with ID: <code>artsite</code></li>
-            <li>Name: "Art Gallery Database"</li>
+            <li>Name: "artsite data"</li>
         </ul>
 
         <h4>2. Create "artworks" Collection</h4>
@@ -146,7 +146,7 @@
         <ul>
             <li>Go to Settings → Platforms</li>
             <li>Add Web Platform</li>
-            <li>Name: "Art Gallery Dev"</li>
+            <li>Name: "artsite dev"</li>
             <li>Hostname: <code>localhost:5173</code></li>
         </ul>
 
@@ -186,7 +186,7 @@
         loginBtn.addEventListener('click', async () => {
             const email = document.getElementById('testEmail').value;
             const password = document.getElementById('testPassword').value;
-            
+
             if (!email || !password) {
                 log('❌ Please enter email and password', 'error');
                 return;
@@ -194,7 +194,7 @@
 
             loginBtn.disabled = true;
             loginBtn.textContent = '⏳ Testing...';
-            
+
             try {
                 const client = new Client()
                     .setEndpoint('https://nyc.cloud.appwrite.io/v1')
@@ -240,7 +240,7 @@
             } catch (error) {
                 log('❌ Authentication failed: ' + error.message, 'error');
             }
-            
+
             loginBtn.disabled = false;
             loginBtn.textContent = 'Login & Test';
         });
@@ -248,10 +248,10 @@
         testBtn.addEventListener('click', async () => {
             testBtn.disabled = true;
             testBtn.textContent = '⏳ Testing...';
-            
+
             try {
                 log('🚀 Starting connection test...');
-                
+
                 // Initialize Appwrite client
                 const client = new Client()
                     .setEndpoint('https://nyc.cloud.appwrite.io/v1')
@@ -267,7 +267,7 @@
                 const STORAGE_BUCKET_ID = 'images';
 
                 log('🔌 Testing client connection...');
-                
+
                 // Test basic connection by trying to get current session (will fail but shows connection works)
                 try {
                     await account.get();
@@ -285,7 +285,7 @@
                 log(`   Database ID: ${DATABASE_ID}`);
                 log(`   Artworks Table ID: ${ARTWORKS_TABLE_ID}`);
                 log(`   Settings Table ID: ${SETTINGS_TABLE_ID}`);
-                
+
                 try {
                     const response = await tablesDB.listRows({
                         databaseId: DATABASE_ID,
@@ -344,7 +344,7 @@
                 log('❌ Connection test failed: ' + error.message, 'error');
                 log('💡 Check your project ID and endpoint configuration.', 'warning');
             }
-            
+
             testBtn.disabled = false;
             testBtn.textContent = '🔍 Test Connection';
         });

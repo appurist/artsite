@@ -1,4 +1,4 @@
-# Cloudflare Workers configuration for Art Gallery
+# Cloudflare Workers configuration for artsite.ca
 
 name = "artsite-api"
 main = "index.js"
@@ -30,7 +30,7 @@ bucket_name = "artsite-images"
 [env.production.vars]
 FRONTEND_URL = "https://artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_DOMAIN = "images.artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
 
 [env.development]
 workers_dev = false
@@ -51,7 +51,7 @@ bucket_name = "artsite-images"
 [env.development.vars]
 FRONTEND_URL = "https://dev.artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_DOMAIN = "images.artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
 
 
 # D1 Database bindings
@@ -75,7 +75,7 @@ bucket_name = "artsite-images"
 [vars]
 FRONTEND_URL = "https://artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_DOMAIN = "images.artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
 
 # Secrets (to be set via CLI)
 # wrangler secret put JWT_SECRET

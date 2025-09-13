@@ -1,4 +1,4 @@
--- Initial database schema for Art Gallery
+-- Initial database schema for artsite.ca
 -- SQLite/D1 compatible
 
 -- Users table for authentication

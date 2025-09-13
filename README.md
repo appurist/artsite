@@ -1,6 +1,6 @@
-# Art Gallery Website
+# artsite.ca
 
-A modern, responsive art gallery website built with Vite and Appwrite, deployed on Cloudflare Workers.
+A modern, responsive art portfolio site built with Vite and deployed on Cloudflare.
 
 ## Features
 
@@ -65,7 +65,7 @@ The application connects to Appwrite for backend services. Configuration is hard
 
 ```javascript
 const APPWRITE_ENDPOINT = "https://nyc.cloud.appwrite.io/v1"
-const APPWRITE_PROJECT_ID = "artsite"  
+const APPWRITE_PROJECT_ID = "artsite"
 const APPWRITE_DATABASE_ID = "68bfaf22002f08bd470a"
 ```
 
