@@ -519,26 +519,40 @@ body {
 }
 
 /* Individual artwork page */
+.artwork-page-container {
+  margin: 0 4rem;
+  padding: 1rem 0;
+}
+
 .artwork-page-content {
   display: flex;
   gap: 2rem;
-  margin-top: 2rem;
 }
 
 .artwork-image-section {
-  flex: 2;
+  flex: 1;
 }
 
 .artwork-full-image {
   width: 100%;
+  max-height: calc(100vh - 120px);
   height: auto;
+  object-fit: contain;
   border-radius: 8px;
   box-shadow: 0 4px 12px var(--shadow-color);
 }
 
 .artwork-details-section {
-  flex: 1;
-  min-width: 300px;
+  width: 300px;
+  flex-shrink: 0;
+}
+
+.artwork-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary-color);
+  margin: 0 0 1.5rem 0;
+  line-height: 1.2;
 }
 
 .artwork-description {
@@ -583,13 +597,21 @@ body {
 }
 
 @media (max-width: 768px) {
+  .artwork-page-container {
+    margin: 0 1rem;
+  }
+  
   .artwork-page-content {
     flex-direction: column;
     gap: 1rem;
   }
   
   .artwork-details-section {
-    min-width: unset;
+    width: auto;
+  }
+  
+  .artwork-title {
+    font-size: 1.75rem;
   }
 }
 
@@ -715,6 +737,15 @@ body {
   gap: 1rem;
 }
 
+.page-header {
+  margin-top: 0.25rem;
+}
+
+.page-actions .btn-sm {
+  padding: 0.25rem 0.75rem;
+  font-size: 0.875rem;
+}
+
 .admin-user-info span {
   font-size: 0.9rem;
   color: var(--text-muted);
@@ -832,6 +863,17 @@ input[type="file"]:focus {
   gap: 1rem;
 }
 
+.admin-artwork-link {
+  text-decoration: none;
+  color: inherit;
+  display: block;
+  transition: transform 0.2s ease;
+}
+
+.admin-artwork-link:hover {
+  transform: translateY(-2px);
+}
+
 .admin-artwork-item {
   display: flex;
   align-items: center;
@@ -840,6 +882,12 @@ input[type="file"]:focus {
   background: var(--card-bg);
   border-radius: 8px;
   border: 1px solid var(--border-light);
+  transition: box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.admin-artwork-link:hover .admin-artwork-item {
+  box-shadow: 0 4px 12px var(--shadow-color);
+  border-color: var(--primary-light);
 }
 
 .admin-artwork-preview img {

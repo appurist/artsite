@@ -770,7 +770,7 @@ function createArtworkCard(artwork) {
           ${artwork.medium || artwork.year_created ? `<p class="artwork-medium-year">${artwork.medium || ''}${artwork.medium && artwork.year_created ? ` (${artwork.year_created})` : artwork.year_created ? `(${artwork.year_created})` : ''}</p>` : ''}
           ${artwork.artist_name || artwork.display_name ? `<p class="artwork-artist">${artwork.artist_name || artwork.display_name}</p>` : ''}
           ${artwork.price && artwork.price.trim() !== '' ? `<p class="artwork-price">${artwork.price}</p>` : ''}
-          ${artwork.tags ? `<div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}</div>` : ''}
+          ${artwork.tags ? `<div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.replace(/"/g, '').trim()}</span>`).join('')}</div>` : ''}
         </div>
       </a>
     </div>
@@ -791,8 +791,12 @@ async function loadArtworkPage(artworkId) {
   `;
 
   try {
-    // Get artwork details
-    const artwork = await getArtwork(artworkId);
+    // Get artwork details and current user
+    const [artwork, currentUser] = await Promise.all([
+      getArtwork(artworkId),
+      getCurrentUser().catch(() => null)
+    ]);
+    
     if (!artwork) {
       app.innerHTML = `
         <div class="page-container">
@@ -811,13 +815,18 @@ async function loadArtworkPage(artworkId) {
     // Get full-size image URL
     const fullImageUrl = artwork.image_url || artwork.original_url || '/placeholder.jpg';
 
+    // Check if current user is the artwork owner
+    const isOwner = currentUser && currentUser.id === artwork.artist_id;
+
     // Create artwork page
     app.innerHTML = `
-      <div class="page-container">
+      <div class="artwork-page-container">
         <div class="page-header">
-          <h1>${artwork.title}</h1>
           <div class="page-actions">
-            <a href="/" class="btn btn-secondary">← Back to Gallery</a>
+            ${isOwner ? `<button class="btn btn-secondary btn-sm" onclick="editArtwork('${artwork.id}')">
+              <img src="${pencilIcon}" alt="Edit" class="icon" aria-hidden="true" />
+              Edit Details
+            </button>` : ''}
           </div>
         </div>
         
@@ -827,6 +836,7 @@ async function loadArtworkPage(artworkId) {
           </div>
           
           <div class="artwork-details-section">
+            <h1 class="artwork-title">${artwork.title}</h1>
             ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
             
             <div class="artwork-metadata">
@@ -835,7 +845,7 @@ async function loadArtworkPage(artworkId) {
               ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
               ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
               ${artwork.price && artwork.price.trim() !== '' ? `<p><strong>Price:</strong> ${artwork.price}</p>` : ''}
-              ${artwork.tags ? `<div class="artwork-tags-section"><strong>Tags:</strong> <div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}</div></div>` : ''}
+              ${artwork.tags ? `<div class="artwork-tags-section"><strong>Tags:</strong> <div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.replace(/"/g, '').trim()}</span>`).join('')}</div></div>` : ''}
             </div>
           </div>
         </div>
@@ -1062,26 +1072,28 @@ async function loadAdminArtworksList() {
       `;
     } else {
       const artworksList = artworks.map(artwork => `
-        <div class="admin-artwork-item">
-          <div class="admin-artwork-preview">
-            <img src="${artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg'}" alt="${artwork.title}">
+        <a href="/art/${artwork.id}" class="admin-artwork-link">
+          <div class="admin-artwork-item">
+            <div class="admin-artwork-preview">
+              <img src="${artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg'}" alt="${artwork.title}">
+            </div>
+            <div class="admin-artwork-details">
+              <h4>${artwork.title}</h4>
+              <p>${artwork.medium || 'No medium specified'} ${artwork.year_created ? '(' + artwork.year_created + ')' : ''}</p>
+              <p class="artwork-created">Uploaded: ${new Date(artwork.created_at).toLocaleDateString()}</p>
+            </div>
+            <div class="admin-artwork-actions">
+              <button class="btn btn-secondary btn-sm" onclick="event.preventDefault(); event.stopPropagation(); editArtwork('${artwork.id}')">
+                <img src="${pencilIcon}" alt="Edit" class="icon" aria-hidden="true" />
+                Edit
+              </button>
+              <button class="btn btn-danger btn-sm" onclick="event.preventDefault(); event.stopPropagation(); deleteArtworkFromUI('${artwork.id}')">
+                <img src="${deleteIcon}" alt="Delete" class="icon" aria-hidden="true" />
+                Delete
+              </button>
+            </div>
           </div>
-          <div class="admin-artwork-details">
-            <h4>${artwork.title}</h4>
-            <p>${artwork.medium || 'No medium specified'} ${artwork.year_created ? '(' + artwork.year_created + ')' : ''}</p>
-            <p class="artwork-created">Uploaded: ${new Date(artwork.created_at).toLocaleDateString()}</p>
-          </div>
-          <div class="admin-artwork-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editArtwork('${artwork.id}')">
-              <img src="${pencilIcon}" alt="Edit" class="icon" aria-hidden="true" />
-              Edit
-            </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteArtworkFromUI('${artwork.id}')">
-              <img src="${deleteIcon}" alt="Delete" class="icon" aria-hidden="true" />
-              Delete
-            </button>
-          </div>
-        </div>
+        </a>
       `).join('');
 
       artworksListDiv.innerHTML = `
