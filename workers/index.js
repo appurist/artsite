@@ -1,0 +1,68 @@
+/**
+ * Main Cloudflare Worker entry point
+ * Routes API requests to appropriate handlers
+ */
+
+import { router } from './shared/router.js';
+import { corsHeaders } from './shared/cors.js';
+
+// Import route handlers
+import { handleAuth } from './auth/index.js';
+import { handleArtworks } from './artworks/index.js';
+import { handleProfiles } from './profiles/index.js';
+import { handleSettings } from './settings/index.js';
+import { handleUpload } from './upload/index.js';
+
+export default {
+  async fetch(request, env, ctx) {
+    // Handle CORS preflight requests
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        status: 200,
+        headers: corsHeaders
+      });
+    }
+
+    try {
+      const url = new URL(request.url);
+      const path = url.pathname;
+
+      // Route API requests
+      if (path.startsWith('/api/auth/')) {
+        return await handleAuth(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/artworks')) {
+        return await handleArtworks(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/profiles')) {
+        return await handleProfiles(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/settings')) {
+        return await handleSettings(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/upload')) {
+        return await handleUpload(request, env, ctx);
+      }
+
+      // Serve static files for non-API requests
+      return env.ASSETS.fetch(request);
+      
+    } catch (error) {
+      console.error('Worker error:', error);
+      return new Response(JSON.stringify({ 
+        error: 'Internal server error',
+        message: error.message 
+      }), {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
+      });
+    }
+  }
+};

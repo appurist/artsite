@@ -1,0 +1,60 @@
+# Cloudflare Workers configuration for Art Gallery
+
+name = "artsite-api"
+main = "index.js"
+compatibility_date = "2024-12-01"
+
+# Worker configuration
+[env.production]
+workers_dev = false
+route = { pattern = "artsite.ca/api/*", zone_name = "artsite.ca" }
+
+[env.development]
+workers_dev = true
+
+# D1 Database bindings
+[[d1_databases]]
+binding = "DB"
+database_name = "artsite-db"
+database_id = "your-database-id"  # Will be updated after creating database
+
+# R2 Storage bindings
+[[r2_buckets]]
+binding = "ARTWORK_IMAGES"
+bucket_name = "artsite-images"
+
+# KV namespaces (for caching if needed)
+[[kv_namespaces]]
+binding = "CACHE"
+id = "your-kv-id"  # Will be updated after creating namespace
+preview_id = "your-preview-kv-id"
+
+# Environment variables
+[vars]
+FRONTEND_URL = "https://artsite.ca"
+JWT_SECRET = "your-jwt-secret-here"  # Will be moved to secrets
+EMAIL_FROM = "noreply@artsite.ca"
+
+# Secrets (to be set via CLI)
+# wrangler secret put JWT_SECRET
+# wrangler secret put EMAIL_API_KEY
+# wrangler secret put DATABASE_URL (if needed)
+
+# Build configuration
+[build]
+command = ""
+cwd = ""
+watch_dir = ""
+
+# Triggers
+[[triggers]]
+crons = ["0 0 * * *"]  # Daily cleanup if needed
+
+# Durable Objects (if needed for real-time features)
+# [[durable_objects.bindings]]
+# name = "GALLERY_SESSIONS"
+# class_name = "GallerySession"
+
+# Analytics
+[analytics_engine_datasets]
+# binding = "ANALYTICS"
