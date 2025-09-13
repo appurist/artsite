@@ -243,14 +243,7 @@ body {
   padding: 2rem;
 }
 
-.profile-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
+/* Profile header uses generic page-header */
 
 .profile-content {
   display: flex;
@@ -332,16 +325,7 @@ body {
 
 /* Site settings page styling - now using page-container */
 
-.site-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
-}
-
-.site-content {
+.page-content {
   background: var(--card-bg);
   padding: 2rem;
   border-radius: 8px;
@@ -387,10 +371,6 @@ body {
   font-size: 0.9rem;
 }
 
-/* Main content area */
-#app {
-  min-height: calc(100vh - 140px);
-}
 
 .content-container {
   max-width: 1200px;
@@ -599,6 +579,7 @@ body {
 }
 
 .auth-section {
+  margin-top: 1.5rem;
   transition: opacity 0.2s ease;
 }
 
@@ -625,21 +606,18 @@ body {
   text-decoration: underline;
 }
 
-.admin-header {
+.page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid var(--border-color);
 }
 
-.admin-header h2 {
+.page-header h2 {
   margin: 0;
   color: var(--text-color);
 }
 
-.admin-user-info {
+.page-actions {
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -668,6 +646,10 @@ body {
   justify-content: space-between;
   align-items: center;
   margin-bottom: 1rem;
+}
+
+.artworks-header .btn {
+  margin-right: 1rem;
 }
 
 .artworks-header h3 {
@@ -1053,7 +1035,7 @@ input[type="file"]:focus {
 /* Footer */
 #main-footer {
   text-align: center;
-  padding: 2rem;
+  padding: 0.5rem 0 0.25rem 0;
   color: var(--text-muted);
   font-size: 0.9rem;
 }

@@ -31,9 +31,9 @@ import userIcon from './assets/icons/user.svg'
 // Password visibility toggle function
 window.togglePasswordVisibility = function(inputId) {
   // For registration form, toggle both password fields together
-  if (inputId === 'register-password' || inputId === 'register-confirm') {
-    const passwordInput = document.getElementById('register-password');
-    const confirmInput = document.getElementById('register-confirm');
+  if (inputId === 'new-password' || inputId === 'confirm-password') {
+    const passwordInput = document.getElementById('new-password');
+    const confirmInput = document.getElementById('confirm-password');
     const passwordToggle = passwordInput.parentElement.querySelector('.password-toggle');
     const confirmToggle = confirmInput.parentElement.querySelector('.password-toggle');
     const passwordIcon = passwordToggle.querySelector('.eye-icon');
@@ -134,8 +134,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 });
 
 // Simple client-side router
-function navigateTo(path) {
-  history.pushState({}, '', path);
+function navigateTo(path, replace = false) {
+  if (replace) {
+    history.replaceState({ path }, '', path);
+  } else {
+    history.pushState({ path }, '', path);
+  }
   handleRoute();
 }
 
@@ -160,12 +164,25 @@ async function handleRoute() {
   } else if (path === '/art') {
     // Art management route
     loadArtPage();
+  } else if (path === '/art/upload') {
+    // Upload artwork route
+    showUploadForm();
   } else if (path === '/site') {
     // Site settings route
     loadSitePage();
   } else if (path === '/profile') {
     // Profile route
     loadProfilePage();
+  } else if (path === '/login') {
+    // Login route - show dedicated login page
+    loadLoginPage();
+  } else if (path === '/register') {
+    // Register route - show dedicated registration page
+    loadRegisterPage()
+  } else if (path === '/logout') {
+    // Logout route - perform logout and redirect to home
+    await logout();
+    navigateTo('/');
   } else {
     // Default route (home) - use domain's focus user
     const focusUser = await getDefaultFocusUser();
@@ -178,54 +195,20 @@ async function handleRoute() {
 
 // Navigation setup
 function setupNavigation() {
-  // Home link
-  document.getElementById('nav-home').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('/');
-  });
-
-  // Art link (My Art)
-  document.getElementById('nav-art').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('/art');
-  });
-
-  // Site link (My Site)
-  document.getElementById('nav-site').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('/site');
-  });
-
-  // Auth link (login/logout)
-  document.getElementById('nav-auth').addEventListener('click', (e) => {
-    e.preventDefault();
-    handleAuthClick();
-  });
-
-  document.getElementById('site-title').addEventListener('click', (e) => {
-    e.preventDefault();
-    navigateTo('/');
+  // Only handle logout via JavaScript, all other navigation uses normal links
+  document.getElementById('nav-auth').addEventListener('click', async (e) => {
+    const navAuthText = document.getElementById('nav-auth-text');
+    if (navAuthText.textContent === 'Logout') {
+      e.preventDefault();
+      await logout();
+      await updateNavigationAuth();
+      navigateTo('/');
+    }
+    // For Login and all other links, let the browser handle them naturally
   });
 }
 
 // Handle auth link click (login or logout)
-async function handleAuthClick() {
-  try {
-    const hasSession = await hasActiveSession();
-    if (hasSession) {
-      // User is logged in, perform logout
-      await logout();
-      await updateNavigationAuth();
-      navigateTo('/');
-    } else {
-      // User is not logged in, go to login
-      navigateTo('/art');
-    }
-  } catch (error) {
-    console.error('Auth click error:', error);
-    navigateTo('/art');
-  }
-}
 
 // Update navigation based on authentication status
 async function updateNavigationAuth() {
@@ -260,6 +243,7 @@ async function updateNavigationAuth() {
         // Show logout option
         navAuthIcon.innerHTML = '<path d="M16,17V14H9V10H16V7L21,12L16,17M14,2A2,2 0 0,1 16,4V6H14V4H5V20H14V18H16V20A2,2 0 0,1 14,22H5A2,2 0 0,1 3,20V4A2,2 0 0,1 5,2H14Z" />';
         navAuthText.textContent = 'Logout';
+        document.getElementById('nav-auth').href = '#'; // Logout handled by JavaScript
 
         // Make user name clickable to go to profile
         navUserName.onclick = () => {
@@ -281,6 +265,7 @@ async function updateNavigationAuth() {
 
     navAuthIcon.innerHTML = '<path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />';
     navAuthText.textContent = 'Login';
+    document.getElementById('nav-auth').href = '/login'; // Normal link to login page
 
     updateActiveNavigation();
 
@@ -297,6 +282,7 @@ async function updateNavigationAuth() {
 
     navAuthIcon.innerHTML = '<path d="M11 7L9.6 8.4L12.2 11H2V13H12.2L9.6 15.6L11 17L16 12L11 7M20 19H12V21H20C21.1 21 22 20.1 22 19V5C22 3.9 21.1 3 20 3H12V5H20V19Z" />';
     navAuthText.textContent = 'Login';
+    document.getElementById('nav-auth').href = '/login'; // Normal link to login page
 
     updateActiveNavigation();
   }
@@ -312,6 +298,107 @@ async function loadUserAvatar(user, navUserNameElement) {
   } catch (error) {
     console.error('Error loading user avatar:', error);
     // Keep the default icon on error
+  }
+}
+
+// Load dedicated login page
+function loadLoginPage() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-container">
+      <div class="admin-section">
+        <div class="auth-section">
+          <h2>Admin Login</h2>
+          <form id="login-form">
+            <div class="form-group">
+              <label for="username">Email:</label>
+              <input type="email" id="username" name="username" autocomplete="username" required>
+            </div>
+            <div class="form-group">
+              <label for="password">Password:</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
+                  <img src="${eyeIcon}" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <div id="login-error" class="error-message" style="display: none;"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Login</button>
+            </div>
+          </form>
+          <div class="auth-switch">
+            <a href="/register">Don't have an account yet?</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Set up form handler
+  document.getElementById('login-form').addEventListener('submit', handleLogin);
+}
+
+// Load dedicated registration page
+function loadRegisterPage() {
+  const app = document.getElementById('app');
+  app.innerHTML = `
+    <div class="page-container">
+      <div class="admin-section">
+        <div class="auth-section">
+          <h2>Create Admin Account</h2>
+          <form id="register-form">
+            <div class="form-group">
+              <label for="name">Name:</label>
+              <input type="text" id="name" name="name" autocomplete="name" required>
+            </div>
+            <div class="form-group">
+              <label for="email">Email:</label>
+              <input type="email" id="email" name="email" autocomplete="email" required>
+            </div>
+            <div class="form-group">
+              <label for="new-password">Password:</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="new-password" name="new-password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-password')">
+                  <img src="${eyeIcon}" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="confirm-password">Confirm Password:</label>
+              <div class="password-input-wrapper">
+                <input type="password" id="confirm-password" name="confirm-password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm-password')">
+                  <img src="${eyeIcon}" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
+                </button>
+              </div>
+            </div>
+            <div id="register-error" class="error-message" style="display: none;"></div>
+            <div class="form-actions">
+              <button type="submit" class="btn btn-primary">Create Account</button>
+            </div>
+          </form>
+          <div class="auth-switch">
+            <a href="/login">Already have an account?</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+  
+  // Set up form handler
+  document.getElementById('register-form').addEventListener('submit', handleRegister);
+}
+
+// Show registration form (used by /register route)
+function showRegistrationForm() {
+  const loginSection = document.getElementById('login-section');
+  const registerSection = document.getElementById('register-section');
+  if (loginSection && registerSection) {
+    loginSection.style.display = 'none';
+    registerSection.style.display = 'block';
   }
 }
 
@@ -481,7 +568,7 @@ async function loadProfilePage() {
     // Show loading state
     app.innerHTML = `
       <div class="profile-container">
-        <div class="profile-header">
+        <div class="page-header">
           <h1>User Profile</h1>
         </div>
         <div class="loading">
@@ -579,7 +666,7 @@ async function loadProfilePage() {
     console.error('Error loading profile:', error);
     app.innerHTML = `
       <div class="profile-container">
-        <div class="profile-header">
+        <div class="page-header">
           <h1>User Profile</h1>
         </div>
         <div class="profile-error">
@@ -806,11 +893,11 @@ async function loadArtPage() {
       }
     }
 
-    // No session or user - show login form
-    showLoginForm();
+    // No session or user - redirect to login page
+    navigateTo('/login');
   } catch (error) {
     console.error('Error checking authentication:', error);
-    showLoginForm();
+    navigateTo('/login');
   }
 }
 
@@ -824,14 +911,14 @@ function showLoginForm() {
           <h2>Admin Login</h2>
           <form id="login-form">
             <div class="form-group">
-              <label for="login-email">Email:</label>
-              <input type="email" id="login-email" required>
+              <label for="username">Email:</label>
+              <input type="email" id="username" name="username" autocomplete="username" required>
             </div>
             <div class="form-group">
-              <label for="login-password">Password:</label>
+              <label for="password">Password:</label>
               <div class="password-input-wrapper">
-                <input type="password" id="login-password" required>
-                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password')">
+                <input type="password" id="password" name="password" autocomplete="current-password" required>
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('password')">
                   <img src="${eyeIcon}" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
                 </button>
               </div>
@@ -850,27 +937,27 @@ function showLoginForm() {
           <h2>Create Admin Account</h2>
           <form id="register-form">
             <div class="form-group">
-              <label for="register-name">Name:</label>
-              <input type="text" id="register-name" required>
+              <label for="name">Name:</label>
+              <input type="text" id="name" name="name" autocomplete="name" required>
             </div>
             <div class="form-group">
-              <label for="register-email">Email:</label>
-              <input type="email" id="register-email" required>
+              <label for="email">Email:</label>
+              <input type="email" id="email" name="email" autocomplete="email" required>
             </div>
             <div class="form-group">
-              <label for="register-password">Password:</label>
+              <label for="new-password">Password:</label>
               <div class="password-input-wrapper">
-                <input type="password" id="register-password" required minlength="8">
-                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-password')">
+                <input type="password" id="new-password" name="new-password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('new-password')">
                   <img src="${eyeIcon}" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
                 </button>
               </div>
             </div>
             <div class="form-group">
-              <label for="register-confirm">Confirm Password:</label>
+              <label for="confirm-password">Confirm Password:</label>
               <div class="password-input-wrapper">
-                <input type="password" id="register-confirm" required minlength="8">
-                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-confirm')">
+                <input type="password" id="confirm-password" name="confirm-password" autocomplete="new-password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('confirm-password')">
                   <img src="${eyeIcon}" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
                 </button>
               </div>
@@ -899,18 +986,6 @@ function setupAuthForms() {
   const showRegisterLink = document.getElementById('show-register');
   const showLoginLink = document.getElementById('show-login');
 
-  // Toggle between login and register
-  showRegisterLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    loginSection.style.display = 'none';
-    registerSection.style.display = 'block';
-  });
-
-  showLoginLink.addEventListener('click', (e) => {
-    e.preventDefault();
-    loginSection.style.display = 'block';
-    registerSection.style.display = 'none';
-  });
 
   // Set up form handlers
   document.getElementById('login-form').addEventListener('submit', handleLogin);
@@ -922,18 +997,18 @@ function showAdminDashboard(user) {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="page-container">
-      <div class="site-header">
+      <div class="page-header">
         <h1>My Art</h1>
       </div>
 
-      <div class="admin-content">
+      <div class="page-content">
         <div class="artworks-section">
           <div class="artworks-header">
             <h3>Manage Artworks</h3>
-            <button id="upload-artwork-btn" class="btn btn-success">
+            <a href="/art/upload" id="upload-artwork-btn" class="btn btn-success">
               <img src="${imagePlusIcon}" alt="Upload" class="icon" aria-hidden="true" />
               Upload Artwork
-            </button>
+            </a>
           </div>
           <div id="artworks-list" class="loading">
             <p>Loading artworks...</p>
@@ -943,8 +1018,6 @@ function showAdminDashboard(user) {
     </div>
   `;
 
-  // Set up dashboard event handlers
-  document.getElementById('upload-artwork-btn').addEventListener('click', showUploadForm);
 
   // Load artworks list
   loadAdminArtworksList();
@@ -1016,8 +1089,8 @@ async function loadAdminArtworksList() {
 async function handleLogin(e) {
   e.preventDefault();
 
-  const email = document.getElementById('login-email').value;
-  const password = document.getElementById('login-password').value;
+  const email = document.getElementById('username').value;
+  const password = document.getElementById('password').value;
   const errorDiv = document.getElementById('login-error');
   const submitBtn = e.target.querySelector('button[type="submit"]');
 
@@ -1030,8 +1103,8 @@ async function handleLogin(e) {
     await login(email, password);
     // Update navigation to show logged in user
     await updateNavigationAuth();
-    // Reload admin page to show dashboard
-    loadArtPage();
+    // Navigate to art management dashboard (replace history to avoid back button issues)
+    navigateTo('/art', true);
   } catch (error) {
     errorDiv.textContent = error.message || 'Login failed. Please check your credentials and try again.';
     errorDiv.style.display = 'block';
@@ -1046,10 +1119,10 @@ async function handleLogin(e) {
 async function handleRegister(e) {
   e.preventDefault();
 
-  const name = document.getElementById('register-name').value;
-  const email = document.getElementById('register-email').value;
-  const password = document.getElementById('register-password').value;
-  const confirmPassword = document.getElementById('register-confirm').value;
+  const name = document.getElementById('name').value;
+  const email = document.getElementById('email').value;
+  const password = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
   const errorDiv = document.getElementById('register-error');
   const submitBtn = e.target.querySelector('button[type="submit"]');
 
@@ -1091,8 +1164,8 @@ async function handleRegister(e) {
     // Update navigation to show logged in user
     await updateNavigationAuth();
 
-    // Redirect to admin dashboard
-    loadArtPage();
+    // Navigate to art management dashboard (replace history to avoid back button issues)
+    navigateTo('/art', true);
 
   } catch (error) {
     console.error('Registration error:', error);
@@ -1121,17 +1194,11 @@ function showUploadForm() {
   const app = document.getElementById('app');
   app.innerHTML = `
     <div class="page-container">
-      <div class="admin-header">
+      <div class="page-header">
         <h2>Upload Artwork</h2>
-        <button id="back-to-dashboard" class="btn btn-secondary">
-          <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-            <path d="M22,16V4A2,2 0 0,0 20,2H8A2,2 0 0,0 6,4V16A2,2 0 0,0 8,18H20A2,2 0 0,0 22,16M11,12L13.03,14.71L16,11L20,16H8M2,6V20A2,2 0 0,0 4,22H18V20H4V6" />
-          </svg>
-          Back to Dashboard
-        </button>
       </div>
 
-      <div class="admin-content">
+      <div class="page-content">
         <form id="upload-form" class="upload-form">
           <div class="form-group">
             <label for="artwork-file">Artwork Image *</label>
@@ -1185,12 +1252,12 @@ function showUploadForm() {
               </svg>
               Upload Artwork
             </button>
-            <button type="button" class="btn btn-secondary" id="upload-cancel">
+            <a href="/art" class="btn btn-secondary" id="upload-cancel">
               <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                 <path d="M12 2C17.5 2 22 6.5 22 12S17.5 22 12 22 2 17.5 2 12 6.5 2 12 2M12 4C10.1 4 8.4 4.6 7.1 5.7L18.3 16.9C19.3 15.5 20 13.8 20 12C20 7.6 16.4 4 12 4M16.9 18.3L5.7 7.1C4.6 8.4 4 10.1 4 12C4 16.4 7.6 20 12 20C13.9 20 15.6 19.4 16.9 18.3Z" />
               </svg>
               Cancel
-            </button>
+            </a>
           </div>
         </form>
 
@@ -1199,9 +1266,6 @@ function showUploadForm() {
     </div>
   `;
 
-  // Set up form event handlers
-  document.getElementById('back-to-dashboard').addEventListener('click', loadArtPage);
-  document.getElementById('upload-cancel').addEventListener('click', loadArtPage);
   document.getElementById('upload-form').addEventListener('submit', handleUploadSubmit);
 }
 
@@ -1348,11 +1412,11 @@ async function loadSitePage() {
 
     app.innerHTML = `
       <div class="page-container">
-        <div class="site-header">
+        <div class="page-header">
           <h1>My Site Settings</h1>
         </div>
 
-        <div class="site-content">
+        <div class="page-content">
           <form id="settings-form">
             <div class="form-group">
               <label for="site-title-setting">Site Title (e.g. Art Gallery)</label>
@@ -1400,10 +1464,10 @@ async function loadSitePage() {
             <div id="settings-status" class="settings-status"></div>
 
             <div class="form-actions">
-              <button type="button" id="settings-cancel" class="btn btn-secondary">
+              <a href="/art" id="settings-cancel" class="btn btn-secondary">
                 <img src="${cancelIcon}" alt="Cancel" class="icon" aria-hidden="true" />
                 Cancel
-              </button>
+              </a>
               <button type="submit" class="btn btn-primary">
                 <img src="${contentSaveIcon}" alt="Save" class="icon" aria-hidden="true" />
                 Save Settings
@@ -1415,7 +1479,6 @@ async function loadSitePage() {
     `;
 
     // Set up event handlers
-    document.getElementById('settings-cancel').addEventListener('click', () => navigateTo('/art'));
     document.getElementById('settings-form').addEventListener('submit', handleSettingsSubmit);
 
     // Load current settings
@@ -1425,7 +1488,7 @@ async function loadSitePage() {
     console.error('Error loading site page:', error);
     app.innerHTML = `
       <div class="page-container">
-        <div class="site-header">
+        <div class="page-header">
           <h1>My Site Settings</h1>
         </div>
         <div class="profile-error">
@@ -1499,7 +1562,7 @@ function showSettingsForm() {
           <div id="settings-status" class="settings-status"></div>
 
           <div class="form-actions">
-            <button type="button" id="settings-cancel" class="btn btn-secondary">Cancel</button>
+            <a href="/art" id="settings-cancel" class="btn btn-secondary">Cancel</a>
             <button type="submit" class="btn btn-primary">Save Settings</button>
           </div>
         </form>
@@ -1508,7 +1571,6 @@ function showSettingsForm() {
   `;
 
   // Set up event handlers
-  document.getElementById('settings-cancel').addEventListener('click', loadArtPage);
   document.getElementById('settings-form').addEventListener('submit', handleSettingsSubmit);
 
   // Load current settings
