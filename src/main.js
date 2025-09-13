@@ -167,6 +167,15 @@ async function handleRoute() {
   } else if (path === '/art/upload') {
     // Upload artwork route
     showUploadForm();
+  } else if (path.startsWith('/art/') && path !== '/art/upload') {
+    // Individual artwork route: /art/:id
+    const artworkId = path.split('/art/')[1];
+    if (artworkId && artworkId !== 'upload') {
+      loadArtworkPage(artworkId);
+    } else {
+      // Redirect to art management if no valid ID
+      navigateTo('/art');
+    }
   } else if (path === '/site') {
     // Site settings route
     loadSitePage();
@@ -749,7 +758,7 @@ function createArtworkCard(artwork) {
 
   return `
     <div class="artwork-item" data-id="${artwork.id}">
-      <a href="#" class="artwork-link" onclick="showArtworkModal('${artwork.id}'); return false;">
+      <a href="/art/${artwork.id}" class="artwork-link">
         <div class="artwork-image-container">
           <img src="${thumbnailUrl}" alt="${artwork.title}" class="artwork-image" loading="lazy">
           <div class="artwork-overlay">
@@ -766,6 +775,87 @@ function createArtworkCard(artwork) {
       </a>
     </div>
   `;
+}
+
+// Load individual artwork page
+async function loadArtworkPage(artworkId) {
+  const app = document.getElementById('app');
+  
+  // Show loading state
+  app.innerHTML = `
+    <div class="page-container">
+      <div class="loading">
+        <p>Loading artwork...</p>
+      </div>
+    </div>
+  `;
+
+  try {
+    // Get artwork details
+    const artwork = await getArtwork(artworkId);
+    if (!artwork) {
+      app.innerHTML = `
+        <div class="page-container">
+          <div class="page-header">
+            <h1>Artwork Not Found</h1>
+          </div>
+          <div class="page-content">
+            <p>The requested artwork could not be found.</p>
+            <a href="/" class="btn btn-primary">Return to Gallery</a>
+          </div>
+        </div>
+      `;
+      return;
+    }
+
+    // Get full-size image URL
+    const fullImageUrl = artwork.image_url || artwork.original_url || '/placeholder.jpg';
+
+    // Create artwork page
+    app.innerHTML = `
+      <div class="page-container">
+        <div class="page-header">
+          <h1>${artwork.title}</h1>
+          <div class="page-actions">
+            <a href="/" class="btn btn-secondary">← Back to Gallery</a>
+          </div>
+        </div>
+        
+        <div class="artwork-page-content">
+          <div class="artwork-image-section">
+            <img src="${fullImageUrl}" alt="${artwork.title}" class="artwork-full-image">
+          </div>
+          
+          <div class="artwork-details-section">
+            ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
+            
+            <div class="artwork-metadata">
+              ${artwork.artist_name || artwork.display_name ? `<p><strong>Artist:</strong> ${artwork.artist_name || artwork.display_name}</p>` : ''}
+              ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
+              ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
+              ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
+              ${artwork.price && artwork.price.trim() !== '' ? `<p><strong>Price:</strong> ${artwork.price}</p>` : ''}
+              ${artwork.tags ? `<div class="artwork-tags-section"><strong>Tags:</strong> <div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}</div></div>` : ''}
+            </div>
+          </div>
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error('Error loading artwork page:', error);
+    app.innerHTML = `
+      <div class="page-container">
+        <div class="page-header">
+          <h1>Error</h1>
+        </div>
+        <div class="page-content">
+          <p>There was an error loading this artwork.</p>
+          <a href="/" class="btn btn-primary">Return to Gallery</a>
+        </div>
+      </div>
+    `;
+  }
 }
 
 // Filter artworks by artist (globally accessible)
@@ -801,76 +891,6 @@ window.filterArtworksByArtist = async function(userId) {
   }
 };
 
-// Show artwork modal (globally accessible)
-window.showArtworkModal = async function(artworkId) {
-  try {
-    // Get artwork details
-    const artwork = await getArtwork(artworkId);
-    if (!artwork) {
-      console.error('Artwork not found');
-      return;
-    }
-
-    // Get full-size image URL
-    const fullImageUrl = artwork.image_url || artwork.original_url || '/placeholder.jpg';
-
-    // Create modal HTML
-    const modal = document.createElement('div');
-    modal.className = 'artwork-modal';
-    modal.innerHTML = `
-      <div class="modal-overlay" onclick="closeArtworkModal()">
-        <div class="modal-content" onclick="event.stopPropagation()">
-          <button class="modal-close" onclick="closeArtworkModal()">&times;</button>
-
-          <div class="modal-spacer"></div>
-
-          <div class="modal-image-container">
-            <img src="${fullImageUrl}" alt="${artwork.title}" class="modal-image">
-          </div>
-
-          <div class="modal-details">
-            <h2>${artwork.title}</h2>
-            ${artwork.description ? `<p class="modal-description">${artwork.description}</p>` : ''}
-
-            <div class="modal-metadata">
-              ${artwork.artist_name || artwork.display_name ? `<p><strong>Artist:</strong> ${artwork.artist_name || artwork.display_name}</p>` : ''}
-              ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
-              ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
-              ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
-              ${artwork.price ? `<p><strong>Price:</strong> ${artwork.price}</p>` : ''}
-              ${artwork.tags ? `<p><strong>Tags:</strong> ${artwork.tags}</p>` : ''}
-            </div>
-          </div>
-        </div>
-      </div>
-    `;
-
-    // Add to page and show
-    document.body.appendChild(modal);
-
-    // Add escape key listener
-    document.addEventListener('keydown', handleModalKeydown);
-
-  } catch (error) {
-    console.error('Error showing artwork modal:', error);
-  }
-}
-
-// Close artwork modal (globally accessible)
-window.closeArtworkModal = function() {
-  const modal = document.querySelector('.artwork-modal');
-  if (modal) {
-    modal.remove();
-    document.removeEventListener('keydown', handleModalKeydown);
-  }
-}
-
-// Handle escape key for modal
-function handleModalKeydown(e) {
-  if (e.key === 'Escape') {
-    closeArtworkModal();
-  }
-}
 
 // Load art management page
 async function loadArtPage() {
