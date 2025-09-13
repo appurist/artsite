@@ -492,10 +492,7 @@ async function loadGalleryPage(focusUser = '*') {
         profileMap = Object.fromEntries(profiles.map(profile => [profile.user_id, profile]));
       }
 
-      const galleryGrid = artworks.map(artwork => {
-        const profile = focusUser === '*' ? profileMap[artwork.user_id] : null;
-        return createArtworkCard(artwork, profile);
-      }).join('');
+      const galleryGrid = artworks.map(artwork => createArtworkCard(artwork)).join('');
 
       // Build artist filter dropdown for multi-artist galleries
       let artistFilter = '';
@@ -746,12 +743,9 @@ async function loadUserGallery(userId) {
 }
 
 // Create artwork card HTML
-function createArtworkCard(artwork, profile = null) {
+function createArtworkCard(artwork) {
   // Get the thumbnail URL - using thumbnailUrl from R2 storage
   const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
-
-  // Format the year
-  const yearDisplay = artwork.year_created ? ` (${artwork.year_created})` : '';
 
   return `
     <div class="artwork-item" data-id="${artwork.id}">
@@ -764,10 +758,10 @@ function createArtworkCard(artwork, profile = null) {
         </div>
         <div class="artwork-details">
           <h3 class="artwork-title">${artwork.title}</h3>
-          ${profile && profile.display_name ? `<p class="artwork-artist">by ${profile.display_name}</p>` : ''}
-          ${artwork.medium ? `<p class="artwork-medium">${artwork.medium}</p>` : ''}
-          ${artwork.year_created ? `<p class="artwork-year">${artwork.year_created}</p>` : ''}
-          ${artwork.price ? `<p class="artwork-price">${artwork.price}</p>` : ''}
+          ${artwork.medium || artwork.year_created ? `<p class="artwork-medium-year">${artwork.medium || ''}${artwork.medium && artwork.year_created ? ` (${artwork.year_created})` : artwork.year_created ? `(${artwork.year_created})` : ''}</p>` : ''}
+          ${artwork.artist_name || artwork.display_name ? `<p class="artwork-artist">${artwork.artist_name || artwork.display_name}</p>` : ''}
+          ${artwork.price && artwork.price.trim() !== '' ? `<p class="artwork-price">${artwork.price}</p>` : ''}
+          ${artwork.tags ? `<div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.trim()}</span>`).join('')}</div>` : ''}
         </div>
       </a>
     </div>
@@ -839,6 +833,7 @@ window.showArtworkModal = async function(artworkId) {
             ${artwork.description ? `<p class="modal-description">${artwork.description}</p>` : ''}
 
             <div class="modal-metadata">
+              ${artwork.artist_name || artwork.display_name ? `<p><strong>Artist:</strong> ${artwork.artist_name || artwork.display_name}</p>` : ''}
               ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
               ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
               ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
