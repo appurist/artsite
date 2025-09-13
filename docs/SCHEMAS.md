@@ -5,49 +5,30 @@ This document describes the database schema for artsite.ca using Cloudflare D1 (
 ## Core Tables
 
 ### `users`
-User authentication and account information.
+User authentication and account information stored as JSON documents.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | TEXT | PRIMARY KEY | Unique user identifier (UUID) |
-| `email` | TEXT | UNIQUE NOT NULL | User's email address (used for login) |
-| `password_hash` | TEXT | NOT NULL | Hashed password using bcrypt |
-| `name` | TEXT | | User's full name (optional) |
-| `email_verified` | BOOLEAN | DEFAULT FALSE | Whether email address has been verified |
-| `email_verification_token` | TEXT | | Token for email verification process |
-| `password_reset_token` | TEXT | | Token for password reset process |
-| `password_reset_expires` | DATETIME | | Expiration time for password reset token |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Account creation timestamp |
-| `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last account update timestamp |
+| `record` | TEXT | NOT NULL | JSON object containing all user data |
 
-**Indexes:**
-- `idx_users_email` on `email`
-- `idx_users_verification_token` on `email_verification_token`
-- `idx_users_reset_token` on `password_reset_token`
+**JSON Indexes:**
+- `idx_users_email` on `json_extract(record, '$.email')`
+- `idx_users_verification_token` on `json_extract(record, '$.email_verification_token')`
+- `idx_users_reset_token` on `json_extract(record, '$.password_reset_token')`
 
 ---
 
 ### `profiles`
-Extended user profile information for artist pages.
+Extended user profile information for artist pages stored as JSON documents.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
-| `user_id` | TEXT | PRIMARY KEY, FK → users.id | References user account |
-| `display_name` | TEXT | | Public display name (overrides user.name) |
-| `bio` | TEXT | | Artist biography/description |
-| `statement` | TEXT | | Artist statement or philosophy |
-| `avatar_url` | TEXT | | URL to user's profile picture |
-| `website` | TEXT | | Artist's personal website |
-| `instagram` | TEXT | | Instagram handle or URL |
-| `twitter` | TEXT | | Twitter handle or URL |
-| `location` | TEXT | | Artist's location (city, country) |
-| `phone` | TEXT | | Contact phone number |
-| `public_profile` | BOOLEAN | DEFAULT TRUE | Whether profile is publicly visible |
-| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Profile creation timestamp |
-| `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last profile update timestamp |
+| `id` | TEXT | PRIMARY KEY | User identifier (same as users.id) |
+| `record` | TEXT | NOT NULL | JSON object containing all profile data |
 
-**Foreign Keys:**
-- `user_id` REFERENCES `users(id)` ON DELETE CASCADE
+**Relationship:**
+- `profiles.id` logically references `users.id` (enforced at application level)
 
 ---
 
@@ -185,6 +166,74 @@ User comments on artworks (not yet implemented).
 ---
 
 ## JSON Object Types
+
+### User Record Object
+Stored in `users.record` as JSON text:
+
+```json
+{
+  "email": "user@example.com",
+  "password_hash": "$2b$10$...",
+  "name": "User Full Name",
+  "email_verified": false,
+  "email_verification_token": "abc123...",
+  "password_reset_token": "def456...",
+  "password_reset_expires": "2024-01-15T10:30:00Z",
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-13T15:45:00Z"
+}
+```
+
+**User Record Fields:**
+- `email` (string, required): User's email address (used for login)
+- `password_hash` (string, required): Hashed password using bcrypt
+- `name` (string, optional): User's full name
+- `email_verified` (boolean): Whether email address has been verified
+- `email_verification_token` (string, optional): Token for email verification process
+- `password_reset_token` (string, optional): Token for password reset process
+- `password_reset_expires` (string, optional): ISO datetime for password reset token expiration
+- `created_at` (string, required): ISO datetime for account creation
+- `updated_at` (string, required): ISO datetime for last account update
+
+---
+
+### Profile Record Object
+Stored in `profiles.record` as JSON text:
+
+```json
+{
+  "display_name": "Artist Display Name",
+  "bio": "Artist biography and background...",
+  "statement": "Artist statement or philosophy...",
+  "avatar_url": "https://r2.artsite.ca/avatars/user-123.jpg",
+  "use_gravatar": true,
+  "website": "https://artistwebsite.com",
+  "instagram": "@artisthandle",
+  "twitter": "@artisttwitter",
+  "location": "City, Country",
+  "phone": "+1 (555) 123-4567",
+  "public_profile": true,
+  "created_at": "2024-01-01T00:00:00Z",
+  "updated_at": "2024-01-13T15:45:00Z"
+}
+```
+
+**Profile Record Fields:**
+- `display_name` (string, optional): Public display name (overrides user.name)
+- `bio` (string, optional): Artist biography/description
+- `statement` (string, optional): Artist statement or philosophy
+- `avatar_url` (string, optional): URL to user's uploaded profile picture
+- `use_gravatar` (boolean): Whether to use Gravatar for avatar (defaults to true)
+- `website` (string, optional): Artist's personal website
+- `instagram` (string, optional): Instagram handle or URL
+- `twitter` (string, optional): Twitter handle or URL
+- `location` (string, optional): Artist's location (city, country)
+- `phone` (string, optional): Contact phone number
+- `public_profile` (boolean): Whether profile is publicly visible (defaults to true)
+- `created_at` (string, required): ISO datetime for profile creation
+- `updated_at` (string, required): ISO datetime for last profile update
+
+---
 
 ### Settings Object
 Stored in `settings.settings` as JSON text:

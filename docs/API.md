@@ -174,9 +174,6 @@ Retrieve artworks with optional filtering.
     {
       "id": "artwork-id",
       "user_id": "artist-user-id",
-      "artist_id": "artist-user-id",
-      "artist_name": "Artist Display Name",
-      "display_name": "Artist Display Name",
       "title": "Artwork Title",
       "description": "Artwork description",
       "medium": "Oil on canvas",
@@ -215,9 +212,6 @@ Get details for a specific artwork.
   "artwork": {
     "id": "artwork-id",
     "user_id": "artist-user-id",
-    "artist_id": "artist-user-id", 
-    "artist_name": "Artist Display Name",
-    "display_name": "Artist Display Name",
     "title": "Artwork Title",
     "description": "Artwork description",
     "medium": "Oil on canvas",
@@ -262,8 +256,6 @@ Content-Type: application/json
   "year_created": 2024,
   "price": "$1,200",
   "tags": "abstract,modern",
-  "artist_id": "current-user-id",
-  "artist_name": "Artist Display Name",
   "image_id": "uploaded-file-id",
   "image_url": "https://r2.artsite.ca/user-id/artwork-image.jpg",
   "thumbnail_url": "https://r2.artsite.ca/user-id/artwork-thumb.jpg",

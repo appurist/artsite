@@ -1,41 +1,21 @@
 -- Initial database schema for artsite.ca
 -- SQLite/D1 compatible
 
--- Users table for authentication
+-- Users table for authentication (JSON-based)
 CREATE TABLE IF NOT EXISTS users (
     id TEXT PRIMARY KEY,
-    email TEXT UNIQUE NOT NULL,
-    password_hash TEXT NOT NULL,
-    name TEXT,
-    email_verified BOOLEAN DEFAULT FALSE,
-    email_verification_token TEXT,
-    password_reset_token TEXT,
-    password_reset_expires DATETIME,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    record TEXT NOT NULL -- JSON object containing all user data
 );
 
--- Create index on email for fast lookups
-CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
-CREATE INDEX IF NOT EXISTS idx_users_verification_token ON users(email_verification_token);
-CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(password_reset_token);
+-- Create indexes for common queries on JSON fields
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(json_extract(record, '$.email'));
+CREATE INDEX IF NOT EXISTS idx_users_verification_token ON users(json_extract(record, '$.email_verification_token'));
+CREATE INDEX IF NOT EXISTS idx_users_reset_token ON users(json_extract(record, '$.password_reset_token'));
 
--- Profiles table for artist information
+-- Profiles table for artist information (JSON-based)
 CREATE TABLE IF NOT EXISTS profiles (
-    user_id TEXT PRIMARY KEY,
-    display_name TEXT,
-    bio TEXT,
-    statement TEXT,
-    avatar_url TEXT,
-    website TEXT,
-    instagram TEXT,
-    twitter TEXT,
-    location TEXT,
-    phone TEXT,
-    public_profile BOOLEAN DEFAULT TRUE,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    id TEXT PRIMARY KEY, -- Same as user_id, references users.id
+    record TEXT NOT NULL -- JSON object containing all profile data
 );
 
 -- Artworks table for gallery pieces

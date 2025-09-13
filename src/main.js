@@ -784,7 +784,7 @@ function createArtworkCard(artwork) {
         <div class="artwork-details">
           <h3 class="artwork-title">${artwork.title}</h3>
           ${artwork.medium || artwork.year_created ? `<p class="artwork-medium-year">${artwork.medium || ''}${artwork.medium && artwork.year_created ? ` (${artwork.year_created})` : artwork.year_created ? `(${artwork.year_created})` : ''}</p>` : ''}
-          ${artwork.artist_name || artwork.display_name ? `<p class="artwork-artist">${artwork.artist_name || artwork.display_name}</p>` : ''}
+          <!-- Artist name will be looked up from profiles cache -->
           ${artwork.price && artwork.price.trim() !== '' ? `<p class="artwork-price">${artwork.price}</p>` : ''}
           ${artwork.tags ? `<div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.replace(/"/g, '').trim()}</span>`).join('')}</div>` : ''}
         </div>
@@ -856,7 +856,7 @@ async function loadArtworkPage(artworkId) {
             ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
             
             <div class="artwork-metadata">
-              ${artwork.artist_name || artwork.display_name ? `<p><strong>Artist:</strong> ${artwork.artist_name || artwork.display_name}</p>` : ''}
+              <!-- Artist name will be looked up from profiles cache -->
               ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
               ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
               ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
@@ -1351,16 +1351,6 @@ async function handleUploadSubmit(e) {
       throw new Error('User not authenticated');
     }
 
-    // Get user profile for display name
-    let userProfile = null;
-    try {
-      userProfile = await getProfile(currentUser.id);
-    } catch (error) {
-      console.log('No profile found, will use user name');
-    }
-
-    // Determine artist display name: profile display_name > user name > Anonymous Artist
-    const artistName = (userProfile && userProfile.display_name) || currentUser.name || 'Anonymous Artist';
 
     // Generate secure file path: user-ID/unique-ID.ext
     const fileExtension = file.name.split('.').pop().toLowerCase();
@@ -1374,7 +1364,6 @@ async function handleUploadSubmit(e) {
     const artworkData = {
       ...formData,
       artist_id: currentUser.id,
-      artist_name: artistName,
       image_id: uploadedFile.$id,
       image_url: uploadedFile.url,
       thumbnail_url: uploadedFile.thumbnailUrl,
