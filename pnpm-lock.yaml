@@ -7,13 +7,6 @@ settings:
 importers:
 
   .:
-    dependencies:
-      appwrite:
-        specifier: ^20.0.0
-        version: 20.0.0
-      node-appwrite:
-        specifier: ^19.0.0
-        version: 19.0.0
     devDependencies:
       vite:
         specifier: ^7.1.2
@@ -628,9 +621,6 @@ packages:
     engines: {node: '>=0.4.0'}
     hasBin: true
 
-  appwrite@20.0.0:
-    resolution: {integrity: sha512-1uUWLCHT2ByJORz5+NORNk74HW02csg8Jm6lUKUog2DU9WnepqzbLnlD7BC22+XVo5tFp29dreinJk/doVTeTw==}
-
   blake3-wasm@2.1.5:
     resolution: {integrity: sha512-F1+K8EbfOZE49dtoPtmxUQrpXaBIl3ICvasLh+nJta0xkz+9kF/7uet9fLnwKqhDrmj6g+6K3Tw9yQPUg2ka5g==}
 
@@ -717,12 +707,6 @@ packages:
     resolution: {integrity: sha512-N8SpfPUnUp1bK+PMYW8qSWdl9U+wwNWI4QKxOYDy9JAro3WMX7p2OeVRF9v+347pnakNevPmiHhNmZ2HbFA76w==}
     engines: {node: ^10 || ^12 || ^13.7 || ^14 || >=15.0.1}
     hasBin: true
-
-  node-appwrite@19.0.0:
-    resolution: {integrity: sha512-Uk55z9OBRiI04GTo+WA5UsHzohtTmWUgzut5Q5lK4n5gWDC1H5HhSJdGJ0qk5RpW1OVvzU6RU9LNnZ4UWpiY+Q==}
-
-  node-fetch-native-with-agent@1.7.2:
-    resolution: {integrity: sha512-5MaOOCuJEvcckoz7/tjdx1M6OusOY6Xc5f459IaruGStWnKzlI1qpNgaAwmn4LmFYcsSlj+jBMk84wmmRxfk5g==}
 
   ohash@2.0.11:
     resolution: {integrity: sha512-RdR9FQrFwNBNXAr4GixM8YaRZRJ5PUWbKYbE5eOsrwAjJW0q2REGcf79oYPsLyskQCZG1PLN+S/K1V00joZAoQ==}
@@ -1224,8 +1208,6 @@ snapshots:
 
   acorn@8.14.0: {}
 
-  appwrite@20.0.0: {}
-
   blake3-wasm@2.1.5: {}
 
   color-convert@2.0.1:
@@ -1347,12 +1329,6 @@ snapshots:
       - utf-8-validate
 
   nanoid@3.3.11: {}
-
-  node-appwrite@19.0.0:
-    dependencies:
-      node-fetch-native-with-agent: 1.7.2
-
-  node-fetch-native-with-agent@1.7.2: {}
 
   ohash@2.0.11: {}
 
