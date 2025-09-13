@@ -1,4 +1,5 @@
 import './style.css'
+import './avatar-styles.css'
 import { 
   getCurrentUser, 
   register, 
@@ -16,6 +17,52 @@ import {
   deleteArtwork,
   updateArtwork
 } from './api.js'
+
+// Password visibility toggle function
+window.togglePasswordVisibility = function(inputId) {
+  // For registration form, toggle both password fields together
+  if (inputId === 'register-password' || inputId === 'register-confirm') {
+    const passwordInput = document.getElementById('register-password');
+    const confirmInput = document.getElementById('register-confirm');
+    const passwordToggle = passwordInput.parentElement.querySelector('.password-toggle');
+    const confirmToggle = confirmInput.parentElement.querySelector('.password-toggle');
+    const passwordIcon = passwordToggle.querySelector('.eye-icon');
+    const confirmIcon = confirmToggle.querySelector('.eye-icon');
+    
+    if (passwordInput.type === 'password') {
+      // Show both passwords
+      passwordInput.type = 'text';
+      confirmInput.type = 'text';
+      passwordIcon.src = '/src/assets/icons/eye-off.svg';
+      passwordIcon.alt = 'Hide password';
+      confirmIcon.src = '/src/assets/icons/eye-off.svg';
+      confirmIcon.alt = 'Hide password';
+    } else {
+      // Hide both passwords
+      passwordInput.type = 'password';
+      confirmInput.type = 'password';
+      passwordIcon.src = '/src/assets/icons/eye.svg';
+      passwordIcon.alt = 'Show password';
+      confirmIcon.src = '/src/assets/icons/eye.svg';
+      confirmIcon.alt = 'Show password';
+    }
+  } else {
+    // For login form, toggle single field
+    const input = document.getElementById(inputId);
+    const toggle = input.parentElement.querySelector('.password-toggle');
+    const eyeIcon = toggle.querySelector('.eye-icon');
+    
+    if (input.type === 'password') {
+      input.type = 'text';
+      eyeIcon.src = '/src/assets/icons/eye-off.svg';
+      eyeIcon.alt = 'Hide password';
+    } else {
+      input.type = 'password';
+      eyeIcon.src = '/src/assets/icons/eye.svg';
+      eyeIcon.alt = 'Show password';
+    }
+  }
+}
 
 // Compatibility functions for Appwrite migration
 async function hasActiveSession() {
@@ -781,7 +828,12 @@ function showLoginForm() {
             </div>
             <div class="form-group">
               <label for="login-password">Password:</label>
-              <input type="password" id="login-password" required>
+              <div class="password-input-wrapper">
+                <input type="password" id="login-password" required>
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('login-password')">
+                  <img src="/src/assets/icons/eye.svg" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <div id="login-error" class="error-message" style="display: none;"></div>
             <div class="form-actions">
@@ -806,11 +858,21 @@ function showLoginForm() {
             </div>
             <div class="form-group">
               <label for="register-password">Password:</label>
-              <input type="password" id="register-password" required minlength="8">
+              <div class="password-input-wrapper">
+                <input type="password" id="register-password" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-password')">
+                  <img src="/src/assets/icons/eye.svg" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <div class="form-group">
               <label for="register-confirm">Confirm Password:</label>
-              <input type="password" id="register-confirm" required minlength="8">
+              <div class="password-input-wrapper">
+                <input type="password" id="register-confirm" required minlength="8">
+                <button type="button" class="password-toggle" onclick="togglePasswordVisibility('register-confirm')">
+                  <img src="/src/assets/icons/eye.svg" alt="Toggle password visibility" class="eye-icon" aria-hidden="true" />
+                </button>
+              </div>
             </div>
             <div id="register-error" class="error-message" style="display: none;"></div>
             <div class="form-actions">
@@ -972,8 +1034,7 @@ async function handleLogin(e) {
     // Reload admin page to show dashboard
     loadArtPage();
   } catch (error) {
-    console.error('Login error:', error);
-    errorDiv.textContent = 'Login failed. Please check your credentials and try again.';
+    errorDiv.textContent = error.message || 'Login failed. Please check your credentials and try again.';
     errorDiv.style.display = 'block';
   } finally {
     // Reset form state
@@ -1009,7 +1070,21 @@ async function handleRegister(e) {
   
   try {
     // Create account
-    await register(email, password, name);
+    const registerResponse = await register(email, password, name);
+    
+    // Check if registration was successful
+    if (registerResponse.success === false) {
+      if (registerResponse.userExists) {
+        errorDiv.textContent = 'This email address is already registered. Please use a different email or login if this is your account.';
+        errorDiv.style.display = 'block';
+        // User can manually switch to login using the link
+        return;
+      } else {
+        errorDiv.textContent = registerResponse.message || 'Registration failed. Please try again.';
+        errorDiv.style.display = 'block';
+        return;
+      }
+    }
     
     // Auto-login after successful registration
     await login(email, password);

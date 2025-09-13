@@ -31,3 +31,4 @@ setenv.bat
 
 # Wrangler local state and cache
 workers/.wrangler/
+workers/.dev.vars

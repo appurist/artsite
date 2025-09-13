@@ -34,7 +34,11 @@
       "Bash(wrangler r2 bucket create:*)",
       "Bash(openssl rand:*)",
       "Bash(pnpm deploy:dev:*)",
-      "WebFetch(domain:developers.cloudflare.com)"
+      "WebFetch(domain:developers.cloudflare.com)",
+      "Bash(wrangler dev:*)",
+      "Bash(pnpm dev:*)",
+      "Bash(pslist:*)",
+      "Bash(curl:*)"
     ],
     "deny": [],
     "ask": [],

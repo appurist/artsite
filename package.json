@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:backend": "cd workers && wrangler dev",
     "build": "vite build",
     "deploy:prod": "pnpm build && cd workers && wrangler deploy --env production",
     "deploy:dev": "pnpm build && cd workers && wrangler deploy --env development",

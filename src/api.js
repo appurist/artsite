@@ -3,7 +3,10 @@
  * Replaces Appwrite SDK
  */
 
-const API_BASE_URL = '/api';
+// Auto-detect environment for API base URL
+const API_BASE_URL = window.location.hostname === 'localhost' 
+  ? 'http://localhost:8787/api'  // Local Workers dev server
+  : '/api';  // Production/staging
 
 // Token management
 let authToken = localStorage.getItem('auth_token');
@@ -91,6 +94,11 @@ export async function login(email, password) {
     method: 'POST',
     body: JSON.stringify({ email, password })
   });
+  
+  // Check for login failure
+  if (response.success === false) {
+    throw new Error(response.message || 'Login failed');
+  }
   
   // Store auth token
   if (response.token) {

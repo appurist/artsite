@@ -95,7 +95,7 @@ async function register(request, env) {
     if (existingUser) {
       return withCors(new Response(JSON.stringify({
         success: false,
-        message: 'User already exists',
+        message: 'Email address already registered',
         userExists: true
       }), {
         status: 200,
