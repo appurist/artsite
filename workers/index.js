@@ -13,6 +13,38 @@ import { handleProfiles } from './profiles/index.js';
 import { handleSettings } from './settings/index.js';
 import { handleUpload } from './upload/index.js';
 
+/**
+ * Handle image serving from R2 storage for local development
+ */
+async function handleImageServing(request, env, ctx) {
+  try {
+    const url = new URL(request.url);
+    const imagePath = url.pathname.replace('/api/images/', '');
+    
+    if (!imagePath) {
+      return new Response('Image path required', { status: 400 });
+    }
+
+    // Get image from R2 storage
+    const object = await env.ARTWORK_IMAGES.get(imagePath);
+    
+    if (!object) {
+      return new Response('Image not found', { status: 404 });
+    }
+
+    // Return the image with appropriate headers
+    const headers = new Headers();
+    headers.set('Content-Type', object.httpMetadata?.contentType || 'image/jpeg');
+    headers.set('Cache-Control', 'public, max-age=31536000');
+    
+    return new Response(object.body, { headers });
+    
+  } catch (error) {
+    console.error('Image serving error:', error);
+    return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
 export default {
   async fetch(request, env, ctx) {
     // Handle CORS preflight requests
@@ -46,6 +78,10 @@ export default {
       
       if (path.startsWith('/api/upload')) {
         return await handleUpload(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/images/')) {
+        return await handleImageServing(request, env, ctx);
       }
 
       // Serve static files for non-API requests

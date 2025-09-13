@@ -112,7 +112,7 @@ async function createArtworkHandler(request, env) {
     const artworkData = await request.json();
     
     // Validate required fields
-    if (!artworkData.title || !artworkData.imageUrl) {
+    if (!artworkData.title || !artworkData.image_url) {
       return withCors(new Response(JSON.stringify({
         error: 'Title and image URL are required'
       }), {
@@ -128,12 +128,15 @@ async function createArtworkHandler(request, env) {
       description: artworkData.description,
       medium: artworkData.medium,
       dimensions: artworkData.dimensions,
-      yearCreated: artworkData.yearCreated,
+      yearCreated: artworkData.year_created,
       price: artworkData.price,
       tags: artworkData.tags || [],
-      imageUrl: artworkData.imageUrl,
-      thumbnailUrl: artworkData.thumbnailUrl,
-      storagePath: artworkData.storagePath,
+      imageUrl: artworkData.image_url,
+      thumbnailUrl: artworkData.thumbnail_url,
+      storagePath: artworkData.storage_path,
+      imageId: artworkData.image_id,
+      originalUrl: artworkData.original_url,
+      originalFilename: artworkData.original_filename,
       status: artworkData.status || 'published'
     });
 
