@@ -104,7 +104,8 @@ export async function login(email, password) {
  * Get current user
  */
 export async function getCurrentUser() {
-  return await apiRequest('/auth/user');
+  const response = await apiRequest('/auth/user');
+  return response.user;
 }
 
 /**

@@ -94,9 +94,11 @@ async function register(request, env) {
     const existingUser = await getUserByEmail(env.DB, email);
     if (existingUser) {
       return withCors(new Response(JSON.stringify({
-        error: 'User already exists'
+        success: false,
+        message: 'User already exists',
+        userExists: true
       }), {
-        status: 409,
+        status: 200,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
@@ -183,9 +185,10 @@ async function login(request, env) {
     const user = await getUserByEmail(env.DB, email);
     if (!user) {
       return withCors(new Response(JSON.stringify({
-        error: 'Invalid credentials'
+        success: false,
+        message: 'Invalid credentials'
       }), {
-        status: 401,
+        status: 200,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
@@ -194,9 +197,10 @@ async function login(request, env) {
     const isValidPassword = await verifyPassword(password, user.password_hash);
     if (!isValidPassword) {
       return withCors(new Response(JSON.stringify({
-        error: 'Invalid credentials'
+        success: false,
+        message: 'Invalid credentials'
       }), {
-        status: 401,
+        status: 200,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
@@ -266,12 +270,11 @@ async function getCurrentUser(request, env) {
     }));
     
   } catch (error) {
-    console.error('Get user error:', error);
+    // Return 200 with null user instead of 401 for unauthenticated requests
     return withCors(new Response(JSON.stringify({
-      error: 'Unauthorized',
-      message: error.message
+      user: null
     }), {
-      status: 401,
+      status: 200,
       headers: { 'Content-Type': 'application/json' }
     }));
   }

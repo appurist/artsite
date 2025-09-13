@@ -48,7 +48,7 @@ function getUserAvatarInitials(user) {
 
 function getDefaultFocusUser() {
   // This was Appwrite-specific, return null for new API
-  return null;
+  return '*';
 }
 
 // Initialize the application
