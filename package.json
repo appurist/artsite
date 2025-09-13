@@ -6,14 +6,14 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "deploy": "pnpm build && cd workers && wrangler deploy",
+    "deploy:prod": "pnpm build && cd workers && wrangler deploy --env production",
     "deploy:dev": "pnpm build && cd workers && wrangler deploy --env development",
     "upload": "wrangler versions upload",
     "preview": "vite preview"
   },
   "devDependencies": {
     "vite": "^7.1.2",
-    "wrangler": "^4.35.0"
+    "wrangler": "^4.36.0"
   },
   "dependencies": {}
 }

@@ -3,7 +3,7 @@
 This document describes the REST API for the artsite.ca platform built on Cloudflare Workers.
 
 ## Base URL
-- **Development**: `https://artsite-api-development.appurist.workers.dev`
+- **Development**: `https://dev.artsite.ca`
 - **Production**: `https://artsite.ca`
 
 ## Authentication

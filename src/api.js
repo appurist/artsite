@@ -161,7 +161,8 @@ export async function getArtworks(options = {}) {
   const query = params.toString();
   const endpoint = query ? `/artworks?${query}` : '/artworks';
   
-  return await apiRequest(endpoint);
+  const response = await apiRequest(endpoint);
+  return response.artworks || [];
 }
 
 /**
