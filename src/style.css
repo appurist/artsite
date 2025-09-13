@@ -175,6 +175,9 @@ body {
 /* Navigation user section */
 
 .nav-user-name {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-family: 'Segoe UI', sans-serif;
   font-weight: 200;
   color: var(--nav-text);

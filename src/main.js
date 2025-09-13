@@ -26,6 +26,7 @@ import cancelIcon from './assets/icons/cancel.svg'
 import contentSaveIcon from './assets/icons/content-save.svg'
 import eyeIcon from './assets/icons/eye.svg'
 import eyeOffIcon from './assets/icons/eye-off.svg'
+import userIcon from './assets/icons/user.svg'
 
 // Password visibility toggle function
 window.togglePasswordVisibility = function(inputId) {
@@ -304,19 +305,10 @@ async function updateNavigationAuth() {
 // Load user avatar asynchronously
 async function loadUserAvatar(user, navUserNameElement) {
   try {
-    // Get user name for initials
+    // Get user name
     const userName = user.name || user.email;
-
-    // Generate avatar initials
-    const avatarInitials = getUserAvatarInitials(user);
-
-    if (avatarInitials) {
-      // Create initials-based avatar
-      const avatarDiv = `<div class="user-avatar-initials">${avatarInitials}</div>`;
-      const fallbackIcon = `<svg class="user-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>`;
-
-      navUserNameElement.innerHTML = `${avatarDiv}${fallbackIcon} ${userName}`;
-    }
+    // Use user icon like other nav buttons
+    navUserNameElement.innerHTML = `<img src="${userIcon}" alt="User" class="nav-icon"> ${userName}`;
   } catch (error) {
     console.error('Error loading user avatar:', error);
     // Keep the default icon on error
