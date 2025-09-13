@@ -28,3 +28,6 @@ dist-ssr
 setenv.bat
 
 *.gz
+
+# Wrangler local state and cache
+workers/.wrangler/

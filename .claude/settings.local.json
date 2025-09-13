@@ -27,13 +27,21 @@
       "Bash(./setup-appwrite.bat)",
       "WebFetch(domain:pictogrammers.com)",
       "Bash(npx:*)",
-      "Bash(timeout 30 npx appwrite push function --functionId=secure-create)"
+      "Bash(timeout 30 npx appwrite push function --functionId=secure-create)",
+      "Bash(wrangler d1 create:*)",
+      "Read(/C:\\c\\dev\\appurist\\artsite/**)",
+      "Bash(wrangler d1 execute:*)",
+      "Bash(wrangler r2 bucket create:*)",
+      "Bash(openssl rand:*)",
+      "Bash(pnpm deploy:dev:*)"
     ],
     "deny": [],
     "ask": [],
     "additionalDirectories": [
       "d:\\Websites\\!Latest",
-      "c:\\dev\\appurist\\artsite"
+      "c:\\dev\\appurist\\artsite",
+      "C:\\c\\dev\\appurist\\artsite",
+      "C:\\c\\dev\\appurist"
     ]
   }
 }
