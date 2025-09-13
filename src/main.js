@@ -39,7 +39,11 @@ function getFileView(fileId) {
 
 function getUserAvatarInitials(user) {
   if (!user || !user.name) return '';
-  return user.name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  const words = user.name.trim().split(/\s+/).filter(word => word.length > 0);
+  if (words.length === 0) return '';
+  if (words.length === 1) return words[0][0].toUpperCase();
+  // Take first letter of first and last word
+  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
 }
 
 function getDefaultFocusUser() {
@@ -78,8 +82,10 @@ function navigateTo(path) {
   handleRoute();
 }
 
-// Make navigateTo globally accessible
+// Make functions globally accessible
 window.navigateTo = navigateTo;
+window.editArtwork = editArtwork;
+window.deleteArtworkFromUI = deleteArtworkFromUI;
 
 async function handleRoute() {
   const path = window.location.pathname;
@@ -245,15 +251,15 @@ async function loadUserAvatar(user, navUserNameElement) {
     // Get user name for initials
     const userName = user.name || user.email;
     
-    // Get avatar initials URL from Appwrite
-    const avatarUrl = getUserAvatarInitials(userName, 24, 24);
+    // Generate avatar initials
+    const avatarInitials = getUserAvatarInitials(user);
     
-    if (avatarUrl) {
-      // Replace the default icon with avatar image
-      const avatarImg = `<img class="user-avatar" src="${avatarUrl}" alt="${userName}" onerror="this.style.display='none'; this.nextElementSibling.style.display='inline-block';">`;
+    if (avatarInitials) {
+      // Create initials-based avatar
+      const avatarDiv = `<div class="user-avatar-initials">${avatarInitials}</div>`;
       const fallbackIcon = `<svg class="user-icon" style="display:none;" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12,4A4,4 0 0,1 16,8A4,4 0 0,1 12,12A4,4 0 0,1 8,8A4,4 0 0,1 12,4M12,14C16.42,14 20,15.79 20,18V20H4V18C4,15.79 7.58,14 12,14Z" /></svg>`;
       
-      navUserNameElement.innerHTML = `${avatarImg}${fallbackIcon} ${userName}`;
+      navUserNameElement.innerHTML = `${avatarDiv}${fallbackIcon} ${userName}`;
     }
   } catch (error) {
     console.error('Error loading user avatar:', error);
@@ -321,8 +327,8 @@ async function loadGalleryPage(focusUser = '*') {
   `;
   
   try {
-    // Fetch artworks from Appwrite for the focus user
-    const artworks = await getArtworks(focusUser);
+    // Fetch artworks for the focus user
+    const artworks = await getArtworks({ userId: focusUser === '*' ? undefined : focusUser });
     
     if (artworks.length === 0) {
       // Show empty state
@@ -346,7 +352,8 @@ async function loadGalleryPage(focusUser = '*') {
       if (focusUser === '*') {
         // Get unique user IDs from artworks
         const userIds = [...new Set(artworks.map(artwork => artwork.user_id))];
-        const profiles = await getProfiles(userIds);
+        const allProfiles = await getProfiles();
+        const profiles = allProfiles.filter(profile => userIds.includes(profile.user_id));
         profileMap = Object.fromEntries(profiles.map(profile => [profile.user_id, profile]));
       }
       
@@ -358,7 +365,7 @@ async function loadGalleryPage(focusUser = '*') {
       // Build artist filter dropdown for multi-artist galleries
       let artistFilter = '';
       if (focusUser === '*') {
-        const artistProfiles = await getArtistProfiles();
+        const artistProfiles = await getProfiles();
         if (artistProfiles.length > 1) {
           const artistOptions = artistProfiles.map(profile => 
             `<option value="${profile.user_id}">${profile.display_name}</option>`
@@ -459,8 +466,8 @@ async function loadProfilePage() {
       return;
     }
     
-    // Format user data for display
-    const avatarUrl = getUserAvatarInitials(user.name || user.email, 80, 80);
+    // Generate avatar initials for display
+    const avatarInitials = getUserAvatarInitials(user);
     
     app.innerHTML = `
       <div class="content-container">
@@ -471,7 +478,7 @@ async function loadProfilePage() {
           
           <div class="profile-content">
           <div class="profile-avatar">
-            <img src="${avatarUrl}" alt="${user.name || user.email}" class="profile-avatar-img">
+            <div class="profile-avatar-initials">${avatarInitials}</div>
           </div>
           
           <div class="profile-info">
@@ -480,26 +487,19 @@ async function loadProfilePage() {
             <div class="profile-details">
               <div class="profile-field">
                 <label>User ID:</label>
-                <span>${user.$id}</span>
+                <span>${user.id}</span>
               </div>
               
               <div class="profile-field">
                 <label>Email:</label>
-                <span class="verification-status ${user.email ? (user.emailVerification ? 'verified' : 'unverified') : 'not-provided'}">
-                  ${user.email || 'Not provided'} ${user.email ? (user.emailVerification ? '(Verified)' : '(Not Verified)') : ''}
-                </span>
-              </div>
-              
-              <div class="profile-field">
-                <label>Phone:</label>
-                <span class="verification-status ${user.phone ? (user.phoneVerification ? 'verified' : 'unverified') : 'not-provided'}">
-                  ${user.phone ? `${user.phone} ${user.phoneVerification ? '(Verified)' : '(Not Verified)'}` : 'Not provided'}
+                <span class="verification-status ${user.email ? (user.emailVerified ? 'verified' : 'unverified') : 'not-provided'}">
+                  ${user.email || 'Not provided'} ${user.email ? (user.emailVerified ? '(Verified)' : '(Not Verified)') : ''}
                 </span>
               </div>
               
               <div class="profile-field">
                 <label>Account Created:</label>
-                <span>${new Date(user.$createdAt).toLocaleDateString()}</span>
+                <span>${new Date(user.created_at).toLocaleDateString()}</span>
               </div>
               
               <div class="profile-field">
@@ -509,7 +509,7 @@ async function loadProfilePage() {
               
               <div class="profile-field">
                 <label>Last Updated:</label>
-                <span>${new Date(user.$updatedAt).toLocaleDateString()}</span>
+                <span>${new Date(user.updated_at).toLocaleDateString()}</span>
               </div>
             </div>
           </div>
@@ -565,8 +565,8 @@ async function loadUserGallery(userId) {
   `;
   
   try {
-    // Fetch artworks from Appwrite for the specified user
-    const artworks = await getArtworks(userId);
+    // Fetch artworks for the specified user
+    const artworks = await getArtworks({ userId });
     
     if (artworks.length === 0) {
       // Show empty state
@@ -612,15 +612,15 @@ async function loadUserGallery(userId) {
 
 // Create artwork card HTML
 function createArtworkCard(artwork, profile = null) {
-  // Get the thumbnail URL
-  const thumbnailUrl = artwork.image_id ? getFilePreview(artwork.image_id, 400, 300) : '/placeholder.jpg';
+  // Get the thumbnail URL - using thumbnailUrl from R2 storage
+  const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
   
   // Format the year
   const yearDisplay = artwork.year_created ? ` (${artwork.year_created})` : '';
   
   return `
-    <div class="artwork-item" data-id="${artwork.$id}">
-      <a href="#" class="artwork-link" onclick="showArtworkModal('${artwork.$id}'); return false;">
+    <div class="artwork-item" data-id="${artwork.id}">
+      <a href="#" class="artwork-link" onclick="showArtworkModal('${artwork.id}'); return false;">
         <div class="artwork-image-container">
           <img src="${thumbnailUrl}" alt="${artwork.title}" class="artwork-image" loading="lazy">
           <div class="artwork-overlay">
@@ -683,7 +683,7 @@ window.showArtworkModal = async function(artworkId) {
     }
 
     // Get full-size image URL
-    const fullImageUrl = getFileView(artwork.image_id);
+    const fullImageUrl = artwork.image_url || artwork.original_url || '/placeholder.jpg';
     
     // Create modal HTML
     const modal = document.createElement('div');
@@ -903,7 +903,7 @@ async function loadAdminArtworksList() {
       return;
     }
     
-    const artworks = await getArtworks(currentUser.$id); // Only get current user's artworks
+    const artworks = await getArtworks({ userId: currentUser.id }); // Only get current user's artworks
     
     if (artworks.length === 0) {
       artworksListDiv.innerHTML = `
@@ -915,19 +915,19 @@ async function loadAdminArtworksList() {
       const artworksList = artworks.map(artwork => `
         <div class="admin-artwork-item">
           <div class="admin-artwork-preview">
-            <img src="${getFilePreview(artwork.image_id, 100, 100)}" alt="${artwork.title}">
+            <img src="${artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg'}" alt="${artwork.title}">
           </div>
           <div class="admin-artwork-details">
             <h4>${artwork.title}</h4>
             <p>${artwork.medium || 'No medium specified'} ${artwork.year_created ? '(' + artwork.year_created + ')' : ''}</p>
-            <p class="artwork-created">Uploaded: ${new Date(artwork.$createdAt).toLocaleDateString()}</p>
+            <p class="artwork-created">Uploaded: ${new Date(artwork.created_at).toLocaleDateString()}</p>
           </div>
           <div class="admin-artwork-actions">
-            <button class="btn btn-secondary btn-sm" onclick="editArtwork('${artwork.$id}')">
+            <button class="btn btn-secondary btn-sm" onclick="editArtwork('${artwork.id}')">
               <img src="/src/assets/icons/pencil.svg" alt="Edit" class="icon" aria-hidden="true" />
               Edit
             </button>
-            <button class="btn btn-danger btn-sm" onclick="deleteArtwork('${artwork.$id}')">
+            <button class="btn btn-danger btn-sm" onclick="deleteArtworkFromUI('${artwork.id}')">
               <img src="/src/assets/icons/delete.svg" alt="Delete" class="icon" aria-hidden="true" />
               Delete
             </button>
@@ -1173,13 +1173,8 @@ async function handleUploadSubmit(e) {
     // Generate secure file path: user-ID/unique-ID.ext
     const fileExtension = file.name.split('.').pop().toLowerCase();
     const uniqueFileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-    const secureFilePath = `${currentUser.$id}/${uniqueFileId}.${fileExtension}`;
-    
-    // Create a new file with secure path as filename
-    const secureFile = new File([file], secureFilePath, { type: file.type });
-    
-    // Upload file to storage
-    const uploadedFile = await uploadFile(secureFile);
+    // Upload file to R2 storage - new API handles path generation
+    const uploadedFile = await uploadFile(file);
     
     showUploadStatus('Image uploaded, saving artwork details...', 'info');
     
@@ -1187,8 +1182,10 @@ async function handleUploadSubmit(e) {
     const artworkData = {
       ...formData,
       image_id: uploadedFile.$id,
-      user_id: currentUser.$id,
-      storage_path: secureFilePath,
+      image_url: uploadedFile.url,
+      thumbnail_url: uploadedFile.thumbnailUrl,
+      original_url: uploadedFile.originalUrl,
+      storage_path: uploadedFile.storagePath,
       original_filename: file.name
     };
     
@@ -1219,16 +1216,40 @@ function showUploadStatus(message, type) {
   statusDiv.textContent = message;
 }
 
-// Edit artwork (placeholder)
-function editArtwork(artworkId) {
-  console.log('Edit artwork:', artworkId);
-  // TODO: Implement edit functionality
+// Edit artwork
+async function editArtwork(artworkId) {
+  try {
+    const artwork = await getArtwork(artworkId);
+    if (!artwork) {
+      alert('Artwork not found');
+      return;
+    }
+    
+    // TODO: Implement edit modal/form
+    console.log('Edit artwork:', artwork);
+    alert('Edit functionality not yet implemented');
+  } catch (error) {
+    console.error('Error loading artwork for editing:', error);
+    alert('Error loading artwork for editing');
+  }
 }
 
-// Delete artwork (placeholder)  
-function deleteArtwork(artworkId) {
-  console.log('Delete artwork:', artworkId);
-  // TODO: Implement delete functionality
+// Delete artwork
+async function deleteArtworkFromUI(artworkId) {
+  if (!confirm('Are you sure you want to delete this artwork? This action cannot be undone.')) {
+    return;
+  }
+  
+  try {
+    await deleteArtwork(artworkId);
+    alert('Artwork deleted successfully');
+    
+    // Reload the art management page
+    loadArtPage();
+  } catch (error) {
+    console.error('Error deleting artwork:', error);
+    alert('Error deleting artwork: ' + error.message);
+  }
 }
 
 // Load site settings page
@@ -1431,7 +1452,7 @@ async function loadCurrentSettings() {
       throw new Error('User not authenticated');
     }
     
-    const settings = await getSettings(currentUser.$id);
+    const settings = await getSettings();
     
     // Populate form fields
     const fields = ['site_title', 'artist_name', 'artist_bio', 'contact_email', 'contact_phone', 'gallery_description', 'primary_color', 'secondary_color'];
