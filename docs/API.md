@@ -1,10 +1,11 @@
-# Artsite API Documentation
+# artsite.ca API Documentation
 
-This document describes the REST API for the artsite.ca platform built on Cloudflare Workers.
+This document describes the REST API for the artsite.ca platform built on Cloudflare Workers with D1 database and R2 storage.
 
 ## Base URL
-- **Development**: `https://dev.artsite.ca`
-- **Production**: `https://artsite.ca`
+- **Development**: `https://dev.artsite.ca/api`
+- **Production**: `https://artsite.ca/api`
+- **Local Development**: `http://localhost:8787/api` (via wrangler dev)
 
 ## Authentication
 
@@ -14,7 +15,7 @@ The API uses JWT (JSON Web Tokens) for authentication. Include the token in the 
 Authorization: Bearer <your-jwt-token>
 ```
 
-Tokens are returned from login/register endpoints and should be stored client-side.
+Tokens are returned from login/register endpoints and should be stored client-side in localStorage.
 
 ---
 
@@ -100,7 +101,7 @@ Authorization: Bearer <jwt-token>
 ```
 
 ### Request Password Reset
-**POST** `/api/auth/password-reset-request`
+**POST** `/api/auth/forgot-password`
 
 Request a password reset email.
 
@@ -120,7 +121,7 @@ Request a password reset email.
 ```
 
 ### Reset Password
-**POST** `/api/auth/password-reset`
+**POST** `/api/auth/reset-password`
 
 Reset password using token from email.
 
@@ -128,12 +129,12 @@ Reset password using token from email.
 ```json
 {
   "token": "reset-token-from-email",
-  "newPassword": "newsecurepassword"
+  "password": "newsecurepassword"
 }
 ```
 
 ### Verify Email
-**POST** `/api/auth/verify-email`
+**POST** `/api/auth/verify`
 
 Verify email address using token from verification email.
 
@@ -155,34 +156,52 @@ Retrieve artworks with optional filtering.
 
 **Query Parameters:**
 - `userId` (optional): Filter by specific user ID
+- `status` (optional): Filter by artwork status (published, draft, archived)
 - `featured` (optional): Filter featured artworks only
-- `limit` (optional): Number of results to return
-- `offset` (optional): Number of results to skip
+- `page` (optional): Page number for pagination
+- `limit` (optional): Number of results per page (default: 50)
 
 **Examples:**
-- `/api/artworks` - Get all artworks
+- `/api/artworks` - Get all published artworks
 - `/api/artworks?userId=123` - Get artworks by specific user
-- `/api/artworks?featured=true` - Get featured artworks only
+- `/api/artworks?status=published&featured=true` - Get featured published artworks
+- `/api/artworks?page=2&limit=20` - Get page 2 with 20 results per page
 
 **Response:**
 ```json
-[
-  {
-    "id": "artwork-id",
-    "title": "Artwork Title",
-    "description": "Artwork description",
-    "medium": "Oil on canvas",
-    "dimensions": "24x36 inches",
-    "year_created": 2024,
-    "price": "$1,200",
-    "tags": "abstract, modern",
-    "image_url": "https://images.artsite.ca/artwork-image.jpg",
-    "thumbnail_url": "https://images.artsite.ca/artwork-thumb.jpg",
-    "user_id": "artist-user-id",
-    "featured": false,
-    "created_at": "2024-01-01T00:00:00.000Z"
-  }
-]
+{
+  "artworks": [
+    {
+      "id": "artwork-id",
+      "user_id": "artist-user-id",
+      "artist_id": "artist-user-id",
+      "artist_name": "Artist Display Name",
+      "display_name": "Artist Display Name",
+      "title": "Artwork Title",
+      "description": "Artwork description",
+      "medium": "Oil on canvas",
+      "dimensions": "24x36 inches",
+      "year_created": 2024,
+      "price": "$1,200",
+      "tags": "abstract,modern",
+      "image_url": "https://r2.artsite.ca/user-id/artwork-image.jpg",
+      "thumbnail_url": "https://r2.artsite.ca/user-id/artwork-thumb.jpg",
+      "storage_path": "user-id/unique-filename.jpg",
+      "file_size": 2048000,
+      "image_width": 1920,
+      "image_height": 1080,
+      "status": "published",
+      "featured": false,
+      "sort_order": 0,
+      "created_at": "2024-01-01T00:00:00.000Z",
+      "updated_at": "2024-01-01T00:00:00.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 50,
+  "hasMore": false
+}
 ```
 
 ### Get Single Artwork
@@ -193,20 +212,32 @@ Get details for a specific artwork.
 **Response:**
 ```json
 {
-  "id": "artwork-id",
-  "title": "Artwork Title",
-  "description": "Artwork description",
-  "medium": "Oil on canvas",
-  "dimensions": "24x36 inches",
-  "year_created": 2024,
-  "price": "$1,200",
-  "tags": "abstract, modern",
-  "image_url": "https://images.artsite.ca/artwork-image.jpg",
-  "thumbnail_url": "https://images.artsite.ca/artwork-thumb.jpg",
-  "original_url": "https://images.artsite.ca/artwork-original.jpg",
-  "user_id": "artist-user-id",
-  "featured": false,
-  "created_at": "2024-01-01T00:00:00.000Z"
+  "artwork": {
+    "id": "artwork-id",
+    "user_id": "artist-user-id",
+    "artist_id": "artist-user-id", 
+    "artist_name": "Artist Display Name",
+    "display_name": "Artist Display Name",
+    "title": "Artwork Title",
+    "description": "Artwork description",
+    "medium": "Oil on canvas",
+    "dimensions": "24x36 inches",
+    "year_created": 2024,
+    "price": "$1,200",
+    "tags": "abstract,modern",
+    "image_url": "https://r2.artsite.ca/user-id/artwork-image.jpg",
+    "thumbnail_url": "https://r2.artsite.ca/user-id/artwork-thumb.jpg",
+    "original_url": "https://r2.artsite.ca/user-id/artwork-original.jpg",
+    "storage_path": "user-id/unique-filename.jpg",
+    "file_size": 2048000,
+    "image_width": 1920,
+    "image_height": 1080,
+    "status": "published",
+    "featured": false,
+    "sort_order": 0,
+    "created_at": "2024-01-01T00:00:00.000Z",
+    "updated_at": "2024-01-01T00:00:00.000Z"
+  }
 }
 ```
 
@@ -225,16 +256,23 @@ Content-Type: application/json
 ```json
 {
   "title": "Artwork Title",
-  "description": "Artwork description",
+  "description": "Artwork description", 
   "medium": "Oil on canvas",
   "dimensions": "24x36 inches",
   "year_created": 2024,
   "price": "$1,200",
-  "tags": "abstract, modern",
+  "tags": "abstract,modern",
+  "artist_id": "current-user-id",
+  "artist_name": "Artist Display Name",
   "image_id": "uploaded-file-id",
-  "image_url": "https://images.artsite.ca/artwork-image.jpg",
-  "thumbnail_url": "https://images.artsite.ca/artwork-thumb.jpg",
-  "featured": false
+  "image_url": "https://r2.artsite.ca/user-id/artwork-image.jpg",
+  "thumbnail_url": "https://r2.artsite.ca/user-id/artwork-thumb.jpg",
+  "original_url": "https://r2.artsite.ca/user-id/artwork-original.jpg",
+  "storage_path": "user-id/unique-filename.jpg",
+  "original_filename": "original-file.jpg",
+  "status": "published",
+  "featured": false,
+  "sort_order": 0
 }
 ```
 
@@ -448,16 +486,15 @@ FormData with 'file' field containing image file
 **Response:**
 ```json
 {
-  "success": true,
-  "file": {
-    "$id": "file-id",
-    "url": "https://images.artsite.ca/image.jpg",
-    "thumbnailUrl": "https://images.artsite.ca/thumb.jpg",
-    "originalUrl": "https://images.artsite.ca/original.jpg",
-    "storagePath": "user-id/unique-filename.jpg",
-    "size": 1024000,
-    "mimeType": "image/jpeg"
-  }
+  "fileId": "unique-file-id",
+  "imageUrl": "https://r2.artsite.ca/user-id/image.jpg",
+  "thumbnailUrl": "https://r2.artsite.ca/user-id/thumb.jpg", 
+  "originalUrl": "https://r2.artsite.ca/user-id/original.jpg",
+  "storagePath": "user-id/unique-filename.jpg",
+  "fileSize": 1024000,
+  "fileType": "image/jpeg",
+  "imageWidth": 1920,
+  "imageHeight": 1080
 }
 ```
 
@@ -534,50 +571,61 @@ The API supports CORS for web applications with the following headers:
 
 ---
 
-## Database Schema
+## Database Schema (Cloudflare D1/SQLite)
 
 ### Users Table
 - `id` (TEXT PRIMARY KEY)
-- `email` (TEXT UNIQUE)
-- `password_hash` (TEXT)
+- `email` (TEXT UNIQUE NOT NULL)
+- `password_hash` (TEXT NOT NULL)
 - `name` (TEXT)
-- `email_verified` (BOOLEAN)
-- `verification_token` (TEXT)
-- `reset_token` (TEXT)
-- `reset_token_expires` (INTEGER)
-- `created_at` (DATETIME)
-- `updated_at` (DATETIME)
+- `email_verified` (BOOLEAN DEFAULT FALSE)
+- `email_verification_token` (TEXT)
+- `password_reset_token` (TEXT)
+- `password_reset_expires` (DATETIME)
+- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+- `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ### Artworks Table
 - `id` (TEXT PRIMARY KEY)
-- `user_id` (TEXT)
-- `title` (TEXT)
+- `user_id` (TEXT NOT NULL)
+- `title` (TEXT NOT NULL)
 - `description` (TEXT)
 - `medium` (TEXT)
 - `dimensions` (TEXT)
 - `year_created` (INTEGER)
 - `price` (TEXT)
-- `tags` (TEXT)
-- `image_id` (TEXT)
-- `image_url` (TEXT)
+- `tags` (TEXT) - Comma-separated values
+- `image_url` (TEXT NOT NULL)
 - `thumbnail_url` (TEXT)
-- `featured` (BOOLEAN)
-- `created_at` (DATETIME)
+- `storage_path` (TEXT)
+- `file_size` (INTEGER)
+- `image_width` (INTEGER)
+- `image_height` (INTEGER)
+- `status` (TEXT DEFAULT 'published') - published/draft/archived
+- `featured` (BOOLEAN DEFAULT FALSE)
+- `sort_order` (INTEGER DEFAULT 0)
+- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+- `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ### Profiles Table
 - `user_id` (TEXT PRIMARY KEY)
 - `display_name` (TEXT)
 - `bio` (TEXT)
+- `statement` (TEXT) - Artist statement
+- `avatar_url` (TEXT)
 - `website` (TEXT)
 - `instagram` (TEXT)
+- `twitter` (TEXT)
 - `location` (TEXT)
-- `avatar_url` (TEXT)
-- `created_at` (DATETIME)
-- `updated_at` (DATETIME)
+- `phone` (TEXT)
+- `public_profile` (BOOLEAN DEFAULT TRUE)
+- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+- `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ### Settings Table
 - `user_id` (TEXT PRIMARY KEY)
-- `settings_json` (TEXT) - JSON blob containing all settings
+- `settings` (TEXT NOT NULL) - JSON object stored as text
+- `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ---
 

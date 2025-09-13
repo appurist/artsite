@@ -247,12 +247,28 @@ body {
 
 .profile-content {
   display: flex;
+  flex-direction: column;
   gap: 2rem;
   margin-bottom: 2rem;
 }
 
+.profile-card {
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 1.5rem;
+  background: var(--card-bg);
+}
+
+.profile-card h3 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
 .profile-avatar {
-  flex-shrink: 0;
+  text-align: center;
+  margin-bottom: 1rem;
 }
 
 .profile-avatar-img {
@@ -286,9 +302,28 @@ body {
   font-weight: 600;
   min-width: 140px;
   color: var(--text-muted);
+  text-align: right;
 }
 
 .profile-field span {
+  color: var(--text-color);
+}
+
+.profile-field-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.profile-field-checkbox input[type="checkbox"] {
+  margin: 0;
+}
+
+.profile-field-checkbox label {
+  margin: 0;
+  min-width: unset;
+  text-align: left;
+  font-weight: 400;
   color: var(--text-color);
 }
 

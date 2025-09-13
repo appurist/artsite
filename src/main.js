@@ -583,8 +583,11 @@ async function loadProfilePage() {
       </div>
     `;
 
-    // Get current user details
-    const user = await getCurrentUser();
+    // Get current user details and profile
+    const [user, userProfile] = await Promise.all([
+      getCurrentUser(),
+      getCurrentUser().then(u => u ? getProfile(u.id).catch(() => null) : null)
+    ]);
 
     if (!user) {
       app.innerHTML = `
@@ -618,52 +621,65 @@ async function loadProfilePage() {
           </div>
 
           <div class="profile-content">
-          <div class="profile-avatar">
-            <div class="profile-avatar-initials">${avatarInitials}</div>
-          </div>
-
-          <div class="profile-info">
-            <h2>${user.name || 'No name set'}</h2>
-
-            <div class="profile-details">
-              <div class="profile-field">
-                <label>User ID:</label>
-                <span>${user.id}</span>
+            <div class="profile-card">
+              <h3>Public</h3>
+              <div class="profile-details">
+                <div class="profile-avatar">
+                  <div class="profile-avatar-initials">${avatarInitials}</div>
+                </div>
+                <div class="profile-field">
+                  <label>Avatar Image:</label>
+                  <div class="profile-field-checkbox">
+                    <input type="checkbox" id="use-gravatar" ${userProfile && userProfile.use_gravatar !== false ? 'checked' : ''}>
+                    <label for="use-gravatar">Use Gravatar</label>
+                  </div>
+                </div>
+                <div class="profile-field">
+                  <label>Display Name:</label>
+                  <span>${userProfile && userProfile.display_name ? userProfile.display_name : 'Not set'}</span>
+                </div>
               </div>
+            </div>
 
-              <div class="profile-field">
-                <label>Email:</label>
-                <span class="verification-status ${user.email ? (user.emailVerified ? 'verified' : 'unverified') : 'not-provided'}">
-                  ${user.email || 'Not provided'} ${user.email ? (user.emailVerified ? '(Verified)' : '(Not Verified)') : ''}
-                </span>
-              </div>
+            <div class="profile-card">
+              <h3>Private</h3>
+              <div class="profile-details">
+                <div class="profile-field">
+                  <label>Name:</label>
+                  <span>${user.name || 'No name set'}</span>
+                </div>
 
-              <div class="profile-field">
-                <label>Account Created:</label>
-                <span>${new Date(user.created_at).toLocaleDateString()}</span>
-              </div>
+                <div class="profile-field">
+                  <label>User ID:</label>
+                  <span>${user.id}</span>
+                </div>
 
-              <div class="profile-field">
-                <label>Password Updated:</label>
-                <span>${new Date(user.passwordUpdate).toLocaleDateString()}</span>
-              </div>
+                <div class="profile-field">
+                  <label>Email:</label>
+                  <span class="verification-status ${user.email ? (user.emailVerified ? 'verified' : 'unverified') : 'not-provided'}">
+                    ${user.email || 'Not provided'} ${user.email ? (user.emailVerified ? '(Verified)' : '(Not Verified)') : ''}
+                  </span>
+                </div>
 
-              <div class="profile-field">
-                <label>Last Updated:</label>
-                <span>${new Date(user.updated_at).toLocaleDateString()}</span>
+                <div class="profile-field">
+                  <label>Account Created:</label>
+                  <span>${new Date(user.created_at).toLocaleDateString()}</span>
+                </div>
+
+                <div class="profile-field">
+                  <label>Password Updated:</label>
+                  <span>${new Date(user.passwordUpdate).toLocaleDateString()}</span>
+                </div>
+
+                <div class="profile-field">
+                  <label>Last Updated:</label>
+                  <span>${new Date(user.updated_at).toLocaleDateString()}</span>
+                </div>
               </div>
             </div>
           </div>
         </div>
 
-        <div class="profile-actions">
-          <button class="btn btn-primary" onclick="navigateTo('/')">
-            <svg class="nav-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-              <path d="M10,20V14H14V20H19V12H22L12,3L2,12H5V20H10Z" />
-            </svg>
-            Back to Gallery
-          </button>
-        </div>
         </div>
       </div>
     `;
@@ -1335,6 +1351,17 @@ async function handleUploadSubmit(e) {
       throw new Error('User not authenticated');
     }
 
+    // Get user profile for display name
+    let userProfile = null;
+    try {
+      userProfile = await getProfile(currentUser.id);
+    } catch (error) {
+      console.log('No profile found, will use user name');
+    }
+
+    // Determine artist display name: profile display_name > user name > Anonymous Artist
+    const artistName = (userProfile && userProfile.display_name) || currentUser.name || 'Anonymous Artist';
+
     // Generate secure file path: user-ID/unique-ID.ext
     const fileExtension = file.name.split('.').pop().toLowerCase();
     const uniqueFileId = `${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -1346,6 +1373,8 @@ async function handleUploadSubmit(e) {
     // Create artwork record with file ID and user ownership
     const artworkData = {
       ...formData,
+      artist_id: currentUser.id,
+      artist_name: artistName,
       image_id: uploadedFile.$id,
       image_url: uploadedFile.url,
       thumbnail_url: uploadedFile.thumbnailUrl,
