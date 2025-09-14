@@ -164,6 +164,7 @@ async function getProfile(request, env) {
       statement: profileData.statement,
       avatar_type: profileData.avatar_type,
       avatar_url: profileData.avatar_url,
+      gravatar_hash: profileData.gravatar_hash,
       website: profileData.website,
       instagram: profileData.instagram,
       twitter: profileData.twitter,

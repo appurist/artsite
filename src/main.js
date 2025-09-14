@@ -31,7 +31,7 @@ import userIcon from './assets/icons/user.svg'
 import nukeIcon from './assets/icons/nuke.svg'
 import keyVariantIcon from './assets/icons/key-variant.svg'
 import emailIcon from './assets/icons/email.svg'
-import { generateInitials, getAvatarUrl, fetchGravatarAsBlob } from './avatar-utils.js'
+import { generateInitials, getAvatarUrl, fetchGravatarAsBlob, generateAvatarHtml } from './avatar-utils.js'
 
 // Configuration object
 const config = {
@@ -105,16 +105,7 @@ function getFileView(fileId) {
 }
 
 function getUserAvatarDisplay(user, profile) {
-  const avatarUrl = getAvatarUrl(user, profile);
-  console.log('Avatar display:', { avatarType: profile?.avatar_type, avatarUrl });
-  
-  // If it's an SVG data URL (initials), use it as background style for the div
-  if (avatarUrl.startsWith('data:image/svg+xml')) {
-    return `<div class="profile-avatar-initials" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>`;
-  } else {
-    // For uploaded images, Gravatar, or icon, use img tag
-    return `<img src="${avatarUrl}" alt="Avatar" class="profile-avatar-img" />`;
-  }
+  return generateAvatarHtml(user, profile, 64);
 }
 
 function getDefaultFocusUser() {
@@ -319,11 +310,45 @@ async function loadUserAvatar(user, navUserNameElement) {
   try {
     // Get user name
     const userName = user.name || user.email;
-    // Use user icon like other nav buttons
-    navUserNameElement.innerHTML = `<img src="${userIcon}" alt="User" class="nav-icon"> ${userName}`;
+    
+    // Get user's profile for avatar
+    let userProfile = null;
+    try {
+      userProfile = await getProfile(user.id);
+    } catch (error) {
+      console.log('Could not load profile for navbar avatar, using default');
+    }
+    
+    // Generate avatar HTML for navbar size (24px)
+    const avatarHtml = generateAvatarHtml(user, userProfile, 24);
+    
+    navUserNameElement.innerHTML = `${avatarHtml} ${userName}`;
+    
+    // Add some margin to separate avatar from text
+    navUserNameElement.style.display = 'flex';
+    navUserNameElement.style.alignItems = 'center';
+    navUserNameElement.style.gap = '8px';
+    
   } catch (error) {
     console.error('Error loading user avatar:', error);
-    // Keep the default icon on error
+    // Fallback to default icon
+    const userName = user.name || user.email;
+    navUserNameElement.innerHTML = `<img src="${userIcon}" alt="User" class="nav-icon"> ${userName}`;
+  }
+}
+
+// Refresh navbar avatar after profile changes
+async function refreshNavbarAvatar() {
+  try {
+    const user = await getCurrentUser();
+    if (user) {
+      const navUserName = document.getElementById('nav-user-name');
+      if (navUserName) {
+        await loadUserAvatar(user, navUserName);
+      }
+    }
+  } catch (error) {
+    console.error('Error refreshing navbar avatar:', error);
   }
 }
 
@@ -640,7 +665,7 @@ async function loadProfilePage() {
 
           <div class="profile-content">
             <div class="profile-card">
-              <h3>Public</h3>
+              <h3>Profile (Public)</h3>
               <div class="profile-details">
                 <div class="profile-field">
                   <label></label>
@@ -674,7 +699,7 @@ async function loadProfilePage() {
             </div>
 
             <div class="profile-card">
-              <h3>Private</h3>
+              <h3>Account Information (Private)</h3>
               <div class="profile-details">
                 <div class="profile-field">
                   <label>Name:</label>
@@ -703,7 +728,7 @@ async function loadProfilePage() {
                 </div>
 
                 <div class="profile-field">
-                  <label>ID:</label>
+                  <label>Account ID:</label>
                   <span><code>${user.id}</code></span>
                 </div>
               </div>
@@ -1915,6 +1940,9 @@ async function handleAvatarTypeChange(avatarType) {
     // Refresh the profile page to show the change
     loadProfilePage();
     
+    // Refresh navbar avatar
+    await refreshNavbarAvatar();
+    
   } catch (error) {
     console.error('Error updating avatar:', error);
     alert('Failed to update avatar: ' + error.message);
@@ -1972,6 +2000,9 @@ async function handleUploadImage() {
         // Refresh the profile page to show the new avatar
         loadProfilePage();
         
+        // Refresh navbar avatar
+        await refreshNavbarAvatar();
+        
       } catch (error) {
         console.error('Error uploading avatar:', error);
         alert('Failed to upload avatar: ' + error.message);
@@ -1991,9 +2022,11 @@ async function handleUploadImage() {
 async function handleImportGravatar() {
   console.log('handleImportGravatar called');
   try {
+    console.log('Getting current user...');
     const user = await getCurrentUser();
+    console.log('Current user:', user);
     if (!user || !user.email) {
-      alert('No email address found for Gravatar import');
+      console.error('No email address found for Gravatar import');
       return;
     }
     
@@ -2002,8 +2035,7 @@ async function handleImportGravatar() {
       throw new Error('Not authenticated');
     }
 
-    // Show loading state
-    alert('Importing Gravatar... This may take a moment.');
+    console.log('Importing Gravatar for email:', user.email);
     
     const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar/gravatar`, {
       method: 'POST',
@@ -2023,7 +2055,11 @@ async function handleImportGravatar() {
 
     // Refresh the profile page to show the new avatar
     loadProfilePage();
-    alert('Gravatar imported successfully!');
+    
+    // Refresh navbar avatar
+    await refreshNavbarAvatar();
+    
+    console.log('Gravatar imported successfully!');
     
   } catch (error) {
     console.error('Error importing Gravatar:', error);

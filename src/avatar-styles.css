@@ -29,3 +29,30 @@
   text-transform: uppercase;
   margin: 0 auto 1rem;
 }
+
+.profile-avatar-img {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  object-fit: cover;
+  margin: 0 auto 1rem;
+  display: block;
+}
+
+/* Icon avatar container */
+.profile-avatar-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background-color: var(--primary-color, #ff6b6b);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1rem;
+}
+
+.profile-avatar-icon img {
+  width: 48px;
+  height: 48px;
+  filter: brightness(0) invert(1); /* Make SVG white */
+}

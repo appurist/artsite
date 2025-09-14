@@ -57,16 +57,61 @@ export function getAvatarUrl(user, profile) {
       return generateInitialsImageUrl(fallbackInitials);
       
     case 'gravatar':
-      if (profile?.avatar_url) {
-        return profile.avatar_url;
+      if (profile?.gravatar_hash) {
+        // Build Gravatar URL from stored hash
+        return `https://www.gravatar.com/avatar/${profile.gravatar_hash}?s=200&d=identicon`;
       }
-      // Fallback to initials if no Gravatar saved
+      // Fallback to initials if no Gravatar hash
       const gravatarFallbackInitials = generateInitials(user?.name || profile?.display_name);
       return generateInitialsImageUrl(gravatarFallbackInitials);
       
     default:
       const defaultInitials = generateInitials(user?.name || profile?.display_name);
       return generateInitialsImageUrl(defaultInitials);
+  }
+}
+
+/**
+ * Generate avatar HTML for display at any size
+ */
+export function generateAvatarHtml(user, profile, size = 64) {
+  const avatarType = profile?.avatar_type || 'initials';
+  const iconSize = Math.round(size * 0.75); // Icon is 75% of container size
+  
+  switch (avatarType) {
+    case 'icon':
+      return `<div class="avatar-icon" style="width: ${size}px; height: ${size}px; border-radius: 50%; background-color: var(--primary-color, #ff6b6b); display: flex; align-items: center; justify-content: center;">
+        <img src="${userIcon}" alt="User Icon" style="width: ${iconSize}px; height: ${iconSize}px; filter: brightness(0) invert(1);" />
+      </div>`;
+      
+    case 'initials':
+      const initials = generateInitials(user?.name || profile?.display_name);
+      const initialsUrl = generateInitialsImageUrl(initials, size);
+      return `<div class="avatar-initials" style="width: ${size}px; height: ${size}px; border-radius: 50%; background-image: url('${initialsUrl}'); background-size: cover;"></div>`;
+      
+    case 'gravatar':
+      if (profile?.gravatar_hash) {
+        const gravatarUrl = `https://www.gravatar.com/avatar/${profile.gravatar_hash}?s=${size}&d=identicon`;
+        return `<img src="${gravatarUrl}" alt="Avatar" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;" />`;
+      }
+      // Fallback to initials
+      const gravatarFallbackInitials = generateInitials(user?.name || profile?.display_name);
+      const gravatarFallbackUrl = generateInitialsImageUrl(gravatarFallbackInitials, size);
+      return `<div class="avatar-initials" style="width: ${size}px; height: ${size}px; border-radius: 50%; background-image: url('${gravatarFallbackUrl}'); background-size: cover;"></div>`;
+      
+    case 'uploaded':
+      if (profile?.avatar_url) {
+        return `<img src="${profile.avatar_url}" alt="Avatar" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;" />`;
+      }
+      // Fallback to initials
+      const uploadFallbackInitials = generateInitials(user?.name || profile?.display_name);
+      const uploadFallbackUrl = generateInitialsImageUrl(uploadFallbackInitials, size);
+      return `<div class="avatar-initials" style="width: ${size}px; height: ${size}px; border-radius: 50%; background-image: url('${uploadFallbackUrl}'); background-size: cover;"></div>`;
+      
+    default:
+      const defaultInitials = generateInitials(user?.name || profile?.display_name);
+      const defaultUrl = generateInitialsImageUrl(defaultInitials, size);
+      return `<div class="avatar-initials" style="width: ${size}px; height: ${size}px; border-radius: 50%; background-image: url('${defaultUrl}'); background-size: cover;"></div>`;
   }
 }
 

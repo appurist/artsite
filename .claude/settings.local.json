@@ -50,7 +50,8 @@
       "Bash(wrangler whoami:*)",
       "WebFetch(domain:dash.cloudflare.com)",
       "WebFetch(domain:dev.artsite.ca)",
-      "WebFetch(domain:artsite.ca)"
+      "WebFetch(domain:artsite.ca)",
+      "WebFetch(domain:i.gyazo.com)"
     ],
     "deny": [],
     "ask": [],
