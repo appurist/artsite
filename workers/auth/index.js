@@ -56,6 +56,10 @@ export async function handleAuth(request, env, ctx) {
     if (path === '/api/auth/reset-password' && method === 'POST') {
       return await resetPassword(request, env);
     }
+    
+    if (path === '/api/auth/delete-account' && method === 'DELETE') {
+      return await deleteAccount(request, env);
+    }
 
     return withCors(new Response(JSON.stringify({ 
       error: 'Endpoint not found' 
@@ -84,9 +88,9 @@ async function register(request, env) {
     const { email, password, name } = await request.json();
     
     // Validate input
-    if (!email || !password) {
+    if (!email || !password || !name) {
       return withCors(new Response(JSON.stringify({
-        error: 'Email and password are required'
+        error: 'Email, password, and name are required'
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
@@ -453,6 +457,77 @@ async function resetPassword(request, env) {
     console.error('Password reset error:', error);
     return withCors(new Response(JSON.stringify({
       error: 'Password reset failed',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+}
+
+/**
+ * Delete user account and all associated data
+ */
+async function deleteAccount(request, env) {
+  try {
+    // Authenticate the request
+    const authResult = await authenticateRequest(request, env.JWT_SECRET);
+    if (!authResult.success) {
+      return withCors(new Response(JSON.stringify({
+        error: authResult.error
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    const userId = authResult.user.id;
+
+    // Get all artworks for this user to delete from R2
+    const artworks = await executeQuery(
+      env.DB,
+      'SELECT storage_path FROM artworks WHERE account_id = ?',
+      [userId]
+    );
+
+    // Delete images from R2 storage
+    for (const artwork of artworks.results || []) {
+      if (artwork.storage_path) {
+        try {
+          await env.STORAGE.delete(artwork.storage_path);
+          // Also delete thumbnail if it exists
+          const thumbnailPath = artwork.storage_path.replace(/^images\//, 'thumbnails/');
+          await env.STORAGE.delete(thumbnailPath);
+        } catch (r2Error) {
+          console.error('Error deleting image from R2:', r2Error);
+          // Continue with deletion even if R2 cleanup fails
+        }
+      }
+    }
+
+    // Delete user data in order (no foreign keys, so order matters)
+    // 1. Delete verification tokens
+    await executeQuery(env.DB, 'DELETE FROM verifications WHERE account_id = ?', [userId]);
+    
+    // 2. Delete artworks
+    await executeQuery(env.DB, 'DELETE FROM artworks WHERE account_id = ?', [userId]);
+    
+    // 3. Delete profile
+    await executeQuery(env.DB, 'DELETE FROM profiles WHERE id = ?', [userId]);
+    
+    // 4. Delete account (last)
+    await executeQuery(env.DB, 'DELETE FROM accounts WHERE id = ?', [userId]);
+
+    return withCors(new Response(JSON.stringify({
+      message: 'Account successfully deleted'
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+    
+  } catch (error) {
+    console.error('Account deletion error:', error);
+    return withCors(new Response(JSON.stringify({
+      error: 'Account deletion failed',
       message: error.message
     }), {
       status: 500,

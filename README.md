@@ -72,7 +72,7 @@ pnpm run deploy:dev
 
 ### Cloudflare Setup
 
-The application uses Cloudflare Workers for backend services. Configuration is in `workers/wrangler.toml`:
+The application uses Cloudflare Workers for backend services. Configuration is in `wrangler.toml`:
 
 - **D1 Database**: SQLite database for artwork, user, and profile data
 - **R2 Storage**: Object storage for artwork images with automatic thumbnailing
@@ -82,7 +82,7 @@ The application uses Cloudflare Workers for backend services. Configuration is i
 ### Required Cloudflare Resources
 
 - **D1 Database**: SQLite database with tables:
-  - `users` - User accounts and authentication
+  - `accounts` - User accounts and authentication
   - `artworks` - Artwork metadata and file references
   - `profiles` - User profiles and artist information 
   - `settings` - Site configuration per user
@@ -131,7 +131,7 @@ The project is configured for Cloudflare Workers deployment with integrated stat
 - **Deploy to Production**: `pnpm run deploy:prod`
 - **Deploy to Development**: `pnpm run deploy:dev`
 
-Configuration is managed via `workers/wrangler.toml` with environment-specific settings.
+Configuration is managed via `wrangler.toml` with environment-specific settings.
 
 ## License
 

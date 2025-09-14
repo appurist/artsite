@@ -112,6 +112,31 @@ export async function createUser(db, userData) {
     await createVerificationToken(db, id, 'email_verification', userData.verificationToken);
   }
   
+  // Create default profile for the new user
+  const defaultDisplayName = userData.name;
+  
+  const profileRecord = {
+    display_name: defaultDisplayName,
+    bio: null,
+    statement: null,
+    avatar_url: null,
+    website: null,
+    instagram: null,
+    twitter: null,
+    location: null,
+    phone: null,
+    created_at: now,
+    updated_at: now
+  };
+
+  const profileQuery = `INSERT INTO profiles (id, public_profile, created_at, record) VALUES (?, ?, ?, ?)`;
+  await executeQuery(db, profileQuery, [
+    id,
+    true, // Default to public profile
+    now,
+    JSON.stringify(profileRecord)
+  ]);
+  
   return id;
 }
 

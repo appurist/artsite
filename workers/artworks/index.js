@@ -40,6 +40,10 @@ export async function handleArtworks(request, env, ctx) {
     if (path.match(/^\/api\/artworks\/[^/]+$/) && method === 'DELETE') {
       return await deleteArtwork(request, env);
     }
+    
+    if (path === '/api/artworks/delete-all' && method === 'DELETE') {
+      return await deleteAllArtworks(request, env);
+    }
 
     return withCors(new Response(JSON.stringify({ 
       error: 'Endpoint not found' 
@@ -392,6 +396,96 @@ async function deleteArtwork(request, env) {
 
     return withCors(new Response(JSON.stringify({
       error: 'Failed to delete artwork',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+}
+
+/**
+ * Delete all artworks for the authenticated user
+ */
+async function deleteAllArtworks(request, env) {
+  try {
+    // Authenticate the request
+    const authResult = await authenticateRequest(request, env.JWT_SECRET);
+    if (!authResult.success) {
+      return withCors(new Response(JSON.stringify({
+        error: authResult.error
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    const userId = authResult.user.id;
+
+    // Get all artworks for this user
+    const artworks = await executeQuery(
+      env.DB,
+      'SELECT id, storage_path FROM artworks WHERE account_id = ?',
+      [userId]
+    );
+
+    const artworkList = artworks.results || [];
+    
+    if (artworkList.length === 0) {
+      return withCors(new Response(JSON.stringify({
+        message: 'No artworks to delete',
+        deletedCount: 0
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    // Delete images from R2 storage
+    let deletedCount = 0;
+    for (const artwork of artworkList) {
+      if (artwork.storage_path) {
+        try {
+          await env.STORAGE.delete(artwork.storage_path);
+          // Also delete thumbnail if it exists
+          const thumbnailPath = artwork.storage_path.replace(/^images\//, 'thumbnails/');
+          await env.STORAGE.delete(thumbnailPath);
+        } catch (r2Error) {
+          console.error('Error deleting image from R2:', r2Error);
+          // Continue with deletion even if R2 cleanup fails
+        }
+      }
+      deletedCount++;
+    }
+
+    // Delete all artworks from database
+    await executeQuery(
+      env.DB,
+      'DELETE FROM artworks WHERE account_id = ?',
+      [userId]
+    );
+
+    return withCors(new Response(JSON.stringify({
+      message: `Successfully deleted ${deletedCount} artworks`,
+      deletedCount: deletedCount
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+  } catch (error) {
+    console.error('Delete all artworks error:', error);
+    
+    if (error.message.includes('Unauthorized') || error.message.includes('token')) {
+      return withCors(new Response(JSON.stringify({
+        error: 'Unauthorized',
+        message: error.message
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    return withCors(new Response(JSON.stringify({
+      error: 'Failed to delete artworks',
       message: error.message
     }), {
       status: 500,

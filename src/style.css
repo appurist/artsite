@@ -1299,3 +1299,56 @@ input[type="file"]:focus {
   --gallery-header-subtitle: var(--text-muted);
 }
 */
+
+/* Danger styling */
+.danger-card {
+  border: 1px solid var(--error-border);
+  background: var(--error-bg);
+}
+
+.danger-text {
+  color: var(--error-text) !important;
+}
+
+.danger-section {
+  padding: 1rem 2rem;
+  border: 1px solid var(--error-border);
+  border-radius: 4px;
+  background: var(--error-bg);
+}
+
+.danger-warning {
+  background: var(--error-bg);
+}
+
+.danger-warning p {
+  color: var(--error-text);
+  margin: 0.5rem 0;
+}
+
+.danger-warning strong {
+  color: var(--error-text);
+  font-weight: 700;
+}
+
+.profile-field.danger-section {
+  justify-content: space-around;
+}
+
+.profile-field .btn {
+  margin-left: auto;
+}
+
+.profile-field .btn.btn-danger {
+  padding: 0.75rem 1rem;
+  font-size: 0.75rem;
+}
+
+.profile-field .btn.btn-secondary {
+  padding: 0.5rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+.btn-danger .icon {
+  margin-right: 0.25rem;
+}

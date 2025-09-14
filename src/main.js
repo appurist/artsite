@@ -27,6 +27,9 @@ import contentSaveIcon from './assets/icons/content-save.svg'
 import eyeIcon from './assets/icons/eye.svg'
 import eyeOffIcon from './assets/icons/eye-off.svg'
 import userIcon from './assets/icons/user.svg'
+import nukeIcon from './assets/icons/nuke.svg'
+import keyVariantIcon from './assets/icons/key-variant.svg'
+import emailIcon from './assets/icons/email.svg'
 
 // Password visibility toggle function
 window.togglePasswordVisibility = function(inputId) {
@@ -112,6 +115,9 @@ function getDefaultFocusUser() {
 document.addEventListener('DOMContentLoaded', async () => {
   // Set current year in footer
   document.getElementById('current-year').textContent = new Date().getFullYear();
+  
+  // Set app version in footer
+  document.getElementById('app-version').textContent = __APP_VERSION__;
 
   // Set hostname as site title (preserving the icon)
   const siteTitle = document.getElementById('site-title');
@@ -624,14 +630,18 @@ async function loadProfilePage() {
             <div class="profile-card">
               <h3>Public</h3>
               <div class="profile-details">
-                <div class="profile-avatar">
-                  <div class="profile-avatar-initials">${avatarInitials}</div>
-                </div>
                 <div class="profile-field">
-                  <label>Avatar Image:</label>
-                  <div class="profile-field-checkbox">
-                    <input type="checkbox" id="use-gravatar" ${userProfile && userProfile.use_gravatar !== false ? 'checked' : ''}>
-                    <label for="use-gravatar">Use Gravatar</label>
+                  <label></label>
+                  <div style="display: flex; align-items: flex-start; gap: 2rem;">
+                    <div class="profile-avatar-initials">${avatarInitials}</div>
+                    <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start;">
+                      <button class="btn btn-secondary" style="margin-left: 0;" onclick="alert('Edit image functionality coming soon')">
+                        Edit Image
+                      </button>
+                      <button class="btn btn-secondary" style="margin-left: 0;" onclick="alert('Use Gravatar functionality coming soon')">
+                        Use Gravatar
+                      </button>
+                    </div>
                   </div>
                 </div>
                 <div class="profile-field">
@@ -650,30 +660,44 @@ async function loadProfilePage() {
                 </div>
 
                 <div class="profile-field">
-                  <label>User ID:</label>
-                  <span>${user.id}</span>
-                </div>
-
-                <div class="profile-field">
                   <label>Email:</label>
                   <span class="verification-status ${user.email ? (user.emailVerified ? 'verified' : 'unverified') : 'not-provided'}">
                     ${user.email || 'Not provided'} ${user.email ? (user.emailVerified ? '(Verified)' : '(Not Verified)') : ''}
                   </span>
                 </div>
-
+                
                 <div class="profile-field">
-                  <label>Account Created:</label>
-                  <span>${new Date(user.created_at).toLocaleDateString()}</span>
+                  <label></label>
+                  <div style="display: flex; gap: 0.5rem;">
+                    <button class="btn btn-secondary" onclick="alert('Change email functionality coming soon')">
+                      <img src="${emailIcon}" alt="Email" class="icon" aria-hidden="true" />
+                      Change Email
+                    </button>
+                    <button class="btn btn-secondary" onclick="alert('Change password functionality coming soon')">
+                      <img src="${keyVariantIcon}" alt="Password" class="icon" aria-hidden="true" />
+                      Change Password
+                    </button>
+                  </div>
                 </div>
 
                 <div class="profile-field">
-                  <label>Password Updated:</label>
-                  <span>${new Date(user.passwordUpdate).toLocaleDateString()}</span>
+                  <label>ID:</label>
+                  <span><code>${user.id}</code></span>
                 </div>
+              </div>
+            </div>
 
-                <div class="profile-field">
-                  <label>Last Updated:</label>
-                  <span>${new Date(user.updated_at).toLocaleDateString()}</span>
+            <div class="danger-card">
+              <h3 class="danger-text">Danger Zone</h3>
+              <div class="profile-details">
+                <div class="profile-field danger-section">
+                  <div class="danger-warning">
+                    <p class="danger-text"><strong>⚠️ WARNING:</strong> This will <strong>permanently</strong> delete your account and profile, site settings and all your artwork images! <strong>This action cannot be undone.</strong></p>
+                  </div>
+                  <button class="btn btn-danger" onclick="handleDeleteAccount()">
+                    <img src="${nukeIcon}" alt="Nuclear explosion" class="icon" aria-hidden="true" />
+                    DELETE MY ACCOUNT
+                  </button>
                 </div>
               </div>
             </div>
@@ -1055,6 +1079,8 @@ function showAdminDashboard(user) {
             <p>Loading artworks...</p>
           </div>
         </div>
+        
+        <div id="danger-zone-container"></div>
       </div>
     </div>
   `;
@@ -1086,6 +1112,11 @@ async function loadAdminArtworksList() {
           <p>No artworks uploaded yet. Click "Upload Artwork" to get started.</p>
         </div>
       `;
+      // Hide danger zone when no artworks
+      const dangerZoneContainer = document.getElementById('danger-zone-container');
+      if (dangerZoneContainer) {
+        dangerZoneContainer.innerHTML = '';
+      }
     } else {
       const artworksList = artworks.map(artwork => `
         <a href="/art/${artwork.id}" class="admin-artwork-link">
@@ -1117,6 +1148,26 @@ async function loadAdminArtworksList() {
           ${artworksList}
         </div>
       `;
+      
+      // Show danger zone when artworks exist
+      const dangerZoneContainer = document.getElementById('danger-zone-container');
+      if (dangerZoneContainer) {
+        dangerZoneContainer.innerHTML = `
+          <div class="danger-card">
+            <h3 class="danger-text">Danger Zone</h3>
+            <div class="profile-details">
+              <div class="profile-field danger-section">
+                <div class="danger-warning">
+                  <p class="danger-text"><strong>⚠️ WARNING:</strong></p>
+                  <p class="danger-text">This will permanently delete ALL your artwork images!</p>
+                  <p class="danger-text">This action cannot be undone.</p>
+                </div>
+                <button class="btn btn-danger" onclick="handleDeleteAllImages()">DELETE ALL IMAGES</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
     }
   } catch (error) {
     console.error('Error loading admin artworks:', error);
@@ -1125,6 +1176,11 @@ async function loadAdminArtworksList() {
         <p>Error loading artworks. Please try refreshing the page.</p>
       </div>
     `;
+    // Hide danger zone on error
+    const dangerZoneContainer = document.getElementById('danger-zone-container');
+    if (dangerZoneContainer) {
+      dangerZoneContainer.innerHTML = '';
+    }
   }
 }
 
@@ -1714,4 +1770,97 @@ function showSettingsStatus(message, type) {
   const statusDiv = document.getElementById('settings-status');
   statusDiv.className = `settings-status message ${type}`;
   statusDiv.textContent = message;
+}
+
+// Handle account deletion
+async function handleDeleteAccount() {
+  // Double confirmation to prevent accidental deletion
+  const confirmText = 'delete my account permanently';
+  const confirmation = prompt(`This action will permanently delete your account and ALL your images. This cannot be undone.\n\nTo proceed, type exactly: ${confirmText}`);
+  
+  if (!confirmation || confirmation !== confirmText) {
+    return; // User cancelled or didn't type correctly
+  }
+  
+  // Final confirmation
+  if (!confirm('Are you absolutely sure? This is your last chance to cancel before everything is permanently deleted.')) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${config.apiBaseUrl}/api/auth/delete-account`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete account');
+    }
+
+    // Account successfully deleted - clear local storage and redirect
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    
+    alert('Your account has been permanently deleted. You will now be redirected to the home page.');
+    window.location.href = '/';
+    
+  } catch (error) {
+    console.error('Error deleting account:', error);
+    alert('Failed to delete account: ' + error.message);
+  }
+}
+
+// Handle delete all images
+async function handleDeleteAllImages() {
+  // Double confirmation to prevent accidental deletion
+  const confirmText = 'delete all my images permanently';
+  const confirmation = prompt(`This action will permanently delete ALL your artwork images. This cannot be undone.\n\nTo proceed, type exactly: ${confirmText}`);
+  
+  if (!confirmation || confirmation !== confirmText) {
+    return; // User cancelled or didn't type correctly
+  }
+  
+  // Final confirmation
+  if (!confirm('Are you absolutely sure? This will delete all your uploaded artwork and cannot be undone.')) {
+    return;
+  }
+
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${config.apiBaseUrl}/api/artworks/delete-all`, {
+      method: 'DELETE',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to delete all images');
+    }
+
+    const result = await response.json();
+    alert(result.message || 'All images have been successfully deleted.');
+    
+    // Refresh the art page to show empty state
+    loadAdminArtworksList();
+    
+  } catch (error) {
+    console.error('Error deleting all images:', error);
+    alert('Failed to delete all images: ' + error.message);
+  }
 }
