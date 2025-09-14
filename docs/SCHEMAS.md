@@ -79,7 +79,6 @@ Individual artwork records with metadata and file references.
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Upload timestamp |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last update timestamp |
 
-**Note:** Referential integrity enforced at application level.
 
 **Indexes:**
 - `idx_artworks_account_id` on `account_id`
@@ -98,7 +97,6 @@ User-specific site configuration stored as JSON.
 | `settings` | TEXT | NOT NULL | JSON object containing all settings |
 | `updated_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Last settings update timestamp |
 
-**Note:** Referential integrity enforced at application level.
 
 ---
 
@@ -126,9 +124,6 @@ Junction table linking artworks to categories (many-to-many).
 | `artwork_id` | TEXT | PK, FK → artworks.id | Reference to artwork |
 | `category_id` | TEXT | PK, FK → categories.id | Reference to category |
 
-**Foreign Keys:**
-- `artwork_id` REFERENCES `artworks(id)` ON DELETE CASCADE
-- `category_id` REFERENCES `categories(id)` ON DELETE CASCADE
 
 **Primary Key:** Composite of `(artwork_id, category_id)`
 
@@ -149,8 +144,6 @@ Track individual artwork views for analytics.
 | `country` | TEXT | | Viewer's country (from IP geolocation) |
 | `viewed_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | View timestamp |
 
-**Foreign Keys:**
-- `artwork_id` REFERENCES `artworks(id)` ON DELETE CASCADE
 
 **Indexes:**
 - `idx_artwork_views_artwork_id` on `artwork_id`
@@ -174,9 +167,6 @@ User comments on artworks (not yet implemented).
 | `status` | TEXT | DEFAULT 'pending' | Moderation status (pending, approved, spam) |
 | `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Comment timestamp |
 
-**Foreign Keys:**
-- `artwork_id` REFERENCES `artworks(id)` ON DELETE CASCADE
-- `account_id` REFERENCES `users(id)` ON DELETE SET NULL
 
 **Indexes:**
 - `idx_comments_artwork_id` on `artwork_id`
@@ -300,4 +290,4 @@ artworks (1) ←→ (*) comments
 
 ---
 
-*Generated for artsite.ca - Database schema as of 2025-01-13*
+*Generated for artsite.ca - Database schema as of 2025-09-14*

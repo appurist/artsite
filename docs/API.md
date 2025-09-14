@@ -565,19 +565,27 @@ The API supports CORS for web applications with the following headers:
 
 ## Database Schema (Cloudflare D1/SQLite)
 
-### Users Table
-- `id` (TEXT PRIMARY KEY)
-- `email` (TEXT UNIQUE NOT NULL)
-- `password_hash` (TEXT NOT NULL)
-- `name` (TEXT)
-- `email_verified` (BOOLEAN DEFAULT FALSE)
-- `email_verification_token` (TEXT)
-- `password_reset_token` (TEXT)
-- `password_reset_expires` (DATETIME)
-- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
-- `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+The database uses a modern JSON-based approach with promoted fields for performance. See [SCHEMAS.md](SCHEMAS.md) for complete documentation.
 
-### Artworks Table
+### Accounts Table (Authentication)
+- `id` (TEXT PRIMARY KEY) - Account UUID
+- `email` (TEXT UNIQUE NOT NULL) - Promoted field for efficient lookups  
+- `record` (TEXT NOT NULL) - JSON containing password_hash, name, email_verified, timestamps
+
+### Verifications Table (Short-lived tokens)
+- `account_id` (TEXT) - References accounts.id
+- `token_type` (TEXT) - 'email_verification' or 'password_reset'
+- `token_value` (TEXT NOT NULL) - The actual token
+- `expires_at` (DATETIME) - Token expiration
+- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+
+### Profiles Table (Artist information)
+- `id` (TEXT PRIMARY KEY) - Same as account_id
+- `public_profile` (BOOLEAN DEFAULT TRUE) - Promoted field for filtering
+- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP) - Promoted field for ordering
+- `record` (TEXT NOT NULL) - JSON containing display_name, bio, website, etc.
+
+### Artworks Table (Column-based for performance)
 - `id` (TEXT PRIMARY KEY)
 - `account_id` (TEXT NOT NULL)
 - `title` (TEXT NOT NULL)
@@ -599,25 +607,11 @@ The API supports CORS for web applications with the following headers:
 - `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 - `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
-### Profiles Table
+### Settings Table (JSON-based)
 - `account_id` (TEXT PRIMARY KEY)
-- `display_name` (TEXT)
-- `bio` (TEXT)
-- `statement` (TEXT) - Artist statement
-- `avatar_url` (TEXT)
-- `website` (TEXT)
-- `instagram` (TEXT)
-- `twitter` (TEXT)
-- `location` (TEXT)
-- `phone` (TEXT)
-- `public_profile` (BOOLEAN DEFAULT TRUE)
-- `created_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
+- `settings` (TEXT NOT NULL) - JSON object with site configuration
 - `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
-### Settings Table
-- `account_id` (TEXT PRIMARY KEY)
-- `settings` (TEXT NOT NULL) - JSON object stored as text
-- `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ---
 
