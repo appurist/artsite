@@ -62,7 +62,12 @@ async function apiRequest(endpoint, options = {}) {
     
     return data;
   } catch (error) {
-    console.error(`API Error [${config.method} ${endpoint}]:`, error);
+    // Use console.log for authentication errors (like "User not found") to reduce noise
+    if (endpoint === '/auth/user' && error.message?.includes('User not found')) {
+      console.log(`API Info [${config.method} ${endpoint}]:`, error.message);
+    } else {
+      console.error(`API Error [${config.method} ${endpoint}]:`, error);
+    }
     throw error;
   }
 }

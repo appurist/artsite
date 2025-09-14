@@ -934,11 +934,11 @@ async function loadArtPage() {
       }
     }
 
-    // No session or user - redirect to login page
-    navigateTo('/login');
+    // No session or user - redirect to home page
+    navigateTo('/');
   } catch (error) {
     console.error('Error checking authentication:', error);
-    navigateTo('/login');
+    navigateTo('/');
   }
 }
 
