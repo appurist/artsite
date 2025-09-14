@@ -46,7 +46,11 @@
       "Bash(wrangler d1 list:*)",
       "Bash(grep:*)",
       "WebFetch(domain:artsite-production.appurist.workers.dev)",
-      "Bash(wrangler tail:*)"
+      "Bash(wrangler tail:*)",
+      "Bash(wrangler whoami:*)",
+      "WebFetch(domain:dash.cloudflare.com)",
+      "WebFetch(domain:dev.artsite.ca)",
+      "WebFetch(domain:artsite.ca)"
     ],
     "deny": [],
     "ask": [],
