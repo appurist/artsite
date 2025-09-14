@@ -10,6 +10,7 @@ import { corsHeaders } from './shared/cors.js';
 import { handleAuth } from './auth/index.js';
 import { handleArtworks } from './artworks/index.js';
 import { handleProfiles } from './profiles/index.js';
+import { handleProfile } from './profile/index.js';
 import { handleSettings } from './settings/index.js';
 import { handleUpload } from './upload/index.js';
 
@@ -70,6 +71,10 @@ export default {
       
       if (path.startsWith('/api/profiles')) {
         return await handleProfiles(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/profile')) {
+        return await handleProfile(request, env, ctx);
       }
       
       if (path.startsWith('/api/settings')) {

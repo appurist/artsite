@@ -162,6 +162,7 @@ async function getProfile(request, env) {
       display_name: profileData.display_name,
       bio: profileData.bio,
       statement: profileData.statement,
+      avatar_type: profileData.avatar_type,
       avatar_url: profileData.avatar_url,
       website: profileData.website,
       instagram: profileData.instagram,

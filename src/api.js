@@ -5,11 +5,13 @@
 
 // Auto-detect environment for API base URL
 const API_BASE_URL = window.location.hostname === 'localhost' 
-  ? 'http://localhost:8787/api'  // Local Workers dev server
-  : '/api';  // Production/staging
+  ? 'http://localhost:8787'  // Local Workers dev server
+  : '';  // Production/staging (same origin)
+
+export { API_BASE_URL };
 
 // Token management
-let authToken = localStorage.getItem('auth_token');
+let authToken = localStorage.getItem('token');
 
 /**
  * Set authentication token
@@ -17,9 +19,9 @@ let authToken = localStorage.getItem('auth_token');
 export function setAuthToken(token) {
   authToken = token;
   if (token) {
-    localStorage.setItem('auth_token', token);
+    localStorage.setItem('token', token);
   } else {
-    localStorage.removeItem('auth_token');
+    localStorage.removeItem('token');
   }
 }
 
@@ -27,14 +29,14 @@ export function setAuthToken(token) {
  * Get current auth token
  */
 export function getAuthToken() {
-  return authToken || localStorage.getItem('auth_token');
+  return authToken || localStorage.getItem('token');
 }
 
 /**
  * Make authenticated API request
  */
 async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE_URL}${endpoint}`;
+  const url = `${API_BASE_URL}/api${endpoint}`;
   const token = getAuthToken();
   
   const headers = {

@@ -15,7 +15,8 @@ import {
   getProfile,
   updateProfile,
   deleteArtwork,
-  updateArtwork
+  updateArtwork,
+  API_BASE_URL
 } from './api.js'
 
 // Import icons
@@ -30,6 +31,12 @@ import userIcon from './assets/icons/user.svg'
 import nukeIcon from './assets/icons/nuke.svg'
 import keyVariantIcon from './assets/icons/key-variant.svg'
 import emailIcon from './assets/icons/email.svg'
+import { generateInitials, getAvatarUrl, fetchGravatarAsBlob } from './avatar-utils.js'
+
+// Configuration object
+const config = {
+  apiBaseUrl: API_BASE_URL // Base URL without /api - we add /api in the fetch calls
+};
 
 // Password visibility toggle function
 window.togglePasswordVisibility = function(inputId) {
@@ -97,13 +104,17 @@ function getFileView(fileId) {
   return fileId; // fileId is now the full URL from R2/Cloudflare
 }
 
-function getUserAvatarInitials(user) {
-  if (!user || !user.name) return '';
-  const words = user.name.trim().split(/\s+/).filter(word => word.length > 0);
-  if (words.length === 0) return '';
-  if (words.length === 1) return words[0][0].toUpperCase();
-  // Take first letter of first and last word
-  return (words[0][0] + words[words.length - 1][0]).toUpperCase();
+function getUserAvatarDisplay(user, profile) {
+  const avatarUrl = getAvatarUrl(user, profile);
+  console.log('Avatar display:', { avatarType: profile?.avatar_type, avatarUrl });
+  
+  // If it's an SVG data URL (initials), use it as background style for the div
+  if (avatarUrl.startsWith('data:image/svg+xml')) {
+    return `<div class="profile-avatar-initials" style="background-image: url('${avatarUrl}'); background-size: cover;"></div>`;
+  } else {
+    // For uploaded images, Gravatar, or icon, use img tag
+    return `<img src="${avatarUrl}" alt="Avatar" class="profile-avatar-img" />`;
+  }
 }
 
 function getDefaultFocusUser() {
@@ -616,8 +627,9 @@ async function loadProfilePage() {
       return;
     }
 
-    // Generate avatar initials for display
-    const avatarInitials = getUserAvatarInitials(user);
+    // Generate avatar display
+    console.log('Profile data for avatar:', { user, userProfile });
+    const avatarDisplay = getUserAvatarDisplay(user, userProfile);
 
     app.innerHTML = `
       <div class="content-container">
@@ -633,14 +645,24 @@ async function loadProfilePage() {
                 <div class="profile-field">
                   <label></label>
                   <div style="display: flex; align-items: flex-start; gap: 2rem;">
-                    <div class="profile-avatar-initials">${avatarInitials}</div>
-                    <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start;">
-                      <button class="btn btn-secondary" style="margin-left: 0;" onclick="alert('Edit image functionality coming soon')">
-                        Edit Image
-                      </button>
-                      <button class="btn btn-secondary" style="margin-left: 0;" onclick="alert('Use Gravatar functionality coming soon')">
-                        Use Gravatar
-                      </button>
+                    ${avatarDisplay}
+                    <div style="display: flex; gap: 0.5rem;">
+                      <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-end;">
+                        <button class="btn btn-secondary" style="margin-left: 0;" onclick="handleAvatarTypeChange('icon')">
+                          Use Icon
+                        </button>
+                        <button class="btn btn-secondary" style="margin-left: 0;" onclick="handleAvatarTypeChange('initials')">
+                          Use Initials
+                        </button>
+                      </div>
+                      <div style="display: flex; flex-direction: column; gap: 0.5rem; align-items: flex-start;">
+                        <button class="btn btn-secondary" style="margin-left: 0;" onclick="handleUploadImage()">
+                          Upload Image
+                        </button>
+                        <button class="btn btn-secondary" style="margin-left: 0;" onclick="handleImportGravatar()">
+                          Import Gravatar
+                        </button>
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -1864,3 +1886,152 @@ async function handleDeleteAllImages() {
     alert('Failed to delete all images: ' + error.message);
   }
 }
+
+// Handle avatar type change (icon or initials)
+async function handleAvatarTypeChange(avatarType) {
+  console.log('handleAvatarTypeChange called with:', avatarType);
+  try {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar`, {
+      method: 'PUT',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        avatar_type: avatarType
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to update avatar');
+    }
+
+    // Refresh the profile page to show the change
+    loadProfilePage();
+    
+  } catch (error) {
+    console.error('Error updating avatar:', error);
+    alert('Failed to update avatar: ' + error.message);
+  }
+}
+
+// Handle image upload
+async function handleUploadImage() {
+  console.log('handleUploadImage called');
+  try {
+    // Create file input element
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    
+    fileInput.onchange = async (event) => {
+      const file = event.target.files[0];
+      if (!file) return;
+      
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+      
+      // Validate file size (max 5MB)
+      if (file.size > 5 * 1024 * 1024) {
+        alert('Image must be smaller than 5MB');
+        return;
+      }
+      
+      try {
+        const token = localStorage.getItem('token');
+        if (!token) {
+          throw new Error('Not authenticated');
+        }
+
+        // Create FormData for file upload
+        const formData = new FormData();
+        formData.append('avatar', file);
+
+        const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          const error = await response.json();
+          throw new Error(error.error || 'Failed to upload image');
+        }
+
+        // Refresh the profile page to show the new avatar
+        loadProfilePage();
+        
+      } catch (error) {
+        console.error('Error uploading avatar:', error);
+        alert('Failed to upload avatar: ' + error.message);
+      }
+    };
+    
+    // Trigger file selection
+    fileInput.click();
+    
+  } catch (error) {
+    console.error('Error handling upload:', error);
+    alert('Failed to open file picker: ' + error.message);
+  }
+}
+
+// Handle Gravatar import
+async function handleImportGravatar() {
+  console.log('handleImportGravatar called');
+  try {
+    const user = await getCurrentUser();
+    if (!user || !user.email) {
+      alert('No email address found for Gravatar import');
+      return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+
+    // Show loading state
+    alert('Importing Gravatar... This may take a moment.');
+    
+    const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar/gravatar`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        email: user.email
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Failed to import Gravatar');
+    }
+
+    // Refresh the profile page to show the new avatar
+    loadProfilePage();
+    alert('Gravatar imported successfully!');
+    
+  } catch (error) {
+    console.error('Error importing Gravatar:', error);
+    alert('Failed to import Gravatar: ' + error.message);
+  }
+}
+
+// Expose avatar functions to global scope for onclick handlers
+window.handleAvatarTypeChange = handleAvatarTypeChange;
+window.handleUploadImage = handleUploadImage;
+window.handleImportGravatar = handleImportGravatar;

@@ -167,6 +167,31 @@ export async function authenticateRequest(request, secret) {
 }
 
 /**
+ * Authenticate request and return structured response (for profile handlers)
+ */
+export async function authenticateRequestSafe(request, secret) {
+  try {
+    const token = extractTokenFromHeader(request);
+    if (!token) {
+      return { success: false, error: 'No token provided' };
+    }
+
+    const payload = await verifyJWT(token, secret);
+    return {
+      success: true,
+      user: {
+        id: payload.sub,
+        account_id: payload.sub,
+        email: payload.email,
+        name: payload.name
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Generate email verification token
  */
 export function generateVerificationToken() {
