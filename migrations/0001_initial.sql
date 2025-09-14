@@ -82,9 +82,7 @@ CREATE TABLE IF NOT EXISTS categories (
 CREATE TABLE IF NOT EXISTS artwork_categories (
     artwork_id TEXT,
     category_id TEXT,
-    PRIMARY KEY (artwork_id, category_id),
-    FOREIGN KEY (artwork_id) REFERENCES artworks(id) ON DELETE CASCADE,
-    FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE
+    PRIMARY KEY (artwork_id, category_id)
 );
 
 -- Views/analytics table (for tracking artwork views)
@@ -95,8 +93,7 @@ CREATE TABLE IF NOT EXISTS artwork_views (
     user_agent TEXT,
     referrer TEXT,
     country TEXT,
-    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (artwork_id) REFERENCES artworks(id) ON DELETE CASCADE
+    viewed_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_artwork_views_artwork_id ON artwork_views(artwork_id);
@@ -111,9 +108,7 @@ CREATE TABLE IF NOT EXISTS comments (
     author_email TEXT,
     content TEXT NOT NULL,
     status TEXT DEFAULT 'pending', -- pending, approved, spam
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (artwork_id) REFERENCES artworks(id) ON DELETE CASCADE,
-    FOREIGN KEY (account_id) REFERENCES accounts(id) ON DELETE SET NULL
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE INDEX IF NOT EXISTS idx_comments_artwork_id ON comments(artwork_id);

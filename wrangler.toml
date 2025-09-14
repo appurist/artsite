@@ -2,12 +2,64 @@ name = "artsite"
 main = "workers/index.js"
 compatibility_date = "2025-09-09"
 
-# Temporarily commented out for API testing
-#[assets]
-#directory = "./dist"
-#not_found_handling = "single-page-application"
+[assets]
+directory = "./dist"
+not_found_handling = "single-page-application"
 
+# Local development database
 [[d1_databases]]
 binding = "DB"
 database_name = "artsite-local"
 database_id = "27fe6352-1275-486d-8f74-c684aac80253"
+
+# R2 Storage bindings
+[[r2_buckets]]
+binding = "ARTWORK_IMAGES"
+bucket_name = "artsite-images"
+
+# Environment variables
+[vars]
+FRONTEND_URL = "https://artsite.ca"
+EMAIL_FROM = "noreply@artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
+
+# Development environment
+[env.development]
+workers_dev = false
+route = { pattern = "dev.artsite.ca/*", zone_name = "artsite.ca" }
+
+[[env.development.d1_databases]]
+binding = "DB"
+database_name = "artsite-local"
+database_id = "27fe6352-1275-486d-8f74-c684aac80253"
+
+[[env.development.r2_buckets]]
+binding = "ARTWORK_IMAGES"
+bucket_name = "artsite-images"
+
+[env.development.vars]
+FRONTEND_URL = "https://dev.artsite.ca"
+EMAIL_FROM = "noreply@artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
+
+# Production environment
+[env.production]
+workers_dev = false
+route = [
+  { pattern = "artsite.ca/*", zone_name = "artsite.ca" },
+  { pattern = "viktoriasart.ca/*", zone_name = "viktoriasart.ca" }
+]
+
+[[env.production.d1_databases]]
+binding = "DB"
+database_name = "artsite-prod"
+database_id = "ca7f0493-f8e2-4823-9c49-a92e1a3a38e7"
+
+[[env.production.r2_buckets]]
+binding = "ARTWORK_IMAGES"
+bucket_name = "artsite-images"
+
+[env.production.vars]
+FRONTEND_URL = "https://artsite.ca"
+EMAIL_FROM = "noreply@artsite.ca"
+ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
