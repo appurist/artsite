@@ -60,8 +60,8 @@ If the CLI doesn't work, manually create in Appwrite Console:
     - `price` (String, 255, Optional)
     - `tags` (String, 1000, Optional)
     - `image_id` (String, 255, Required)
-    - `user_id` (String, 255, Required) - Owner user ID for access control
-    - `storage_path` (String, 512, Required) - Secure path in storage: user-id/file-id.ext
+    - `account_id` (String, 255, Required) - Owner account ID for access control
+    - `storage_path` (String, 512, Required) - Secure path in storage: account-id/file-id.ext
     - `original_filename` (String, 255, Required) - Original uploaded filename
     - Note: `$createdAt` and `$updatedAt` are automatically added by Appwrite
 

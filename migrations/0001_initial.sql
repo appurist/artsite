@@ -1,20 +1,33 @@
 -- Initial database schema for artsite.ca
 -- SQLite/D1 compatible
 
--- Accounts table for authentication (JSON-based)
+-- Accounts table for authentication (JSON-based with promoted email field)
 CREATE TABLE IF NOT EXISTS accounts (
     id TEXT PRIMARY KEY,
-    record TEXT NOT NULL -- JSON object containing all account data
+    email TEXT UNIQUE NOT NULL, -- Promoted field for efficient lookups
+    record TEXT NOT NULL -- JSON object containing all account data except email
 );
 
--- Create indexes for common queries on JSON fields
-CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(json_extract(record, '$.email'));
-CREATE INDEX IF NOT EXISTS idx_accounts_verification_token ON accounts(json_extract(record, '$.email_verification_token'));
-CREATE INDEX IF NOT EXISTS idx_accounts_reset_token ON accounts(json_extract(record, '$.password_reset_token'));
+-- Create index for email lookups (automatically created due to UNIQUE constraint)
+CREATE INDEX IF NOT EXISTS idx_accounts_email ON accounts(email);
+
+-- Verifications table for short-lived tokens
+CREATE TABLE IF NOT EXISTS verifications (
+    account_id TEXT NOT NULL,
+    token_type TEXT NOT NULL, -- 'email_verification', 'password_reset'
+    token_value TEXT NOT NULL,
+    expires_at DATETIME, -- For tokens that expire (like password reset)
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (account_id, token_type)
+);
+
+CREATE INDEX IF NOT EXISTS idx_verifications_token_value ON verifications(token_value);
 
 -- Profiles table for artist information (JSON-based)
 CREATE TABLE IF NOT EXISTS profiles (
     id TEXT PRIMARY KEY, -- Same as account_id, references accounts.id
+    public_profile BOOLEAN DEFAULT TRUE, -- Promoted field for efficient filtering
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP, -- Promoted field for efficient ordering
     record TEXT NOT NULL -- JSON object containing all profile data
 );
 
@@ -39,7 +52,7 @@ CREATE TABLE IF NOT EXISTS artworks (
     featured BOOLEAN DEFAULT FALSE,
     sort_order INTEGER DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create indexes for artworks
@@ -52,7 +65,7 @@ CREATE INDEX IF NOT EXISTS idx_artworks_created_at ON artworks(created_at);
 CREATE TABLE IF NOT EXISTS settings (
     account_id TEXT PRIMARY KEY,
     settings TEXT NOT NULL, -- JSON object stored as text
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Categories table (optional - for organizing artworks)

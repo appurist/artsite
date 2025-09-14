@@ -72,7 +72,7 @@ async function listArtworks(request, env) {
     const limit = parseInt(url.searchParams.get('limit')) || 20;
 
     const artworks = await getArtworks(env.DB, {
-      userId,
+      account_id: userId,
       status,
       page,
       limit
@@ -123,7 +123,7 @@ async function createArtworkHandler(request, env) {
 
     // Create artwork
     const artworkId = await createArtwork(env.DB, {
-      userId: user.userId,
+      account_id: user.account_id,
       title: artworkData.title,
       description: artworkData.description,
       medium: artworkData.medium,
@@ -242,7 +242,7 @@ async function updateArtwork(request, env) {
       }));
     }
 
-    if (existingArtwork.user_id !== user.userId) {
+    if (existingArtwork.account_id !== user.account_id) {
       return withCors(new Response(JSON.stringify({
         error: 'Forbidden: You can only update your own artworks'
       }), {
@@ -354,7 +354,7 @@ async function deleteArtwork(request, env) {
       }));
     }
 
-    if (existingArtwork.user_id !== user.userId) {
+    if (existingArtwork.account_id !== user.account_id) {
       return withCors(new Response(JSON.stringify({
         error: 'Forbidden: You can only delete your own artworks'
       }), {

@@ -30,5 +30,6 @@ setenv.bat
 *.gz
 
 # Wrangler local state and cache
+.wrangler/
 workers/.wrangler/
 workers/.dev.vars

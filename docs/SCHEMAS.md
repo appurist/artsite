@@ -5,17 +5,36 @@ This document describes the database schema for artsite.ca using Cloudflare D1 (
 ## Core Tables
 
 ### `accounts`
-Account authentication and login information stored as JSON documents.
+Account authentication and login information with promoted email field and JSON for other data.
 
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | TEXT | PRIMARY KEY | Unique account identifier (UUID) |
-| `record` | TEXT | NOT NULL | JSON object containing all account data |
+| `email` | TEXT | UNIQUE NOT NULL | Email address (promoted for efficient lookups) |
+| `record` | TEXT | NOT NULL | JSON object containing account data (excluding email) |
 
-**JSON Indexes:**
-- `idx_accounts_email` on `json_extract(record, '$.email')`
-- `idx_accounts_verification_token` on `json_extract(record, '$.email_verification_token')`
-- `idx_accounts_reset_token` on `json_extract(record, '$.password_reset_token')`
+**Indexes:**
+- `idx_accounts_email` on `email` (unique index for fast email lookups)
+
+---
+
+### `verifications`
+Short-lived verification tokens for email verification and password reset.
+
+| Column | Type | Constraints | Description |
+|--------|------|-------------|-------------|
+| `account_id` | TEXT | PK, FK → accounts.id | Account these tokens belong to |
+| `token_type` | TEXT | PK, NOT NULL | Type of token ('email_verification', 'password_reset') |
+| `token_value` | TEXT | NOT NULL | The actual token value |
+| `expires_at` | DATETIME | | Expiration time for tokens that expire |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Token creation time |
+
+**Primary Key:** Composite of `(account_id, token_type)` - one token per type per account  
+**Relationship:**
+- `account_id` logically references `accounts.id` (enforced at application level)
+
+**Indexes:**
+- `idx_verifications_token_value` on `token_value` (for token lookups during verification)
 
 ---
 
@@ -25,6 +44,8 @@ Extended user profile information for artist pages stored as JSON documents.
 | Column | Type | Constraints | Description |
 |--------|------|-------------|-------------|
 | `id` | TEXT | PRIMARY KEY | Account identifier (same as accounts.id) |
+| `public_profile` | BOOLEAN | DEFAULT TRUE | Whether profile is publicly visible (promoted for efficient filtering) |
+| `created_at` | DATETIME | DEFAULT CURRENT_TIMESTAMP | Profile creation time (promoted for efficient ordering) |
 | `record` | TEXT | NOT NULL | JSON object containing all profile data |
 
 **Relationship:**
@@ -166,32 +187,26 @@ User comments on artworks (not yet implemented).
 ## JSON Object Types
 
 ### Account Record Object
-Stored in `accounts.record` as JSON text:
+Stored in `accounts.record` as JSON text (email is stored in separate column):
 
 ```json
 {
-  "email": "user@example.com",
   "password_hash": "$2b$10$...",
   "name": "User Full Name",
   "email_verified": false,
-  "email_verification_token": "abc123...",
-  "password_reset_token": "def456...",
-  "password_reset_expires": "2024-01-15T10:30:00Z",
   "created_at": "2024-01-01T00:00:00Z",
   "updated_at": "2024-01-13T15:45:00Z"
 }
 ```
 
 **Account Record Fields:**
-- `email` (string, required): User's email address (used for login)
 - `password_hash` (string, required): Hashed password using bcrypt
 - `name` (string, optional): User's full name
 - `email_verified` (boolean): Whether email address has been verified
-- `email_verification_token` (string, optional): Token for email verification process
-- `password_reset_token` (string, optional): Token for password reset process
-- `password_reset_expires` (string, optional): ISO datetime for password reset token expiration
 - `created_at` (string, required): ISO datetime for account creation
 - `updated_at` (string, required): ISO datetime for last account update
+
+**Note:** Email is stored in `accounts.email` column, verification tokens are stored in `verifications` table.
 
 ---
 

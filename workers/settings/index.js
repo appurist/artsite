@@ -54,8 +54,8 @@ async function getSettings(request, env) {
 
     const settingsRow = await queryFirst(
       env.DB,
-      'SELECT * FROM settings WHERE user_id = ?',
-      [user.userId]
+      'SELECT * FROM settings WHERE account_id = ?',
+      [user.account_id]
     );
 
     let settings = {};
@@ -140,8 +140,8 @@ async function updateSettings(request, env) {
     // Get current settings if they exist
     const existingSettingsRow = await queryFirst(
       env.DB,
-      'SELECT * FROM settings WHERE user_id = ?',
-      [user.userId]
+      'SELECT * FROM settings WHERE account_id = ?',
+      [user.account_id]
     );
 
     let currentSettings = {};
@@ -162,15 +162,15 @@ async function updateSettings(request, env) {
       // Update existing settings
       await executeQuery(
         env.DB,
-        'UPDATE settings SET settings = ?, updated_at = ? WHERE user_id = ?',
-        [settingsJson, now, user.userId]
+        'UPDATE settings SET settings = ?, updated_at = ? WHERE account_id = ?',
+        [settingsJson, now, user.account_id]
       );
     } else {
       // Create new settings record
       await executeQuery(
         env.DB,
-        'INSERT INTO settings (user_id, settings, updated_at) VALUES (?, ?, ?)',
-        [user.userId, settingsJson, now]
+        'INSERT INTO settings (account_id, settings, updated_at) VALUES (?, ?, ?)',
+        [user.account_id, settingsJson, now]
       );
     }
 

@@ -59,32 +59,35 @@ async function listProfiles(request, env) {
     const includePrivate = url.searchParams.get('includePrivate') === 'true';
 
     let query = `
-      SELECT p.*, u.name, u.email 
+      SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record
       FROM profiles p
-      JOIN users u ON p.user_id = u.id
+      JOIN accounts a ON p.id = a.id
     `;
 
     if (!includePrivate) {
-      query += ' WHERE p.public_profile = true';
+      query += ` WHERE p.public_profile = 1`;
     }
 
-    query += ' ORDER BY p.created_at DESC';
+    query += ` ORDER BY p.created_at DESC`;
 
     const profiles = await queryAll(env.DB, query);
 
     // Remove sensitive data for public listing
-    const publicProfiles = profiles.map(profile => ({
-      user_id: profile.user_id,
-      display_name: profile.display_name,
-      bio: profile.bio,
-      statement: profile.statement,
-      avatar_url: profile.avatar_url,
-      website: profile.website,
-      instagram: profile.instagram,
-      twitter: profile.twitter,
-      location: profile.location,
-      created_at: profile.created_at
-    }));
+    const publicProfiles = profiles.map(profile => {
+      const profileData = JSON.parse(profile.record);
+      return {
+        account_id: profile.id,
+        display_name: profileData.display_name,
+        bio: profileData.bio,
+        statement: profileData.statement,
+        avatar_url: profileData.avatar_url,
+        website: profileData.website,
+        instagram: profileData.instagram,
+        twitter: profileData.twitter,
+        location: profileData.location,
+        created_at: profile.created_at
+      };
+    });
 
     return withCors(new Response(JSON.stringify({
       profiles: publicProfiles
@@ -115,10 +118,10 @@ async function getProfile(request, env) {
     const profile = await queryFirst(
       env.DB,
       `
-        SELECT p.*, u.name, u.email 
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record
         FROM profiles p
-        JOIN users u ON p.user_id = u.id
-        WHERE p.user_id = ?
+        JOIN accounts a ON p.id = a.id
+        WHERE p.id = ?
       `,
       [userId]
     );
@@ -136,10 +139,13 @@ async function getProfile(request, env) {
     let isOwner = false;
     try {
       const user = await authenticateRequest(request, env.JWT_SECRET);
-      isOwner = user.userId === userId;
+      isOwner = user.account_id === userId;
     } catch (e) {
       // Not authenticated, continue as public view
     }
+
+    const profileData = JSON.parse(profile.record);
+    const accountData = JSON.parse(profile.account_record);
 
     if (!profile.public_profile && !isOwner) {
       return withCors(new Response(JSON.stringify({
@@ -152,24 +158,24 @@ async function getProfile(request, env) {
 
     // Return appropriate fields based on ownership
     const responseProfile = {
-      user_id: profile.user_id,
-      display_name: profile.display_name,
-      bio: profile.bio,
-      statement: profile.statement,
-      avatar_url: profile.avatar_url,
-      website: profile.website,
-      instagram: profile.instagram,
-      twitter: profile.twitter,
-      location: profile.location,
+      account_id: profile.id,
+      display_name: profileData.display_name,
+      bio: profileData.bio,
+      statement: profileData.statement,
+      avatar_url: profileData.avatar_url,
+      website: profileData.website,
+      instagram: profileData.instagram,
+      twitter: profileData.twitter,
+      location: profileData.location,
       created_at: profile.created_at
     };
 
     // Include private fields if owner
     if (isOwner) {
-      responseProfile.phone = profile.phone;
+      responseProfile.phone = profileData.phone;
       responseProfile.public_profile = profile.public_profile;
-      responseProfile.name = profile.name;
-      responseProfile.email = profile.email;
+      responseProfile.name = accountData.name;
+      responseProfile.email = accountData.email;
     }
 
     return withCors(new Response(JSON.stringify({
@@ -204,8 +210,8 @@ async function updateProfile(request, env) {
     // Check if profile exists
     const existingProfile = await queryFirst(
       env.DB,
-      'SELECT * FROM profiles WHERE user_id = ?',
-      [user.userId]
+      'SELECT id, public_profile, created_at, record FROM profiles WHERE id = ?',
+      [user.account_id]
     );
 
     if (existingProfile) {
@@ -214,78 +220,79 @@ async function updateProfile(request, env) {
       const params = [];
 
       if (profileData.displayName !== undefined) {
-        updateFields.push('display_name = ?');
+        updateFields.push(`'$.display_name', ?`);
         params.push(profileData.displayName);
       }
       if (profileData.bio !== undefined) {
-        updateFields.push('bio = ?');
+        updateFields.push(`'$.bio', ?`);
         params.push(profileData.bio);
       }
       if (profileData.statement !== undefined) {
-        updateFields.push('statement = ?');
+        updateFields.push(`'$.statement', ?`);
         params.push(profileData.statement);
       }
       if (profileData.avatarUrl !== undefined) {
-        updateFields.push('avatar_url = ?');
+        updateFields.push(`'$.avatar_url', ?`);
         params.push(profileData.avatarUrl);
       }
       if (profileData.website !== undefined) {
-        updateFields.push('website = ?');
+        updateFields.push(`'$.website', ?`);
         params.push(profileData.website);
       }
       if (profileData.instagram !== undefined) {
-        updateFields.push('instagram = ?');
+        updateFields.push(`'$.instagram', ?`);
         params.push(profileData.instagram);
       }
       if (profileData.twitter !== undefined) {
-        updateFields.push('twitter = ?');
+        updateFields.push(`'$.twitter', ?`);
         params.push(profileData.twitter);
       }
       if (profileData.location !== undefined) {
-        updateFields.push('location = ?');
+        updateFields.push(`'$.location', ?`);
         params.push(profileData.location);
       }
       if (profileData.phone !== undefined) {
-        updateFields.push('phone = ?');
+        updateFields.push(`'$.phone', ?`);
         params.push(profileData.phone);
       }
+      // Handle public_profile separately as it's a promoted column
+      let publicProfileUpdate = '';
       if (profileData.publicProfile !== undefined) {
-        updateFields.push('public_profile = ?');
+        publicProfileUpdate = ', public_profile = ?';
         params.push(profileData.publicProfile);
       }
 
-      updateFields.push('updated_at = ?');
+      updateFields.push(`'$.updated_at', ?`);
       params.push(now);
-      params.push(user.userId);
+      params.push(user.account_id);
 
-      const query = `UPDATE profiles SET ${updateFields.join(', ')} WHERE user_id = ?`;
+      const query = `UPDATE profiles SET record = json_set(record, ${updateFields.join(', ')})${publicProfileUpdate} WHERE id = ?`;
       await executeQuery(env.DB, query, params);
 
     } else {
       // Create new profile
-      const query = `
-        INSERT INTO profiles (
-          user_id, display_name, bio, statement, avatar_url, 
-          website, instagram, twitter, location, phone, 
-          public_profile, created_at, updated_at
-        )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `;
+      const profileRecord = {
+        display_name: profileData.displayName || null,
+        bio: profileData.bio || null,
+        statement: profileData.statement || null,
+        avatar_url: profileData.avatarUrl || null,
+        website: profileData.website || null,
+        instagram: profileData.instagram || null,
+        twitter: profileData.twitter || null,
+        location: profileData.location || null,
+        phone: profileData.phone || null,
+        created_at: now,
+        updated_at: now
+      };
 
+      const publicProfile = profileData.publicProfile !== undefined ? profileData.publicProfile : true;
+
+      const query = `INSERT INTO profiles (id, public_profile, created_at, record) VALUES (?, ?, ?, ?)`;
       await executeQuery(env.DB, query, [
-        user.userId,
-        profileData.displayName || null,
-        profileData.bio || null,
-        profileData.statement || null,
-        profileData.avatarUrl || null,
-        profileData.website || null,
-        profileData.instagram || null,
-        profileData.twitter || null,
-        profileData.location || null,
-        profileData.phone || null,
-        profileData.publicProfile !== undefined ? profileData.publicProfile : true,
+        user.account_id,
+        publicProfile,
         now,
-        now
+        JSON.stringify(profileRecord)
       ]);
     }
 
@@ -293,17 +300,25 @@ async function updateProfile(request, env) {
     const updatedProfile = await queryFirst(
       env.DB,
       `
-        SELECT p.*, u.name, u.email 
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record
         FROM profiles p
-        JOIN users u ON p.user_id = u.id
-        WHERE p.user_id = ?
+        JOIN accounts a ON p.id = a.id
+        WHERE p.id = ?
       `,
-      [user.userId]
+      [user.account_id]
     );
+
+    const updatedProfileData = JSON.parse(updatedProfile.record);
+    const accountData = JSON.parse(updatedProfile.account_record);
 
     return withCors(new Response(JSON.stringify({
       message: 'Profile updated successfully',
-      profile: updatedProfile
+      profile: {
+        ...updatedProfileData,
+        public_profile: updatedProfile.public_profile,
+        name: accountData.name,
+        email: accountData.email
+      }
     }), {
       headers: { 'Content-Type': 'application/json' }
     }));

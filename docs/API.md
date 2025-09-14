@@ -155,7 +155,7 @@ Verify email address using token from verification email.
 Retrieve artworks with optional filtering.
 
 **Query Parameters:**
-- `userId` (optional): Filter by specific user ID
+- `userId` (optional): Filter by specific account ID
 - `status` (optional): Filter by artwork status (published, draft, archived)
 - `featured` (optional): Filter featured artworks only
 - `page` (optional): Page number for pagination
@@ -173,7 +173,7 @@ Retrieve artworks with optional filtering.
   "artworks": [
     {
       "id": "artwork-id",
-      "user_id": "artist-user-id",
+      "account_id": "artist-account-id",
       "title": "Artwork Title",
       "description": "Artwork description",
       "medium": "Oil on canvas",
@@ -181,9 +181,9 @@ Retrieve artworks with optional filtering.
       "year_created": 2024,
       "price": "$1,200",
       "tags": "abstract,modern",
-      "image_url": "https://r2.artsite.ca/user-id/artwork-image.jpg",
-      "thumbnail_url": "https://r2.artsite.ca/user-id/artwork-thumb.jpg",
-      "storage_path": "user-id/unique-filename.jpg",
+      "image_url": "https://r2.artsite.ca/account-id/artwork-image.jpg",
+      "thumbnail_url": "https://r2.artsite.ca/account-id/artwork-thumb.jpg",
+      "storage_path": "account-id/unique-filename.jpg",
       "file_size": 2048000,
       "image_width": 1920,
       "image_height": 1080,
@@ -211,7 +211,7 @@ Get details for a specific artwork.
 {
   "artwork": {
     "id": "artwork-id",
-    "user_id": "artist-user-id",
+    "account_id": "artist-account-id",
     "title": "Artwork Title",
     "description": "Artwork description",
     "medium": "Oil on canvas",
@@ -219,10 +219,10 @@ Get details for a specific artwork.
     "year_created": 2024,
     "price": "$1,200",
     "tags": "abstract,modern",
-    "image_url": "https://r2.artsite.ca/user-id/artwork-image.jpg",
-    "thumbnail_url": "https://r2.artsite.ca/user-id/artwork-thumb.jpg",
-    "original_url": "https://r2.artsite.ca/user-id/artwork-original.jpg",
-    "storage_path": "user-id/unique-filename.jpg",
+    "image_url": "https://r2.artsite.ca/account-id/artwork-image.jpg",
+    "thumbnail_url": "https://r2.artsite.ca/account-id/artwork-thumb.jpg",
+    "original_url": "https://r2.artsite.ca/account-id/artwork-original.jpg",
+    "storage_path": "account-id/unique-filename.jpg",
     "file_size": 2048000,
     "image_width": 1920,
     "image_height": 1080,
@@ -334,7 +334,7 @@ Get all user profiles (for artist listings).
 ```json
 [
   {
-    "user_id": "user-id",
+    "account_id": "account-id",
     "display_name": "Artist Display Name",
     "bio": "Artist biography",
     "website": "https://artistwebsite.com",
@@ -354,7 +354,7 @@ Get profile for a specific user.
 **Response:**
 ```json
 {
-  "user_id": "user-id",
+  "account_id": "account-id",
   "display_name": "Artist Display Name",
   "bio": "Artist biography",
   "website": "https://artistwebsite.com",
@@ -579,7 +579,7 @@ The API supports CORS for web applications with the following headers:
 
 ### Artworks Table
 - `id` (TEXT PRIMARY KEY)
-- `user_id` (TEXT NOT NULL)
+- `account_id` (TEXT NOT NULL)
 - `title` (TEXT NOT NULL)
 - `description` (TEXT)
 - `medium` (TEXT)
@@ -600,7 +600,7 @@ The API supports CORS for web applications with the following headers:
 - `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ### Profiles Table
-- `user_id` (TEXT PRIMARY KEY)
+- `account_id` (TEXT PRIMARY KEY)
 - `display_name` (TEXT)
 - `bio` (TEXT)
 - `statement` (TEXT) - Artist statement
@@ -615,7 +615,7 @@ The API supports CORS for web applications with the following headers:
 - `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 
 ### Settings Table
-- `user_id` (TEXT PRIMARY KEY)
+- `account_id` (TEXT PRIMARY KEY)
 - `settings` (TEXT NOT NULL) - JSON object stored as text
 - `updated_at` (DATETIME DEFAULT CURRENT_TIMESTAMP)
 

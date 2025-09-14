@@ -42,7 +42,9 @@
       "Bash(robocopy:*)",
       "Bash(wrangler secret:*)",
       "Bash(wrangler deploy:*)",
-      "Bash(move:*)"
+      "Bash(move:*)",
+      "Bash(wrangler d1 list:*)",
+      "Bash(grep:*)"
     ],
     "deny": [],
     "ask": [],

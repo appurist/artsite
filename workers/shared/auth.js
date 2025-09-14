@@ -160,7 +160,7 @@ export async function authenticateRequest(request, secret) {
 
   const payload = await verifyJWT(token, secret);
   return {
-    userId: payload.sub,
+    account_id: payload.sub,
     email: payload.email,
     name: payload.name
   };

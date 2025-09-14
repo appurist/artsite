@@ -91,21 +91,26 @@ export async function createUser(db, userData) {
   const id = generateId();
   const now = getCurrentTimestamp();
   
-  const query = `
-    INSERT INTO users (id, email, password_hash, name, email_verified, email_verification_token, created_at, updated_at)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-  `;
+  const accountRecord = {
+    password_hash: userData.passwordHash,
+    name: userData.name || null,
+    email_verified: userData.emailVerified || false,
+    created_at: now,
+    updated_at: now
+  };
+  
+  const query = `INSERT INTO accounts (id, email, record) VALUES (?, ?, ?)`;
   
   await executeQuery(db, query, [
     id,
     userData.email,
-    userData.passwordHash,
-    userData.name || null,
-    userData.emailVerified || false,
-    userData.verificationToken || null,
-    now,
-    now
+    JSON.stringify(accountRecord)
   ]);
+  
+  // Create verification token if provided
+  if (userData.verificationToken) {
+    await createVerificationToken(db, id, 'email_verification', userData.verificationToken);
+  }
   
   return id;
 }
@@ -114,16 +119,36 @@ export async function createUser(db, userData) {
  * Get user by email
  */
 export async function getUserByEmail(db, email) {
-  const query = 'SELECT * FROM users WHERE email = ?';
-  return await queryFirst(db, query, [email]);
+  const query = `SELECT id, email, record FROM accounts WHERE email = ?`;
+  const result = await queryFirst(db, query, [email]);
+  if (result) {
+    const accountData = JSON.parse(result.record);
+    return {
+      id: result.id,
+      email: result.email,
+      ...accountData
+    };
+  }
+  return null;
 }
 
 /**
  * Get user by ID
  */
 export async function getUserById(db, id) {
-  const query = 'SELECT id, email, name, email_verified, created_at FROM users WHERE id = ?';
-  return await queryFirst(db, query, [id]);
+  const query = `SELECT id, email, record FROM accounts WHERE id = ?`;
+  const result = await queryFirst(db, query, [id]);
+  if (result) {
+    const accountData = JSON.parse(result.record);
+    return {
+      id: result.id,
+      email: result.email,
+      name: accountData.name,
+      email_verified: accountData.email_verified,
+      created_at: accountData.created_at
+    };
+  }
+  return null;
 }
 
 /**
@@ -135,7 +160,7 @@ export async function createArtwork(db, artworkData) {
   
   const query = `
     INSERT INTO artworks (
-      id, user_id, title, description, medium, dimensions, 
+      id, account_id, title, description, medium, dimensions, 
       year_created, price, tags, image_url, thumbnail_url, 
       storage_path, status, created_at, updated_at
     )
@@ -144,7 +169,7 @@ export async function createArtwork(db, artworkData) {
   
   await executeQuery(db, query, [
     id,
-    artworkData.userId,
+    artworkData.account_id,
     artworkData.title,
     artworkData.description || null,
     artworkData.medium || null,
@@ -167,17 +192,16 @@ export async function createArtwork(db, artworkData) {
  * Get artworks with pagination
  */
 export async function getArtworks(db, options = {}) {
-  const { userId, status = 'published', page = 1, limit = 20 } = options;
+  const { account_id, status = 'published', page = 1, limit = 20 } = options;
   
   let baseQuery = `
-    SELECT a.*, u.name as artist_name, p.display_name as artist_display_name
+    SELECT a.*, p.record as profile_record
     FROM artworks a
-    JOIN users u ON a.user_id = u.id
-    LEFT JOIN profiles p ON a.user_id = p.user_id
+    LEFT JOIN profiles p ON a.account_id = p.id
   `;
   
   const filters = {};
-  if (userId) filters['a.user_id'] = userId;
+  if (account_id) filters['a.account_id'] = account_id;
   if (status) filters['a.status'] = status;
   
   const { whereClause, params } = buildWhereClause(filters);
@@ -193,12 +217,56 @@ export async function getArtworks(db, options = {}) {
  */
 export async function getArtworkById(db, id) {
   const query = `
-    SELECT a.*, u.name as artist_name, p.display_name as artist_display_name
+    SELECT a.*, p.record as profile_record
     FROM artworks a
-    JOIN users u ON a.user_id = u.id
-    LEFT JOIN profiles p ON a.user_id = p.user_id
+    LEFT JOIN profiles p ON a.account_id = p.id
     WHERE a.id = ?
   `;
   
   return await queryFirst(db, query, [id]);
+}
+
+/**
+ * Create or update verification token
+ */
+export async function createVerificationToken(db, accountId, tokenType, tokenValue, expiresAt = null) {
+  const now = getCurrentTimestamp();
+  
+  const query = `
+    INSERT OR REPLACE INTO verifications (account_id, token_type, token_value, expires_at, created_at)
+    VALUES (?, ?, ?, ?, ?)
+  `;
+  
+  await executeQuery(db, query, [
+    accountId,
+    tokenType,
+    tokenValue,
+    expiresAt,
+    now
+  ]);
+}
+
+/**
+ * Get verification token
+ */
+export async function getVerificationToken(db, tokenValue) {
+  const query = `SELECT * FROM verifications WHERE token_value = ?`;
+  return await queryFirst(db, query, [tokenValue]);
+}
+
+/**
+ * Delete verification token
+ */
+export async function deleteVerificationToken(db, accountId, tokenType) {
+  const query = `DELETE FROM verifications WHERE account_id = ? AND token_type = ?`;
+  await executeQuery(db, query, [accountId, tokenType]);
+}
+
+/**
+ * Clean expired tokens
+ */
+export async function cleanExpiredTokens(db) {
+  const now = getCurrentTimestamp();
+  const query = `DELETE FROM verifications WHERE expires_at IS NOT NULL AND expires_at < ?`;
+  await executeQuery(db, query, [now]);
 }

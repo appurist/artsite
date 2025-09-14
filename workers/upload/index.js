@@ -86,9 +86,9 @@ async function uploadImage(request, env) {
     // Generate unique file paths
     const fileId = generateId();
     const fileExtension = getFileExtension(imageFile.name);
-    const originalPath = `artworks/${user.userId}/${fileId}/original.${fileExtension}`;
-    const displayPath = `artworks/${user.userId}/${fileId}/display.${fileExtension}`;
-    const thumbPath = `artworks/${user.userId}/${fileId}/thumb.${fileExtension}`;
+    const originalPath = `artworks/${user.account_id}/${fileId}/original.${fileExtension}`;
+    const displayPath = `artworks/${user.account_id}/${fileId}/display.${fileExtension}`;
+    const thumbPath = `artworks/${user.account_id}/${fileId}/thumb.${fileExtension}`;
 
     // Convert file to ArrayBuffer
     const imageBuffer = await imageFile.arrayBuffer();
@@ -100,7 +100,7 @@ async function uploadImage(request, env) {
         cacheControl: 'public, max-age=31536000' // 1 year cache
       },
       customMetadata: {
-        uploadedBy: user.userId,
+        uploadedBy: user.account_id,
         originalName: imageFile.name,
         uploadedAt: new Date().toISOString()
       }
@@ -221,7 +221,7 @@ async function generateSignedUploadUrl(request, env) {
     // Generate unique file path
     const fileId = generateId();
     const fileExtension = getFileExtension(fileName);
-    const uploadPath = `artworks/${user.userId}/${fileId}/original.${fileExtension}`;
+    const uploadPath = `artworks/${user.account_id}/${fileId}/original.${fileExtension}`;
 
     // This is a placeholder - R2 doesn't currently support signed URLs for uploads
     // You would typically use presigned URLs with S3-compatible APIs

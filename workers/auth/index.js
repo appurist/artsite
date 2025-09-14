@@ -16,7 +16,10 @@ import {
   getUserByEmail, 
   getUserById,
   executeQuery,
-  queryFirst 
+  queryFirst,
+  getVerificationToken,
+  deleteVerificationToken,
+  createVerificationToken
 } from '../shared/db.js';
 import { 
   sendVerificationEmail, 
@@ -110,7 +113,7 @@ async function register(request, env) {
     const verificationToken = generateVerificationToken();
     
     // Create user
-    const userId = await createUser(env.DB, {
+    const account_id = await createUser(env.DB, {
       email,
       passwordHash,
       name,
@@ -121,7 +124,7 @@ async function register(request, env) {
     // Generate JWT
     const token = await generateJWT(
       { 
-        sub: userId,
+        sub: account_id,
         email,
         name,
         emailVerified: false
@@ -141,7 +144,7 @@ async function register(request, env) {
     return withCors(new Response(JSON.stringify({
       message: 'User registered successfully',
       user: {
-        id: userId,
+        id: account_id,
         email,
         name,
         emailVerified: false
@@ -247,7 +250,7 @@ async function login(request, env) {
 async function getCurrentUser(request, env) {
   try {
     const user = await authenticateRequest(request, env.JWT_SECRET);
-    const userData = await getUserById(env.DB, user.userId);
+    const userData = await getUserById(env.DB, user.account_id);
     
     if (!userData) {
       return withCors(new Response(JSON.stringify({
@@ -296,14 +299,10 @@ async function verifyEmail(request, env) {
       }));
     }
     
-    // Find user with verification token
-    const user = await queryFirst(
-      env.DB,
-      'SELECT * FROM users WHERE email_verification_token = ?',
-      [token]
-    );
+    // Find verification token
+    const verification = await getVerificationToken(env.DB, token);
     
-    if (!user) {
+    if (!verification || verification.token_type !== 'email_verification') {
       return withCors(new Response(JSON.stringify({
         error: 'Invalid verification token'
       }), {
@@ -312,12 +311,15 @@ async function verifyEmail(request, env) {
       }));
     }
     
-    // Update user as verified
+    // Update user as verified and remove token
     await executeQuery(
       env.DB,
-      'UPDATE users SET email_verified = true, email_verification_token = NULL, updated_at = ? WHERE id = ?',
-      [new Date().toISOString(), user.id]
+      'UPDATE accounts SET record = json_set(record, \'$.email_verified\', 1, \'$.updated_at\', ?) WHERE id = ?',
+      [new Date().toISOString(), verification.account_id]
     );
+
+    // Delete the verification token
+    await deleteVerificationToken(env.DB, verification.account_id, 'email_verification');
     
     return withCors(new Response(JSON.stringify({
       message: 'Email verified successfully'
@@ -367,12 +369,8 @@ async function forgotPassword(request, env) {
     const resetToken = generateVerificationToken();
     const resetExpires = new Date(Date.now() + 3600000).toISOString(); // 1 hour
     
-    // Update user with reset token
-    await executeQuery(
-      env.DB,
-      'UPDATE users SET password_reset_token = ?, password_reset_expires = ?, updated_at = ? WHERE id = ?',
-      [resetToken, resetExpires, new Date().toISOString(), user.id]
-    );
+    // Create password reset token
+    await createVerificationToken(env.DB, user.id, 'password_reset', resetToken, resetExpires);
     
     // Send password reset email
     try {
@@ -417,14 +415,13 @@ async function resetPassword(request, env) {
       }));
     }
     
-    // Find user with valid reset token
-    const user = await queryFirst(
-      env.DB,
-      'SELECT * FROM users WHERE password_reset_token = ? AND password_reset_expires > ?',
-      [token, new Date().toISOString()]
-    );
+    // Find valid reset token
+    const verification = await getVerificationToken(env.DB, token);
+    const now = new Date().toISOString();
     
-    if (!user) {
+    if (!verification || 
+        verification.token_type !== 'password_reset' ||
+        (verification.expires_at && verification.expires_at < now)) {
       return withCors(new Response(JSON.stringify({
         error: 'Invalid or expired reset token'
       }), {
@@ -439,9 +436,12 @@ async function resetPassword(request, env) {
     // Update password and clear reset token
     await executeQuery(
       env.DB,
-      'UPDATE users SET password_hash = ?, password_reset_token = NULL, password_reset_expires = NULL, updated_at = ? WHERE id = ?',
-      [passwordHash, new Date().toISOString(), user.id]
+      'UPDATE accounts SET record = json_set(record, \'$.password_hash\', ?, \'$.updated_at\', ?) WHERE id = ?',
+      [passwordHash, now, verification.account_id]
     );
+
+    // Delete the password reset token
+    await deleteVerificationToken(env.DB, verification.account_id, 'password_reset');
     
     return withCors(new Response(JSON.stringify({
       message: 'Password reset successfully'

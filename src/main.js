@@ -495,10 +495,10 @@ async function loadGalleryPage(focusUser = '*') {
       let profileMap = {};
       if (focusUser === '*') {
         // Get unique user IDs from artworks
-        const userIds = [...new Set(artworks.map(artwork => artwork.user_id))];
+        const userIds = [...new Set(artworks.map(artwork => artwork.account_id))];
         const allProfiles = await getProfiles();
-        const profiles = allProfiles.filter(profile => userIds.includes(profile.user_id));
-        profileMap = Object.fromEntries(profiles.map(profile => [profile.user_id, profile]));
+        const profiles = allProfiles.filter(profile => userIds.includes(profile.account_id));
+        profileMap = Object.fromEntries(profiles.map(profile => [profile.account_id, profile]));
       }
 
       const galleryGrid = artworks.map(artwork => createArtworkCard(artwork)).join('');
@@ -509,7 +509,7 @@ async function loadGalleryPage(focusUser = '*') {
         const artistProfiles = await getProfiles();
         if (artistProfiles.length > 1) {
           const artistOptions = artistProfiles.map(profile =>
-            `<option value="${profile.user_id}">${profile.display_name}</option>`
+            `<option value="${profile.account_id}">${profile.display_name}</option>`
           ).join('');
 
           artistFilter = `
