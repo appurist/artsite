@@ -53,7 +53,9 @@
       "WebFetch(domain:artsite.ca)",
       "WebFetch(domain:i.gyazo.com)",
       "Bash(pnpm build:*)",
-      "Bash(pnpm deploy:prod:*)"
+      "Bash(pnpm deploy:prod:*)",
+      "Bash(status.cmd)",
+      "Bash(cmd:*)"
     ],
     "deny": [],
     "ask": [],
