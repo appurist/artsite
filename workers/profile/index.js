@@ -191,9 +191,10 @@ async function uploadAvatar(request, env) {
     if (currentProfile) {
       const currentProfileData = JSON.parse(currentProfile.record);
       if (currentProfileData.avatar_url && currentProfileData.avatar_type === 'uploaded') {
-        // Extract filename from URL for local development or production
+        // Extract storage path from URL for local development or production
         const url = new URL(currentProfileData.avatar_url);
-        oldAvatarPath = url.pathname.replace('/api/images/', '').replace('/', '');
+        const pathParts = url.pathname.split('/api/images/');
+        oldAvatarPath = pathParts.length > 1 ? pathParts[1] : null;
       }
     }
 

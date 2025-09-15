@@ -4,7 +4,7 @@
  */
 
 // Auto-detect environment for API base URL
-const API_BASE_URL = window.location.hostname === 'localhost' 
+const API_BASE_URL = window.location.hostname === 'localhost'
   ? 'http://localhost:8787'  // Local Workers dev server
   : '';  // Production/staging (same origin)
 
@@ -35,33 +35,33 @@ export function getAuthToken() {
 /**
  * Make authenticated API request
  */
-async function apiRequest(endpoint, options = {}) {
-  const url = `${API_BASE_URL}/api${endpoint}`;
+export async function apiRequest(endpoint, options = {}) {
+  const url = `${API_BASE_URL}${endpoint}`;
   const token = getAuthToken();
-  
+
   const headers = {
     'Content-Type': 'application/json',
     ...options.headers
   };
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   const config = {
     method: 'GET',
     ...options,
     headers
   };
-  
+
   try {
     const response = await fetch(url, config);
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || `HTTP ${response.status}`);
     }
-    
+
     return data;
   } catch (error) {
     // Use console.log for authentication errors (like "User not found") to reduce noise
@@ -80,16 +80,16 @@ async function apiRequest(endpoint, options = {}) {
  * Register a new user
  */
 export async function register(email, password, name) {
-  const response = await apiRequest('/auth/register', {
+  const response = await apiRequest('/api/auth/register', {
     method: 'POST',
     body: JSON.stringify({ email, password, name })
   });
-  
+
   // Store auth token
   if (response.token) {
     setAuthToken(response.token);
   }
-  
+
   return response;
 }
 
@@ -97,21 +97,21 @@ export async function register(email, password, name) {
  * Login user
  */
 export async function login(email, password) {
-  const response = await apiRequest('/auth/login', {
+  const response = await apiRequest('/api/auth/login', {
     method: 'POST',
     body: JSON.stringify({ email, password })
   });
-  
+
   // Check for login failure
   if (response.success === false) {
     throw new Error(response.message || 'Login failed');
   }
-  
+
   // Store auth token
   if (response.token) {
     setAuthToken(response.token);
   }
-  
+
   return response;
 }
 
@@ -119,7 +119,7 @@ export async function login(email, password) {
  * Get current user
  */
 export async function getCurrentUser() {
-  const response = await apiRequest('/auth/user');
+  const response = await apiRequest('/api/auth/user');
   return response.user;
 }
 
@@ -135,7 +135,7 @@ export function logout() {
  * Verify email with token
  */
 export async function verifyEmail(token) {
-  return await apiRequest('/auth/verify', {
+  return await apiRequest('/api/auth/verify', {
     method: 'POST',
     body: JSON.stringify({ token })
   });
@@ -145,7 +145,7 @@ export async function verifyEmail(token) {
  * Request password reset
  */
 export async function forgotPassword(email) {
-  return await apiRequest('/auth/forgot-password', {
+  return await apiRequest('/api/auth/forgot-password', {
     method: 'POST',
     body: JSON.stringify({ email })
   });
@@ -155,7 +155,7 @@ export async function forgotPassword(email) {
  * Reset password with token
  */
 export async function resetPassword(token, password) {
-  return await apiRequest('/auth/reset-password', {
+  return await apiRequest('/api/auth/reset-password', {
     method: 'POST',
     body: JSON.stringify({ token, password })
   });
@@ -168,15 +168,15 @@ export async function resetPassword(token, password) {
  */
 export async function getArtworks(options = {}) {
   const params = new URLSearchParams();
-  
+
   if (options.userId) params.append('userId', options.userId);
   if (options.status) params.append('status', options.status);
   if (options.page) params.append('page', options.page.toString());
   if (options.limit) params.append('limit', options.limit.toString());
-  
+
   const query = params.toString();
-  const endpoint = query ? `/artworks?${query}` : '/artworks';
-  
+  const endpoint = query ? `/api/artworks?${query}` : '/api/artworks';
+
   const response = await apiRequest(endpoint);
   return response.artworks || [];
 }
@@ -185,7 +185,7 @@ export async function getArtworks(options = {}) {
  * Get single artwork by ID
  */
 export async function getArtwork(id) {
-  const response = await apiRequest(`/artworks/${id}`);
+  const response = await apiRequest(`/api/artworks/${id}`);
   return response.artwork;
 }
 
@@ -193,7 +193,7 @@ export async function getArtwork(id) {
  * Create new artwork
  */
 export async function createArtwork(artworkData) {
-  const response = await apiRequest('/artworks', {
+  const response = await apiRequest('/api/artworks', {
     method: 'POST',
     body: JSON.stringify(artworkData)
   });
@@ -204,7 +204,7 @@ export async function createArtwork(artworkData) {
  * Update artwork
  */
 export async function updateArtwork(id, artworkData) {
-  const response = await apiRequest(`/artworks/${id}`, {
+  const response = await apiRequest(`/api/artworks/${id}`, {
     method: 'PUT',
     body: JSON.stringify(artworkData)
   });
@@ -215,7 +215,7 @@ export async function updateArtwork(id, artworkData) {
  * Delete artwork
  */
 export async function deleteArtwork(id) {
-  return await apiRequest(`/artworks/${id}`, {
+  return await apiRequest(`/api/artworks/${id}`, {
     method: 'DELETE'
   });
 }
@@ -226,7 +226,7 @@ export async function deleteArtwork(id) {
  * Get all public profiles
  */
 export async function getProfiles() {
-  const response = await apiRequest('/profiles');
+  const response = await apiRequest('/api/profiles');
   return response.profiles;
 }
 
@@ -234,7 +234,7 @@ export async function getProfiles() {
  * Get specific profile by user ID
  */
 export async function getProfile(userId) {
-  const response = await apiRequest(`/profiles/${userId}`);
+  const response = await apiRequest(`/api/profiles/${userId}`);
   return response.profile;
 }
 
@@ -242,7 +242,7 @@ export async function getProfile(userId) {
  * Update own profile
  */
 export async function updateProfile(profileData) {
-  const response = await apiRequest('/profiles', {
+  const response = await apiRequest('/api/profiles', {
     method: 'PUT',
     body: JSON.stringify(profileData)
   });
@@ -255,7 +255,7 @@ export async function updateProfile(profileData) {
  * Get user settings
  */
 export async function getSettings() {
-  const response = await apiRequest('/settings');
+  const response = await apiRequest('/api/settings');
   return response.settings;
 }
 
@@ -263,7 +263,7 @@ export async function getSettings() {
  * Update user settings
  */
 export async function updateSettings(settingsData) {
-  const response = await apiRequest('/settings', {
+  const response = await apiRequest('/api/settings', {
     method: 'PUT',
     body: JSON.stringify(settingsData)
   });
@@ -278,27 +278,27 @@ export async function updateSettings(settingsData) {
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('image', file);
-  
+
   const token = getAuthToken();
   const headers = {};
-  
+
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
   }
-  
+
   try {
-    const response = await fetch(`${API_BASE_URL}/upload`, {
+    const response = await fetch(`${API_BASE_URL}/api/upload`, {
       method: 'POST',
       headers,
       body: formData
     });
-    
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.error || `HTTP ${response.status}`);
     }
-    
+
     return {
       $id: data.fileId,
       url: data.imageUrl,
@@ -322,7 +322,7 @@ export async function uploadFile(file) {
 export const createAccount = register;
 
 /**
- * Create session (alias for login)  
+ * Create session (alias for login)
  */
 export const createSession = login;
 

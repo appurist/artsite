@@ -3,9 +3,9 @@
 This document describes the REST API for the artsite.ca platform built on Cloudflare Workers with D1 database and R2 storage.
 
 ## Base URL
-- **Development**: `https://dev.artsite.ca/api`
-- **Production**: `https://artsite.ca/api`
-- **Local Development**: `http://localhost:8787/api` (via wrangler dev)
+- **Development**: `https://dev.artsite.ca`
+- **Production**: `https://artsite.ca`
+- **Local Development**: `http://localhost:8787` (via wrangler dev)
 
 ## Authentication
 
@@ -145,6 +145,24 @@ Verify email address using token from verification email.
 }
 ```
 
+### Delete Account
+**DELETE** `/api/auth/delete-account`
+
+Permanently delete the current user's account and all associated data (authenticated users only).
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Account deleted successfully"
+}
+```
+
 ---
 
 ## Artwork Endpoints
@@ -250,7 +268,7 @@ Content-Type: application/json
 ```json
 {
   "title": "Artwork Title",
-  "description": "Artwork description", 
+  "description": "Artwork description",
   "medium": "Oil on canvas",
   "dimensions": "24x36 inches",
   "year_created": 2024,
@@ -318,6 +336,25 @@ Authorization: Bearer <jwt-token>
 {
   "success": true,
   "message": "Artwork deleted successfully"
+}
+```
+
+### Delete All Artworks
+**DELETE** `/api/artworks/delete-all`
+
+Delete all artworks for the current user (authenticated users only).
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "All artworks deleted successfully",
+  "deleted_count": 5
 }
 ```
 
@@ -394,6 +431,91 @@ Content-Type: application/json
   "profile": {
     // ... updated profile object
   }
+}
+```
+
+## Avatar Endpoints
+
+### Update Avatar Type
+**PUT** `/api/profile/avatar`
+
+Update the avatar type for the current user (authenticated users only).
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "avatar_type": "icon"
+}
+```
+
+**Valid avatar types:** `"icon"`, `"initials"`, `"gravatar"`, `"uploaded"`
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Avatar type updated successfully",
+  "avatar_type": "icon"
+}
+```
+
+### Upload Avatar
+**POST** `/api/profile/avatar/upload`
+
+Upload a custom avatar image (authenticated users only).
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+Content-Type: multipart/form-data
+```
+
+**Request Body:**
+```
+FormData with 'avatar' field containing image file
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Avatar uploaded successfully",
+  "avatar_url": "https://r2.artsite.ca/avatars/user-123-1699876543.jpg",
+  "avatar_type": "uploaded"
+}
+```
+
+### Import Gravatar
+**POST** `/api/profile/avatar/gravatar`
+
+Import avatar from Gravatar service (authenticated users only).
+
+**Headers:**
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body:**
+```json
+{
+  "email": "user@example.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "message": "Gravatar imported successfully",
+  "gravatar_hash": "5d41402abc4b2a76b9719d911017c592",
+  "avatar_type": "gravatar"
 }
 ```
 
@@ -480,7 +602,7 @@ FormData with 'file' field containing image file
 {
   "fileId": "unique-file-id",
   "imageUrl": "https://r2.artsite.ca/user-id/image.jpg",
-  "thumbnailUrl": "https://r2.artsite.ca/user-id/thumb.jpg", 
+  "thumbnailUrl": "https://r2.artsite.ca/user-id/thumb.jpg",
   "originalUrl": "https://r2.artsite.ca/user-id/original.jpg",
   "storagePath": "user-id/unique-filename.jpg",
   "fileSize": 1024000,
@@ -569,7 +691,7 @@ The database uses a modern JSON-based approach with promoted fields for performa
 
 ### Accounts Table (Authentication)
 - `id` (TEXT PRIMARY KEY) - Account UUID
-- `email` (TEXT UNIQUE NOT NULL) - Promoted field for efficient lookups  
+- `email` (TEXT UNIQUE NOT NULL) - Promoted field for efficient lookups
 - `record` (TEXT NOT NULL) - JSON containing password_hash, name, email_verified, timestamps
 
 ### Verifications Table (Short-lived tokens)

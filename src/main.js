@@ -16,6 +16,7 @@ import {
   updateProfile,
   deleteArtwork,
   updateArtwork,
+  apiRequest,
   API_BASE_URL
 } from './api.js'
 
@@ -33,10 +34,6 @@ import keyVariantIcon from './assets/icons/key-variant.svg'
 import emailIcon from './assets/icons/email.svg'
 import { generateInitials, getAvatarUrl, fetchGravatarAsBlob, generateAvatarHtml } from './avatar-utils.js'
 
-// Configuration object
-const config = {
-  apiBaseUrl: API_BASE_URL // Base URL without /api - we add /api in the fetch calls
-};
 
 // Password visibility toggle function
 window.togglePasswordVisibility = function(inputId) {
@@ -117,7 +114,7 @@ function getDefaultFocusUser() {
 document.addEventListener('DOMContentLoaded', async () => {
   // Set current year in footer
   document.getElementById('current-year').textContent = new Date().getFullYear();
-  
+
   // Set app version in footer
   document.getElementById('app-version').textContent = __APP_VERSION__;
 
@@ -310,7 +307,7 @@ async function loadUserAvatar(user, navUserNameElement) {
   try {
     // Get user name
     const userName = user.name || user.email;
-    
+
     // Get user's profile for avatar
     let userProfile = null;
     try {
@@ -318,17 +315,17 @@ async function loadUserAvatar(user, navUserNameElement) {
     } catch (error) {
       console.log('Could not load profile for navbar avatar, using default');
     }
-    
+
     // Generate avatar HTML for navbar size (24px)
     const avatarHtml = generateAvatarHtml(user, userProfile, 24);
-    
+
     navUserNameElement.innerHTML = `${avatarHtml} ${userName}`;
-    
+
     // Add some margin to separate avatar from text
     navUserNameElement.style.display = 'flex';
     navUserNameElement.style.alignItems = 'center';
     navUserNameElement.style.gap = '8px';
-    
+
   } catch (error) {
     console.error('Error loading user avatar:', error);
     // Fallback to default icon
@@ -386,7 +383,7 @@ function loadLoginPage() {
       </div>
     </div>
   `;
-  
+
   // Set up form handler
   document.getElementById('login-form').addEventListener('submit', handleLogin);
 }
@@ -438,7 +435,7 @@ function loadRegisterPage() {
       </div>
     </div>
   `;
-  
+
   // Set up form handler
   document.getElementById('register-form').addEventListener('submit', handleRegister);
 }
@@ -712,7 +709,7 @@ async function loadProfilePage() {
                     ${user.email || 'Not provided'} ${user.email ? (user.emailVerified ? '(Verified)' : '(Not Verified)') : ''}
                   </span>
                 </div>
-                
+
                 <div class="profile-field">
                   <label></label>
                   <div style="display: flex; gap: 0.5rem;">
@@ -867,7 +864,7 @@ function createArtworkCard(artwork) {
 // Load individual artwork page
 async function loadArtworkPage(artworkId) {
   const app = document.getElementById('app');
-  
+
   // Show loading state
   app.innerHTML = `
     <div class="page-container">
@@ -883,7 +880,7 @@ async function loadArtworkPage(artworkId) {
       getArtwork(artworkId),
       getCurrentUser().catch(() => null)
     ]);
-    
+
     if (!artwork) {
       app.innerHTML = `
         <div class="page-container">
@@ -916,16 +913,16 @@ async function loadArtworkPage(artworkId) {
             </button>` : ''}
           </div>
         </div>
-        
+
         <div class="artwork-page-content">
           <div class="artwork-image-section">
             <img src="${fullImageUrl}" alt="${artwork.title}" class="artwork-full-image">
           </div>
-          
+
           <div class="artwork-details-section">
             <h1 class="artwork-title">${artwork.title}</h1>
             ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
-            
+
             <div class="artwork-metadata">
               <!-- Artist name will be looked up from profiles cache -->
               ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
@@ -1126,7 +1123,7 @@ function showAdminDashboard(user) {
             <p>Loading artworks...</p>
           </div>
         </div>
-        
+
         <div id="danger-zone-container"></div>
       </div>
     </div>
@@ -1195,7 +1192,7 @@ async function loadAdminArtworksList() {
           ${artworksList}
         </div>
       `;
-      
+
       // Show danger zone when artworks exist
       const dangerZoneContainer = document.getElementById('danger-zone-container');
       if (dangerZoneContainer) {
@@ -1824,11 +1821,11 @@ async function handleDeleteAccount() {
   // Double confirmation to prevent accidental deletion
   const confirmText = 'delete my account permanently';
   const confirmation = prompt(`This action will permanently delete your account and ALL your images. This cannot be undone.\n\nTo proceed, type exactly: ${confirmText}`);
-  
+
   if (!confirmation || confirmation !== confirmText) {
     return; // User cancelled or didn't type correctly
   }
-  
+
   // Final confirmation
   if (!confirm('Are you absolutely sure? This is your last chance to cancel before everything is permanently deleted.')) {
     return;
@@ -1840,26 +1837,17 @@ async function handleDeleteAccount() {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${config.apiBaseUrl}/api/auth/delete-account`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+    await apiRequest('/api/auth/delete-account', {
+      method: 'DELETE'
     });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to delete account');
-    }
 
     // Account successfully deleted - clear local storage and redirect
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    
+
     alert('Your account has been permanently deleted. You will now be redirected to the home page.');
     window.location.href = '/';
-    
+
   } catch (error) {
     console.error('Error deleting account:', error);
     alert('Failed to delete account: ' + error.message);
@@ -1871,11 +1859,11 @@ async function handleDeleteAllImages() {
   // Double confirmation to prevent accidental deletion
   const confirmText = 'delete all my images permanently';
   const confirmation = prompt(`This action will permanently delete ALL your artwork images. This cannot be undone.\n\nTo proceed, type exactly: ${confirmText}`);
-  
+
   if (!confirmation || confirmation !== confirmText) {
     return; // User cancelled or didn't type correctly
   }
-  
+
   // Final confirmation
   if (!confirm('Are you absolutely sure? This will delete all your uploaded artwork and cannot be undone.')) {
     return;
@@ -1887,25 +1875,15 @@ async function handleDeleteAllImages() {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${config.apiBaseUrl}/api/artworks/delete-all`, {
-      method: 'DELETE',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      }
+    const result = await apiRequest('/api/artworks/delete-all', {
+      method: 'DELETE'
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to delete all images');
-    }
-
-    const result = await response.json();
     alert(result.message || 'All images have been successfully deleted.');
-    
+
     // Refresh the art page to show empty state
     loadAdminArtworksList();
-    
+
   } catch (error) {
     console.error('Error deleting all images:', error);
     alert('Failed to delete all images: ' + error.message);
@@ -1921,28 +1899,19 @@ async function handleAvatarTypeChange(avatarType) {
       throw new Error('Not authenticated');
     }
 
-    const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar`, {
+    await apiRequest('/api/profile/avatar', {
       method: 'PUT',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         avatar_type: avatarType
       })
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to update avatar');
-    }
-
     // Refresh the profile page to show the change
     loadProfilePage();
-    
+
     // Refresh navbar avatar
     await refreshNavbarAvatar();
-    
+
   } catch (error) {
     console.error('Error updating avatar:', error);
     alert('Failed to update avatar: ' + error.message);
@@ -1957,23 +1926,23 @@ async function handleUploadImage() {
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
     fileInput.accept = 'image/*';
-    
+
     fileInput.onchange = async (event) => {
       const file = event.target.files[0];
       if (!file) return;
-      
+
       // Validate file type
       if (!file.type.startsWith('image/')) {
         alert('Please select an image file');
         return;
       }
-      
+
       // Validate file size (max 5MB)
       if (file.size > 5 * 1024 * 1024) {
         alert('Image must be smaller than 5MB');
         return;
       }
-      
+
       try {
         const token = localStorage.getItem('token');
         if (!token) {
@@ -1984,7 +1953,7 @@ async function handleUploadImage() {
         const formData = new FormData();
         formData.append('avatar', file);
 
-        const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar/upload`, {
+        const response = await fetch(`${API_BASE_URL}/api/profile/avatar/upload`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -1999,19 +1968,19 @@ async function handleUploadImage() {
 
         // Refresh the profile page to show the new avatar
         loadProfilePage();
-        
+
         // Refresh navbar avatar
         await refreshNavbarAvatar();
-        
+
       } catch (error) {
         console.error('Error uploading avatar:', error);
         alert('Failed to upload avatar: ' + error.message);
       }
     };
-    
+
     // Trigger file selection
     fileInput.click();
-    
+
   } catch (error) {
     console.error('Error handling upload:', error);
     alert('Failed to open file picker: ' + error.message);
@@ -2029,38 +1998,29 @@ async function handleImportGravatar() {
       console.error('No email address found for Gravatar import');
       return;
     }
-    
+
     const token = localStorage.getItem('token');
     if (!token) {
       throw new Error('Not authenticated');
     }
 
     console.log('Importing Gravatar for email:', user.email);
-    
-    const response = await fetch(`${config.apiBaseUrl}/api/profile/avatar/gravatar`, {
+
+    await apiRequest('/api/profile/avatar/gravatar', {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`,
-        'Content-Type': 'application/json'
-      },
       body: JSON.stringify({
         email: user.email
       })
     });
 
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Failed to import Gravatar');
-    }
-
     // Refresh the profile page to show the new avatar
     loadProfilePage();
-    
+
     // Refresh navbar avatar
     await refreshNavbarAvatar();
-    
+
     console.log('Gravatar imported successfully!');
-    
+
   } catch (error) {
     console.error('Error importing Gravatar:', error);
     alert('Failed to import Gravatar: ' + error.message);
