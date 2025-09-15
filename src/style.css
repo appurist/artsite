@@ -467,13 +467,16 @@ body {
 
 /* Gallery grid */
 .gallery-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  display: flex;
+  flex-wrap: wrap;
   gap: 2rem;
   margin-bottom: 3rem;
+  justify-content: space-around;
 }
 
 .artwork-item {
+  flex: 0 0 280px;
+  max-width: 400px;
   background: transparent;
   transition: transform 0.2s;
 }
@@ -582,6 +585,7 @@ body {
 .artwork-details-section {
   width: 300px;
   flex-shrink: 0;
+  margin-right: 1rem;
 }
 
 .artwork-title {

@@ -130,12 +130,9 @@ async function uploadImage(request, env) {
       });
     }
 
-    // Generate public URLs - detect local development by hostname
-    const requestUrl = new URL(request.url);
-    const isLocal = requestUrl.hostname === '127.0.0.1' || requestUrl.hostname === 'localhost';
-    const baseUrl = isLocal 
-      ? `http://${requestUrl.host}/api/images`  // Local development endpoint (preserves port)
-      : `https://${env.ARTWORK_IMAGES_DOMAIN || 'r2.artsite.ca'}`;
+    // Generate public URLs using environment configuration
+    const baseUrl = env.ARTWORK_IMAGES_BASE_URL;
+    console.log('Upload baseUrl:', baseUrl);
     const imageUrl = displayImage ? `${baseUrl}/${displayPath}` : `${baseUrl}/${originalPath}`;
     const thumbnailUrl = thumbnailImage ? `${baseUrl}/${thumbPath}` : imageUrl;
 

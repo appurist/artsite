@@ -55,7 +55,8 @@
       "Bash(pnpm build:*)",
       "Bash(pnpm deploy:prod:*)",
       "Bash(status.cmd)",
-      "Bash(cmd:*)"
+      "Bash(cmd:*)",
+      "Bash(taskkill:*)"
     ],
     "deny": [],
     "ask": [],

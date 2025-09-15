@@ -21,7 +21,7 @@ bucket_name = "artsite-images"
 [vars]
 FRONTEND_URL = "https://artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
+ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
 
 # Development environment
 [env.development]
@@ -40,7 +40,7 @@ bucket_name = "artsite-images"
 [env.development.vars]
 FRONTEND_URL = "https://dev.artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
+ARTWORK_IMAGES_BASE_URL = "http://localhost:8787/api/images"
 
 # Production environment
 [env.production]
@@ -62,4 +62,4 @@ bucket_name = "artsite-images"
 [env.production.vars]
 FRONTEND_URL = "https://artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_DOMAIN = "r2.artsite.ca"
+ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"

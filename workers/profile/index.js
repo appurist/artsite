@@ -221,12 +221,8 @@ async function uploadAvatar(request, env) {
       }
     });
 
-    // Generate the avatar URL (use local development server in dev mode)
-    const requestUrl = new URL(request.url);
-    const isLocal = requestUrl.hostname === '127.0.0.1' || requestUrl.hostname === 'localhost';
-    const avatarUrl = isLocal 
-      ? `http://${requestUrl.host}/api/images/${fileName}`  // Local development endpoint
-      : `https://${env.ARTWORK_IMAGES_DOMAIN || 'r2.artsite.ca'}/${fileName}`;
+    // Generate the avatar URL using environment configuration
+    const avatarUrl = `${env.ARTWORK_IMAGES_BASE_URL}/${fileName}`;
 
     // Update the existing profile data (already queried above)
     const profileData = JSON.parse(currentProfile.record);

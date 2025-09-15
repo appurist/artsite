@@ -16,10 +16,15 @@ import { handleUpload } from './upload/index.js';
 import { handleDomains } from './domains/index.js';
 
 /**
- * Handle image serving from R2 storage for local development
+ * Handle image serving from R2 storage for local development only
  */
 async function handleImageServing(request, env, ctx) {
   try {
+    // Only serve images for local development (when ARTWORK_IMAGES_BASE_URL contains localhost)
+    if (!env.ARTWORK_IMAGES_BASE_URL?.includes('localhost')) {
+      return new Response('Image serving not available in this environment', { status: 404 });
+    }
+
     const url = new URL(request.url);
     const imagePath = url.pathname.replace('/api/images/', '');
     
@@ -27,7 +32,7 @@ async function handleImageServing(request, env, ctx) {
       return new Response('Image path required', { status: 400 });
     }
 
-    // Get image from R2 storage
+    // Get image from R2 storage (local emulation)
     const object = await env.ARTWORK_IMAGES.get(imagePath);
     
     if (!object) {
