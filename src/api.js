@@ -335,3 +335,41 @@ export const getSession = getCurrentUser;
  * Delete session (alias for logout)
  */
 export const deleteSession = logout;
+
+// =============================================================================
+// DOMAIN CONFIGURATION API
+// =============================================================================
+
+/**
+ * Get domain configuration for the current hostname
+ */
+export async function getDomainConfig(hostname) {
+  try {
+    const searchParams = new URLSearchParams();
+    if (hostname) {
+      searchParams.set('hostname', hostname);
+    }
+    
+    const response = await apiRequest(`/api/domains/config?${searchParams.toString()}`);
+    return response;
+  } catch (error) {
+    console.error('Error getting domain config:', error);
+    throw error;
+  }
+}
+
+/**
+ * Get the default focus user for this domain
+ */
+export async function getDefaultFocusUser() {
+  try {
+    const hostname = window.location.hostname;
+    const domainConfig = await getDomainConfig(hostname);
+    
+    // Return the focus_user_id from domain config, or '*' as default
+    return domainConfig?.focus_user_id || '*';
+  } catch (error) {
+    console.error('Error getting default focus user:', error);
+    return '*'; // Fallback to show all artists
+  }
+}

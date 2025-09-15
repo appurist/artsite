@@ -555,7 +555,7 @@ body {
 
 /* Individual artwork page */
 .artwork-page-container {
-  margin: 0 4rem;
+  margin-left: 4rem;
   padding: 1rem 0;
 }
 
@@ -566,6 +566,9 @@ body {
 
 .artwork-image-section {
   flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
 }
 
 .artwork-full-image {

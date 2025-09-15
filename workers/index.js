@@ -13,6 +13,7 @@ import { handleProfiles } from './profiles/index.js';
 import { handleProfile } from './profile/index.js';
 import { handleSettings } from './settings/index.js';
 import { handleUpload } from './upload/index.js';
+import { handleDomains } from './domains/index.js';
 
 /**
  * Handle image serving from R2 storage for local development
@@ -83,6 +84,10 @@ export default {
       
       if (path.startsWith('/api/upload')) {
         return await handleUpload(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/domains')) {
+        return await handleDomains(request, env, ctx);
       }
       
       if (path.startsWith('/api/images/')) {

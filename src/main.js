@@ -17,7 +17,8 @@ import {
   deleteArtwork,
   updateArtwork,
   apiRequest,
-  API_BASE_URL
+  API_BASE_URL,
+  getDefaultFocusUser
 } from './api.js'
 
 // Import icons
@@ -105,10 +106,6 @@ function getUserAvatarDisplay(user, profile) {
   return generateAvatarHtml(user, profile, 64);
 }
 
-function getDefaultFocusUser() {
-  // This was Appwrite-specific, return null for new API
-  return '*';
-}
 
 // Initialize the application
 document.addEventListener('DOMContentLoaded', async () => {
