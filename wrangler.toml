@@ -30,8 +30,8 @@ route = { pattern = "dev.artsite.ca/*", zone_name = "artsite.ca" }
 
 [[env.development.d1_databases]]
 binding = "DB"
-database_name = "artsite-local"
-database_id = "27fe6352-1275-486d-8f74-c684aac80253"
+database_name = "artsite-dev"
+database_id = "838eb3fb-0a38-4118-9bee-d62a149f0503"
 
 [[env.development.r2_buckets]]
 binding = "ARTWORK_IMAGES"
