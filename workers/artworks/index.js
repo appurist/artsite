@@ -29,19 +29,19 @@ export async function handleArtworks(request, env, ctx) {
       return await createArtworkHandler(request, env);
     }
     
-    if (path.match(/^\/api\/artworks\/[^/]+$/) && method === 'GET') {
+    if (path.match(/^\/api\/artworks\/one\/[^/]+$/) && method === 'GET') {
       return await getArtwork(request, env);
     }
     
-    if (path.match(/^\/api\/artworks\/[^/]+$/) && method === 'PUT') {
+    if (path.match(/^\/api\/artworks\/one\/[^/]+$/) && method === 'PUT') {
       return await updateArtwork(request, env);
     }
     
-    if (path.match(/^\/api\/artworks\/[^/]+$/) && method === 'DELETE') {
+    if (path.match(/^\/api\/artworks\/one\/[^/]+$/) && method === 'DELETE') {
       return await deleteArtwork(request, env);
     }
     
-    if (path === '/api/artworks/delete-all' && method === 'DELETE') {
+    if ((path === '/api/artworks/all' || path === '/api/artworks/delete-all') && method === 'DELETE') {
       return await deleteAllArtworks(request, env);
     }
 
@@ -368,16 +368,38 @@ async function deleteArtwork(request, env) {
       }));
     }
 
-    // Delete the artwork
+    // Delete associated files from R2 storage first
+    let fileDeletedMessage = '';
+    if (existingArtwork.storage_path) {
+      try {
+        await env.ARTWORK_IMAGES.delete(existingArtwork.storage_path);
+        console.log(`Deleted image: ${existingArtwork.storage_path}`);
+        fileDeletedMessage = ' (image file deleted)';
+        
+        // Also delete thumbnail if it exists
+        const thumbnailPath = existingArtwork.storage_path.replace(/^images\//, 'thumbnails/');
+        try {
+          await env.ARTWORK_IMAGES.delete(thumbnailPath);
+          console.log(`Deleted thumbnail: ${thumbnailPath}`);
+        } catch (thumbError) {
+          console.log(`Thumbnail not found: ${thumbnailPath}`);
+        }
+      } catch (r2Error) {
+        if (r2Error.message?.includes('404') || r2Error.message?.includes('not found')) {
+          console.log(`File not found: ${existingArtwork.storage_path}`);
+          fileDeletedMessage = ' (image file was already missing)';
+        } else {
+          console.error('Error deleting image from R2:', r2Error);
+          fileDeletedMessage = ' (image file deletion failed)';
+        }
+      }
+    }
+
+    // Delete the artwork from database
     await executeQuery(env.DB, 'DELETE FROM artworks WHERE id = ?', [artworkId]);
 
-    // TODO: Also delete associated files from R2 storage
-    // if (existingArtwork.storage_path) {
-    //   await env.ARTWORK_IMAGES.delete(existingArtwork.storage_path);
-    // }
-
     return withCors(new Response(JSON.stringify({
-      message: 'Artwork deleted successfully'
+      message: `Artwork deleted successfully${fileDeletedMessage}`
     }), {
       headers: { 'Content-Type': 'application/json' }
     }));
@@ -443,15 +465,34 @@ async function deleteAllArtworks(request, env) {
 
     // Delete images from R2 storage
     let deletedCount = 0;
+    let deletedFiles = 0;
+    let skippedFiles = 0;
+    
     for (const artwork of artworkList) {
       if (artwork.storage_path) {
         try {
-          await env.STORAGE.delete(artwork.storage_path);
+          await env.ARTWORK_IMAGES.delete(artwork.storage_path);
+          deletedFiles++;
+          console.log(`Deleted image: ${artwork.storage_path}`);
+          
           // Also delete thumbnail if it exists
           const thumbnailPath = artwork.storage_path.replace(/^images\//, 'thumbnails/');
-          await env.STORAGE.delete(thumbnailPath);
+          try {
+            await env.ARTWORK_IMAGES.delete(thumbnailPath);
+            console.log(`Deleted thumbnail: ${thumbnailPath}`);
+          } catch (thumbError) {
+            // Thumbnail may not exist, just log and continue
+            console.log(`Thumbnail not found (continuing): ${thumbnailPath}`);
+          }
         } catch (r2Error) {
-          console.error('Error deleting image from R2:', r2Error);
+          // Handle 404 (not found) gracefully - file may already be gone
+          if (r2Error.message?.includes('404') || r2Error.message?.includes('not found')) {
+            console.log(`File not found (continuing cleanup): ${artwork.storage_path}`);
+            skippedFiles++;
+          } else {
+            console.error('Error deleting image from R2:', r2Error);
+            skippedFiles++;
+          }
           // Continue with deletion even if R2 cleanup fails
         }
       }
@@ -466,8 +507,10 @@ async function deleteAllArtworks(request, env) {
     );
 
     return withCors(new Response(JSON.stringify({
-      message: `Successfully deleted ${deletedCount} artworks`,
-      deletedCount: deletedCount
+      message: `Successfully deleted ${deletedCount} artworks (${deletedFiles} files deleted, ${skippedFiles} files missing)`,
+      deletedCount: deletedCount,
+      deletedFiles: deletedFiles,
+      skippedFiles: skippedFiles
     }), {
       headers: { 'Content-Type': 'application/json' }
     }));

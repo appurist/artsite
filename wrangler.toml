@@ -1,6 +1,6 @@
 name = "artsite-api"
 main = "workers/index.js"
-compatibility_date = "2025-09-09"
+compatibility_date = "2025-09-16"
 
 [assets]
 directory = "./dist"
@@ -40,7 +40,7 @@ bucket_name = "artsite-images"
 [env.development.vars]
 FRONTEND_URL = "https://dev.artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_BASE_URL = "http://localhost:8787/api/images"
+ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
 
 # Production environment
 [env.production]

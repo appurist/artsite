@@ -58,7 +58,9 @@
       "Bash(cmd:*)",
       "Bash(taskkill:*)",
       "Bash(wrangler r2 bucket:*)",
-      "WebFetch(domain:github.com)"
+      "WebFetch(domain:github.com)",
+      "Read(/C:\\Users\\paul\\Documents\\! Art\\artsite-backup\\art/**)",
+      "Bash(wrangler d1 migrations apply:*)"
     ],
     "deny": [],
     "ask": [],

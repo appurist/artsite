@@ -1870,7 +1870,7 @@ async function handleDeleteAccount() {
 // Handle delete all images
 async function handleDeleteAllImages() {
   // Double confirmation to prevent accidental deletion
-  const confirmText = 'delete all my images permanently';
+  const confirmText = 'DELETE ALL';
   const confirmation = prompt(`This action will permanently delete ALL your artwork images. This cannot be undone.\n\nTo proceed, type exactly: ${confirmText}`);
 
   if (!confirmation || confirmation !== confirmText) {
@@ -1912,7 +1912,7 @@ function showBackupModal() {
       <div class="modal-close" onclick="closeModal()">&times;</div>
       <h2>Backup Data</h2>
       <p>Select which components to include in your backup:</p>
-      
+
       <div class="backup-components">
         <label class="backup-component">
           <input type="checkbox" value="artworks" checked>
@@ -1921,7 +1921,7 @@ function showBackupModal() {
             <small>All artwork images and metadata</small>
           </div>
         </label>
-        
+
         <label class="backup-component">
           <input type="checkbox" value="settings" checked>
           <div class="component-info">
@@ -1929,7 +1929,7 @@ function showBackupModal() {
             <small>Site configuration and preferences</small>
           </div>
         </label>
-        
+
         <label class="backup-component">
           <input type="checkbox" value="profile" checked>
           <div class="component-info">
@@ -1938,14 +1938,14 @@ function showBackupModal() {
           </div>
         </label>
       </div>
-      
+
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary" onclick="performBackup()">Create Backup</button>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(overlay);
 }
 
@@ -1958,7 +1958,7 @@ function showRestoreModal() {
       <div class="modal-close" onclick="closeModal()">&times;</div>
       <h2>Restore Data</h2>
       <p>Select a backup file and choose which components to restore:</p>
-      
+
       <div class="backup-file-section">
         <input type="file" id="backup-file" accept=".zip">
       </div>
@@ -1976,7 +1976,7 @@ function showRestoreModal() {
           <small>Delete current data first, then restore from backup</small>
         </label>
       </div>
-      
+
       <div class="backup-components">
         <label class="backup-component">
           <input type="checkbox" value="artworks" checked>
@@ -1985,7 +1985,7 @@ function showRestoreModal() {
             <small>All artwork images and metadata</small>
           </div>
         </label>
-        
+
         <label class="backup-component">
           <input type="checkbox" value="settings" checked>
           <div class="component-info">
@@ -1993,7 +1993,7 @@ function showRestoreModal() {
             <small>Site configuration and preferences</small>
           </div>
         </label>
-        
+
         <label class="backup-component">
           <input type="checkbox" value="profile" checked>
           <div class="component-info">
@@ -2002,14 +2002,14 @@ function showRestoreModal() {
           </div>
         </label>
       </div>
-      
+
       <div class="modal-actions">
         <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
         <button class="btn btn-primary" onclick="performRestore()">Restore Backup</button>
       </div>
     </div>
   `;
-  
+
   document.body.appendChild(overlay);
 }
 
@@ -2026,12 +2026,12 @@ async function performBackup() {
   try {
     const selectedComponents = Array.from(document.querySelectorAll('.backup-component input:checked'))
       .map(cb => cb.value);
-    
+
     if (selectedComponents.length === 0) {
       alert('Please select at least one component to backup.');
       return;
     }
-    
+
     const response = await fetch(`${API_BASE_URL}/api/backup/create?components=${selectedComponents.join(',')}`, {
       method: 'GET',
       headers: {
@@ -2069,15 +2069,15 @@ async function performRestore() {
   try {
     const fileInput = document.getElementById('backup-file');
     const file = fileInput.files[0];
-    
+
     if (!file) {
       alert('Please select a backup file.');
       return;
     }
-    
+
     const selectedComponents = Array.from(document.querySelectorAll('.backup-component input:checked'))
       .map(cb => cb.value);
-    
+
     if (selectedComponents.length === 0) {
       alert('Please select at least one component to restore.');
       return;
@@ -2108,7 +2108,7 @@ async function performRestore() {
     alert(`Restore completed!\n\nResults:\n${Object.entries(result.results)
       .map(([comp, res]) => `${comp}: ${res.success ? 'Success' : 'Failed - ' + res.error}`)
       .join('\n')}`);
-    
+
     // Refresh the artworks list if artworks were restored
     if (selectedComponents.includes('artworks')) {
       loadAdminArtworksList();

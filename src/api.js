@@ -185,7 +185,7 @@ export async function getArtworks(options = {}) {
  * Get single artwork by ID
  */
 export async function getArtwork(id) {
-  const response = await apiRequest(`/api/artworks/${id}`);
+  const response = await apiRequest(`/api/artworks/one/${id}`);
   return response.artwork;
 }
 
@@ -204,7 +204,7 @@ export async function createArtwork(artworkData) {
  * Update artwork
  */
 export async function updateArtwork(id, artworkData) {
-  const response = await apiRequest(`/api/artworks/${id}`, {
+  const response = await apiRequest(`/api/artworks/one/${id}`, {
     method: 'PUT',
     body: JSON.stringify(artworkData)
   });
@@ -215,7 +215,7 @@ export async function updateArtwork(id, artworkData) {
  * Delete artwork
  */
 export async function deleteArtwork(id) {
-  return await apiRequest(`/api/artworks/${id}`, {
+  return await apiRequest(`/api/artworks/one/${id}`, {
     method: 'DELETE'
   });
 }

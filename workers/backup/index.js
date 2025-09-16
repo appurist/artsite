@@ -384,8 +384,14 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
       if (artwork.storage_path) {
         try {
           await env.ARTWORK_IMAGES.delete(artwork.storage_path);
+          console.log(`Deleted image: ${artwork.storage_path}`);
         } catch (error) {
-          console.warn(`Failed to delete image ${artwork.storage_path}:`, error);
+          // 404/not found is success - file is already gone
+          if (error.message?.includes('404') || error.message?.includes('not found')) {
+            console.log(`File already deleted (continuing): ${artwork.storage_path}`);
+          } else {
+            console.warn(`Failed to delete image ${artwork.storage_path}:`, error);
+          }
         }
       }
     }
@@ -416,17 +422,27 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
         }
       }
 
-      // Restore image if present
+      // Restore image if present, or update URLs to current environment
       let storage_path = null;
       let image_url = null;
       const imagePath = `art/images/${artwork.id}-${artwork.title.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
       
       if (entries[imagePath]) {
+        // Image file exists in backup - restore it
         storage_path = `artworks/${user.account_id}/${artwork.id}/restored.jpg`;
         await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
           httpMetadata: { contentType: 'image/jpeg' }
         });
         image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+      } else if (artwork.storage_path) {
+        // No image file in backup, but metadata has storage info
+        // Update storage path and URL to match current user and environment
+        const pathParts = artwork.storage_path.split('/');
+        if (pathParts.length >= 3) {
+          // Update account_id in storage path: artworks/[old_account_id]/[artwork_id]/file.ext
+          storage_path = `artworks/${user.account_id}/${pathParts[2]}/${pathParts[3] || 'original.jpg'}`;
+          image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+        }
       }
 
       // Insert artwork record
