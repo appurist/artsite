@@ -4,6 +4,7 @@
 
 import { withCors } from '../shared/cors.js';
 import { authenticateRequestSafe } from '../shared/auth.js';
+import { createStoragePath, extractBasePath } from '../shared/storage.js';
 import { 
   executeQuery,
   queryFirst,
@@ -201,7 +202,7 @@ async function uploadAvatar(request, env) {
     // Generate filename based on file type with timestamp to avoid caching issues
     const fileExtension = avatarFile.type === 'image/png' ? 'png' : 'jpg';
     const timestamp = Date.now();
-    const fileName = `avatars/${userId}-${timestamp}.${fileExtension}`;
+    const fileName = createStoragePath(env, `avatars/${userId}-${timestamp}.${fileExtension}`);
 
     // Delete old avatar if it exists
     if (oldAvatarPath) {

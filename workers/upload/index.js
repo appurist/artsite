@@ -5,6 +5,7 @@
 import { withCors } from '../shared/cors.js';
 import { authenticateRequest } from '../shared/auth.js';
 import { generateId } from '../shared/db.js';
+import { createStoragePath } from '../shared/storage.js';
 
 export async function handleUpload(request, env, ctx) {
   const url = new URL(request.url);
@@ -83,12 +84,12 @@ async function uploadImage(request, env) {
       }));
     }
 
-    // Generate unique file paths
+    // Generate unique file paths with environment prefixes
     const fileId = generateId();
     const fileExtension = getFileExtension(imageFile.name);
-    const originalPath = `artworks/${user.account_id}/${fileId}/original.${fileExtension}`;
-    const displayPath = `artworks/${user.account_id}/${fileId}/display.${fileExtension}`;
-    const thumbPath = `artworks/${user.account_id}/${fileId}/thumb.${fileExtension}`;
+    const originalPath = createStoragePath(env, `artworks/${user.account_id}/${fileId}/original.${fileExtension}`);
+    const displayPath = createStoragePath(env, `artworks/${user.account_id}/${fileId}/display.${fileExtension}`);
+    const thumbPath = createStoragePath(env, `artworks/${user.account_id}/${fileId}/thumb.${fileExtension}`);
 
     // Convert file to ArrayBuffer
     const imageBuffer = await imageFile.arrayBuffer();
@@ -215,10 +216,10 @@ async function generateSignedUploadUrl(request, env) {
       }));
     }
 
-    // Generate unique file path
+    // Generate unique file path with environment prefix
     const fileId = generateId();
     const fileExtension = getFileExtension(fileName);
-    const uploadPath = `artworks/${user.account_id}/${fileId}/original.${fileExtension}`;
+    const uploadPath = createStoragePath(env, `artworks/${user.account_id}/${fileId}/original.${fileExtension}`);
 
     // This is a placeholder - R2 doesn't currently support signed URLs for uploads
     // You would typically use presigned URLs with S3-compatible APIs

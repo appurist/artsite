@@ -821,6 +821,12 @@ body {
   color: var(--text-color);
 }
 
+.artwork-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .empty-artworks {
   text-align: center;
   padding: 2rem;
@@ -1080,6 +1086,157 @@ input[type="file"]:focus {
 
 .modal-metadata strong {
   color: var(--text-color);
+}
+
+/* Backup/Restore Modal Styles */
+.backup-modal-content {
+  position: relative;
+  background: var(--card-bg);
+  border-radius: 12px;
+  width: 90vw;
+  max-width: 600px;
+  max-height: 80vh;
+  margin: 10vh auto;
+  padding: 2rem;
+  box-shadow: 0 8px 32px var(--shadow-color);
+  overflow-y: auto;
+  display: block;
+}
+
+.backup-modal-content h2 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.backup-modal-content p {
+  margin: 0 0 1.5rem 0;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.backup-components {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.backup-component {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-color);
+}
+
+.backup-component:hover {
+  border-color: var(--primary-color);
+  background: var(--hover-bg, rgba(59, 130, 246, 0.05));
+}
+
+.backup-component input[type="checkbox"] {
+  margin: 0;
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.component-info {
+  flex: 1;
+}
+
+.component-info strong {
+  display: block;
+  margin-bottom: 0.25rem;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.component-info small {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.backup-file-section {
+  margin: 1.5rem 0;
+}
+
+.backup-file-section input[type="file"] {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background: var(--input-bg);
+  color: var(--text-color);
+  font-size: 0.875rem;
+}
+
+.restore-mode-section {
+  margin: 1.5rem 0;
+}
+
+.restore-mode-section h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.restore-mode-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  background: var(--bg-color);
+  margin-bottom: 0.75rem;
+}
+
+.restore-mode-option:hover {
+  border-color: var(--primary-color);
+  background: var(--hover-bg, rgba(59, 130, 246, 0.05));
+}
+
+.restore-mode-option input[type="radio"] {
+  margin: 0;
+  margin-top: 2px;
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}
+
+.restore-mode-option span {
+  font-weight: 500;
+  color: var(--text-color);
+  display: block;
+  margin-bottom: 0.25rem;
+}
+
+.restore-mode-option small {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  display: block;
+}
+
+.modal-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 2rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color);
 }
 
 /* Footer */

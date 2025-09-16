@@ -33,6 +33,8 @@ import userIcon from './assets/icons/user.svg'
 import nukeIcon from './assets/icons/nuke.svg'
 import keyVariantIcon from './assets/icons/key-variant.svg'
 import emailIcon from './assets/icons/email.svg'
+import downloadIcon from './assets/icons/download.svg'
+import uploadIcon from './assets/icons/upload.svg'
 import { generateInitials, getAvatarUrl, fetchGravatarAsBlob, generateAvatarHtml } from './avatar-utils.js'
 
 
@@ -1111,10 +1113,20 @@ function showAdminDashboard(user) {
         <div class="artworks-section">
           <div class="artworks-header">
             <h3>Manage Artworks</h3>
-            <a href="/art/upload" id="upload-artwork-btn" class="btn btn-success">
-              <img src="${imagePlusIcon}" alt="Upload" class="icon" aria-hidden="true" />
-              Upload Artwork
-            </a>
+            <div class="artwork-actions">
+              <button id="backup-btn" class="btn btn-secondary">
+                <img src="${downloadIcon}" alt="Backup" class="icon" aria-hidden="true" />
+                Backup
+              </button>
+              <button id="restore-btn" class="btn btn-secondary">
+                <img src="${uploadIcon}" alt="Restore" class="icon" aria-hidden="true" />
+                Restore
+              </button>
+              <a href="/art/upload" id="upload-artwork-btn" class="btn btn-success">
+                <img src="${imagePlusIcon}" alt="Upload" class="icon" aria-hidden="true" />
+                Upload Artwork
+              </a>
+            </div>
           </div>
           <div id="artworks-list" class="loading">
             <p>Loading artworks...</p>
@@ -1129,6 +1141,10 @@ function showAdminDashboard(user) {
 
   // Load artworks list
   loadAdminArtworksList();
+
+  // Set up backup and restore functionality
+  document.getElementById('backup-btn').addEventListener('click', showBackupModal);
+  document.getElementById('restore-btn').addEventListener('click', showRestoreModal);
 }
 
 // Load artworks list for admin dashboard
@@ -1887,6 +1903,223 @@ async function handleDeleteAllImages() {
   }
 }
 
+// Show backup modal with component selection
+function showBackupModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="backup-modal-content">
+      <div class="modal-close" onclick="closeModal()">&times;</div>
+      <h2>Backup Data</h2>
+      <p>Select which components to include in your backup:</p>
+      
+      <div class="backup-components">
+        <label class="backup-component">
+          <input type="checkbox" value="artworks" checked>
+          <div class="component-info">
+            <strong>Artworks</strong>
+            <small>All artwork images and metadata</small>
+          </div>
+        </label>
+        
+        <label class="backup-component">
+          <input type="checkbox" value="settings" checked>
+          <div class="component-info">
+            <strong>Site Settings</strong>
+            <small>Site configuration and preferences</small>
+          </div>
+        </label>
+        
+        <label class="backup-component">
+          <input type="checkbox" value="profile" checked>
+          <div class="component-info">
+            <strong>Profile</strong>
+            <small>Profile information and avatar</small>
+          </div>
+        </label>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="performBackup()">Create Backup</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+// Show restore modal with component selection
+function showRestoreModal() {
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.innerHTML = `
+    <div class="backup-modal-content">
+      <div class="modal-close" onclick="closeModal()">&times;</div>
+      <h2>Restore Data</h2>
+      <p>Select a backup file and choose which components to restore:</p>
+      
+      <div class="backup-file-section">
+        <input type="file" id="backup-file" accept=".zip">
+      </div>
+
+      <div class="restore-mode-section">
+        <h4>Restore Mode</h4>
+        <label class="restore-mode-option">
+          <input type="radio" name="restore-mode" value="add" checked>
+          <span>Add to existing data</span>
+          <small>Keep current data and add items from backup</small>
+        </label>
+        <label class="restore-mode-option">
+          <input type="radio" name="restore-mode" value="replace">
+          <span>Replace all data</span>
+          <small>Delete current data first, then restore from backup</small>
+        </label>
+      </div>
+      
+      <div class="backup-components">
+        <label class="backup-component">
+          <input type="checkbox" value="artworks" checked>
+          <div class="component-info">
+            <strong>Artworks</strong>
+            <small>All artwork images and metadata</small>
+          </div>
+        </label>
+        
+        <label class="backup-component">
+          <input type="checkbox" value="settings" checked>
+          <div class="component-info">
+            <strong>Site Settings</strong>
+            <small>Site configuration and preferences</small>
+          </div>
+        </label>
+        
+        <label class="backup-component">
+          <input type="checkbox" value="profile" checked>
+          <div class="component-info">
+            <strong>Profile</strong>
+            <small>Profile information and avatar</small>
+          </div>
+        </label>
+      </div>
+      
+      <div class="modal-actions">
+        <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+        <button class="btn btn-primary" onclick="performRestore()">Restore Backup</button>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(overlay);
+}
+
+// Close modal
+function closeModal() {
+  const overlay = document.querySelector('.modal-overlay');
+  if (overlay) {
+    overlay.remove();
+  }
+}
+
+// Perform backup with selected components
+async function performBackup() {
+  try {
+    const selectedComponents = Array.from(document.querySelectorAll('.backup-component input:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedComponents.length === 0) {
+      alert('Please select at least one component to backup.');
+      return;
+    }
+    
+    const response = await fetch(`${API_BASE_URL}/api/backup/create?components=${selectedComponents.join(',')}`, {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      }
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Backup failed');
+    }
+
+    // Download the ZIP file
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'artsite-backup.zip';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    window.URL.revokeObjectURL(url);
+
+    closeModal();
+    alert('Backup created successfully!');
+
+  } catch (error) {
+    console.error('Error creating backup:', error);
+    alert('Failed to create backup: ' + error.message);
+  }
+}
+
+// Perform restore with selected components
+async function performRestore() {
+  try {
+    const fileInput = document.getElementById('backup-file');
+    const file = fileInput.files[0];
+    
+    if (!file) {
+      alert('Please select a backup file.');
+      return;
+    }
+    
+    const selectedComponents = Array.from(document.querySelectorAll('.backup-component input:checked'))
+      .map(cb => cb.value);
+    
+    if (selectedComponents.length === 0) {
+      alert('Please select at least one component to restore.');
+      return;
+    }
+
+    const restoreMode = document.querySelector('input[name="restore-mode"]:checked').value;
+
+    const formData = new FormData();
+    formData.append('backup', file);
+    formData.append('components', selectedComponents.join(','));
+    formData.append('restore_mode', restoreMode);
+
+    const response = await fetch(`${API_BASE_URL}/api/backup/restore`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: formData
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || 'Restore failed');
+    }
+
+    closeModal();
+    alert(`Restore completed!\n\nResults:\n${Object.entries(result.results)
+      .map(([comp, res]) => `${comp}: ${res.success ? 'Success' : 'Failed - ' + res.error}`)
+      .join('\n')}`);
+    
+    // Refresh the artworks list if artworks were restored
+    if (selectedComponents.includes('artworks')) {
+      loadAdminArtworksList();
+    }
+
+  } catch (error) {
+    console.error('Error restoring backup:', error);
+    alert('Failed to restore backup: ' + error.message);
+  }
+}
+
 // Handle avatar type change (icon or initials)
 async function handleAvatarTypeChange(avatarType) {
   console.log('handleAvatarTypeChange called with:', avatarType);
@@ -2024,7 +2257,11 @@ async function handleImportGravatar() {
   }
 }
 
-// Expose avatar functions to global scope for onclick handlers
+// Expose functions to global scope for onclick handlers
 window.handleAvatarTypeChange = handleAvatarTypeChange;
 window.handleUploadImage = handleUploadImage;
 window.handleImportGravatar = handleImportGravatar;
+window.closeModal = closeModal;
+window.performBackup = performBackup;
+window.performRestore = performRestore;
+window.handleDeleteAllImages = handleDeleteAllImages;

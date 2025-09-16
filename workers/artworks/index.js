@@ -45,6 +45,7 @@ export async function handleArtworks(request, env, ctx) {
       return await deleteAllArtworks(request, env);
     }
 
+
     return withCors(new Response(JSON.stringify({ 
       error: 'Endpoint not found' 
     }), {

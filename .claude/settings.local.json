@@ -56,7 +56,9 @@
       "Bash(pnpm deploy:prod:*)",
       "Bash(status.cmd)",
       "Bash(cmd:*)",
-      "Bash(taskkill:*)"
+      "Bash(taskkill:*)",
+      "Bash(wrangler r2 bucket:*)",
+      "WebFetch(domain:github.com)"
     ],
     "deny": [],
     "ask": [],

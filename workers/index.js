@@ -14,6 +14,7 @@ import { handleProfile } from './profile/index.js';
 import { handleSettings } from './settings/index.js';
 import { handleUpload } from './upload/index.js';
 import { handleDomains } from './domains/index.js';
+import { handleBackup } from './backup/index.js';
 
 /**
  * Handle image serving from R2 storage for local development only
@@ -93,6 +94,10 @@ export default {
       
       if (path.startsWith('/api/domains')) {
         return await handleDomains(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/backup')) {
+        return await handleBackup(request, env, ctx);
       }
       
       if (path.startsWith('/api/images/')) {
