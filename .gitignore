@@ -33,3 +33,5 @@ setenv.bat
 .wrangler/
 workers/.wrangler/
 workers/.dev.vars
+
+.claude/settings.local.json
