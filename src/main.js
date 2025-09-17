@@ -130,6 +130,9 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check authentication status and update navigation
   await updateNavigationAuth();
 
+  // Load site title from settings
+  await loadSiteTitle();
+
   // Handle browser back/forward
   window.addEventListener('popstate', handleRoute);
 
@@ -299,6 +302,35 @@ async function updateNavigationAuth() {
 
     updateActiveNavigation();
   }
+}
+
+// Load site title from settings and update document title and navigation
+async function loadSiteTitle() {
+  try {
+    // Try to get settings if user is authenticated
+    const currentUser = await getCurrentUser();
+    if (currentUser) {
+      const settings = await getSettings();
+      if (settings && settings.site_title) {
+        // Update document title
+        document.title = settings.site_title;
+        
+        // Update site title in navigation (preserving the icon)
+        const siteTitle = document.getElementById('site-title');
+        const iconElement = siteTitle.querySelector('.site-icon');
+        siteTitle.innerHTML = '';
+        siteTitle.appendChild(iconElement);
+        siteTitle.appendChild(document.createTextNode(settings.site_title));
+        return;
+      }
+    }
+  } catch (error) {
+    // Settings not available or user not authenticated, use default
+    console.log('Could not load site title from settings, using default');
+  }
+  
+  // Fallback to hostname if no settings or user not authenticated
+  document.title = window.location.hostname;
 }
 
 // Load user avatar asynchronously
@@ -1805,6 +1837,9 @@ async function handleSettingsSubmit(e) {
       siteTitle.innerHTML = '';
       siteTitle.appendChild(iconElement);
       siteTitle.appendChild(document.createTextNode(settings.site_title));
+      
+      // Update document title for saved shortcuts
+      document.title = settings.site_title;
     }
 
     // Redirect after delay
@@ -2028,7 +2063,7 @@ async function performBackup() {
       .map(cb => cb.value);
 
     if (selectedComponents.length === 0) {
-      alert('Please select at least one component to backup.');
+      console.log('Please select at least one component to backup.');
       return;
     }
 
@@ -2056,11 +2091,11 @@ async function performBackup() {
     window.URL.revokeObjectURL(url);
 
     closeModal();
-    alert('Backup created successfully!');
+    console.log('Backup created successfully!');
 
   } catch (error) {
     console.error('Error creating backup:', error);
-    alert('Failed to create backup: ' + error.message);
+    console.error('Failed to create backup:', error.message);
   }
 }
 
@@ -2071,7 +2106,7 @@ async function performRestore() {
     const file = fileInput.files[0];
 
     if (!file) {
-      alert('Please select a backup file.');
+      console.log('Please select a backup file.');
       return;
     }
 
@@ -2079,7 +2114,7 @@ async function performRestore() {
       .map(cb => cb.value);
 
     if (selectedComponents.length === 0) {
-      alert('Please select at least one component to restore.');
+      console.log('Please select at least one component to restore.');
       return;
     }
 
@@ -2105,9 +2140,9 @@ async function performRestore() {
     }
 
     closeModal();
-    alert(`Restore completed!\n\nResults:\n${Object.entries(result.results)
+    console.log('Restore completed!', 'Results:', Object.entries(result.results)
       .map(([comp, res]) => `${comp}: ${res.success ? 'Success' : 'Failed - ' + res.error}`)
-      .join('\n')}`);
+      .join(', '));
 
     // Refresh the artworks list if artworks were restored
     if (selectedComponents.includes('artworks')) {
@@ -2116,7 +2151,7 @@ async function performRestore() {
 
   } catch (error) {
     console.error('Error restoring backup:', error);
-    alert('Failed to restore backup: ' + error.message);
+    console.error('Failed to restore backup:', error.message);
   }
 }
 
