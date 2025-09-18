@@ -8,6 +8,7 @@ import RegisterPage from './pages/RegisterPage';
 import ArtPage from './pages/ArtPage';
 import ArtworkDetailPage from './pages/ArtworkDetailPage';
 import UploadPage from './pages/UploadPage';
+import EditArtworkPage from './pages/EditArtworkPage';
 import SitePage from './pages/SitePage';
 import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
@@ -23,6 +24,7 @@ function App() {
           <Route path="/register" component={RegisterPage} />
           <Route path="/art" component={ArtPage} />
           <Route path="/art/upload" component={UploadPage} />
+          <Route path="/art/:id/edit" component={EditArtworkPage} />
           <Route path="/art/:id" component={ArtworkDetailPage} />
           <Route path="/site" component={SitePage} />
           <Route path="/profile" component={ProfilePage} />

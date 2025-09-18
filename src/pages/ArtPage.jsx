@@ -46,8 +46,7 @@ function ArtPage() {
   });
 
   const handleEditArtwork = (artworkId) => {
-    console.log('Edit artwork:', artworkId);
-    alert('Edit functionality not yet implemented');
+    navigate(`/art/${artworkId}/edit`);
   };
 
   const handleDeleteArtwork = async (artworkId) => {
