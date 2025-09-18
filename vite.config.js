@@ -1,9 +1,12 @@
 import { defineConfig } from 'vite'
 import { readFileSync } from 'fs'
+import solidPlugin from 'vite-plugin-solid'
+import devtools from 'solid-devtools/vite'
 
 const packageJson = JSON.parse(readFileSync('./package.json', 'utf-8'))
 
 export default defineConfig({
+  plugins: [devtools(), solidPlugin()],
   define: {
     __APP_VERSION__: JSON.stringify(packageJson.version)
   },
@@ -12,6 +15,7 @@ export default defineConfig({
     strictPort: true  // Fail if port is in use instead of trying another port
   },
   build: {
+    target: 'esnext',
     minify: 'esbuild',
     cssMinify: 'esbuild',
     rollupOptions: {
