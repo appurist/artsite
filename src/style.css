@@ -437,6 +437,58 @@ body {
   color: var(--gallery-header-subtitle);
 }
 
+.gallery-actions {
+  margin-top: 1.5rem;
+}
+
+.gallery-actions .btn {
+  display: inline-block;
+  margin: 0 0.5rem;
+}
+
+/* About page styles */
+.about-page-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.about-content {
+  margin-top: 2rem;
+}
+
+.about-content section {
+  margin-bottom: 3rem;
+}
+
+.about-content h2 {
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 1.5rem;
+  font-weight: 300;
+  color: var(--text-color);
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--border-color);
+  padding-bottom: 0.5rem;
+}
+
+.artist-bio p {
+  margin-bottom: 1rem;
+  line-height: 1.7;
+}
+
+.artist-bio p:last-child {
+  margin-bottom: 0;
+}
+
+.contact-info a {
+  color: var(--primary-color);
+  text-decoration: none;
+}
+
+.contact-info a:hover {
+  text-decoration: underline;
+}
+
 .gallery-filter {
   text-align: center;
   margin: 2rem 0;

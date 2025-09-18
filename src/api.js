@@ -260,6 +260,16 @@ export async function getSettings() {
 }
 
 /**
+ * Get settings for a specific user (for focus mode)
+ */
+export async function getFocusUserSettings(userId) {
+  const response = await apiRequest(`/api/settings/${userId}`, {
+    method: 'GET'
+  });
+  return response.settings;
+}
+
+/**
  * Update user settings
  */
 export async function updateSettings(settingsData) {

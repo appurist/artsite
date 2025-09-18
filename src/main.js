@@ -10,6 +10,7 @@ import {
   uploadFile,
   getArtwork,
   getSettings,
+  getFocusUserSettings,
   updateSettings,
   getProfiles,
   getProfile,
@@ -117,12 +118,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Set app version in footer
   document.getElementById('app-version').textContent = __APP_VERSION__;
 
-  // Set hostname as site title (preserving the icon)
-  const siteTitle = document.getElementById('site-title');
-  const iconElement = siteTitle.querySelector('.site-icon');
-  siteTitle.innerHTML = '';
-  siteTitle.appendChild(iconElement);
-  siteTitle.appendChild(document.createTextNode(window.location.hostname));
+  // Site title will be set by loadSiteTitle() function below
 
   // Set up navigation
   setupNavigation();
@@ -130,14 +126,18 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check authentication status and update navigation
   await updateNavigationAuth();
 
-  // Load site title from settings
-  await loadSiteTitle();
+  // Check if we're in focus mode and hide navigation if needed
+  await checkFocusModeAndHideNav();
 
   // Handle browser back/forward
   window.addEventListener('popstate', handleRoute);
 
   // Load the initial page based on URL
   handleRoute();
+
+  // Load site title from settings AFTER route handling
+  await loadSiteTitle();
+
 });
 
 // Simple client-side router
@@ -157,6 +157,8 @@ window.deleteArtworkFromUI = deleteArtworkFromUI;
 
 async function handleRoute() {
   const path = window.location.pathname;
+
+  console.log("handleRoute:", path)
 
   if (path.startsWith('/@')) {
     // User gallery route: /@userid
@@ -190,11 +192,26 @@ async function handleRoute() {
     // Profile route
     loadProfilePage();
   } else if (path === '/login') {
+    // Check if we're in focus mode and redirect to main site
+    const focusUser = await getDefaultFocusUser();
+    if (focusUser && focusUser !== '*') {
+      window.location.href = 'https://artsite.ca/login';
+      return;
+    }
     // Login route - show dedicated login page
     loadLoginPage();
   } else if (path === '/register') {
+    // Check if we're in focus mode and redirect to main site
+    const focusUser = await getDefaultFocusUser();
+    if (focusUser && focusUser !== '*') {
+      window.location.href = 'https://artsite.ca/register';
+      return;
+    }
     // Register route - show dedicated registration page
     loadRegisterPage()
+  } else if (path === '/about') {
+    // About route - show artist's statement for focus user
+    loadAboutPage();
   } else if (path === '/logout') {
     // Logout route - perform logout and redirect to home
     await logout();
@@ -307,30 +324,55 @@ async function updateNavigationAuth() {
 // Load site title from settings and update document title and navigation
 async function loadSiteTitle() {
   try {
-    // Try to get settings if user is authenticated
-    const currentUser = await getCurrentUser();
-    if (currentUser) {
-      const settings = await getSettings();
+    console.log("loadSiteTitle")
+    // Only apply custom site title if we're in focus mode with a specific user
+    const focusUser = await getDefaultFocusUser();
+    if (focusUser && focusUser !== '*') {
+      // In focus mode - get settings for the focus user (not current user)
+      const settings = await getFocusUserSettings(focusUser);
       if (settings && settings.site_title) {
         // Update document title
         document.title = settings.site_title;
-        
+
         // Update site title in navigation (preserving the icon)
         const siteTitle = document.getElementById('site-title');
-        const iconElement = siteTitle.querySelector('.site-icon');
-        siteTitle.innerHTML = '';
-        siteTitle.appendChild(iconElement);
-        siteTitle.appendChild(document.createTextNode(settings.site_title));
+        if (siteTitle) {
+          const iconElement = siteTitle.querySelector('.site-icon');
+          if (iconElement) {
+            const iconClone = iconElement.cloneNode(true);
+            siteTitle.innerHTML = '';
+            siteTitle.appendChild(iconClone);
+            siteTitle.appendChild(document.createTextNode(settings.site_title));
+          }
+        }
         return;
       }
     }
   } catch (error) {
-    // Settings not available or user not authenticated, use default
-    console.log('Could not load site title from settings, using default');
+    console.log('Could not load site title from settings, using fallback');
   }
-  
-  // Fallback to hostname if no settings or user not authenticated
+
+  // Fallback to hostname for main site or when no custom title is set
   document.title = window.location.hostname;
+}
+
+// Check if we're in focus mode and hide navigation if needed
+async function checkFocusModeAndHideNav() {
+  try {
+    const focusUser = await getDefaultFocusUser();
+    if (focusUser && focusUser !== '*') {
+      // We're in focus mode - hide the navigation completely
+      const nav = document.getElementById('main-nav');
+      if (nav) {
+        nav.style.display = 'none';
+      }
+
+      // Store focus user for other functions to use
+      window.currentFocusUser = focusUser;
+    }
+  } catch (error) {
+    console.log('Could not determine focus mode, showing navigation');
+  }
 }
 
 // Load user avatar asynchronously
@@ -531,6 +573,9 @@ async function loadGalleryPage(focusUser = '*') {
     <div class="gallery-header">
       <h1 class="gallery-title">${galleryTitle}</h1>
       <p class="gallery-subtitle">${gallerySubtitle}</p>
+      ${focusUser !== '*' ? `<div class="gallery-actions">
+        <a href="/about" class="btn btn-secondary">About ${focusUser}</a>
+      </div>` : ''}
     </div>
 
     <div class="content-container">
@@ -906,11 +951,14 @@ async function loadArtworkPage(artworkId) {
   `;
 
   try {
-    // Get artwork details and current user
-    const [artwork, currentUser] = await Promise.all([
+    // Get artwork details, current user, and check focus mode
+    const [artwork, currentUser, focusUser] = await Promise.all([
       getArtwork(artworkId),
-      getCurrentUser().catch(() => null)
+      getCurrentUser().catch(() => null),
+      getDefaultFocusUser().catch(() => '*')
     ]);
+
+    const isInFocusMode = focusUser && focusUser !== '*';
 
     if (!artwork) {
       app.innerHTML = `
@@ -955,7 +1003,7 @@ async function loadArtworkPage(artworkId) {
             ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
 
             <div class="artwork-metadata">
-              <!-- Artist name will be looked up from profiles cache -->
+              ${!isInFocusMode ? `<!-- Artist name will be looked up from profiles cache -->` : ''}
               ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
               ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
               ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
@@ -976,6 +1024,84 @@ async function loadArtworkPage(artworkId) {
         </div>
         <div class="page-content">
           <p>There was an error loading this artwork.</p>
+          <a href="/" class="btn btn-primary">Return to Gallery</a>
+        </div>
+      </div>
+    `;
+  }
+}
+
+// Load about page for focus user
+async function loadAboutPage() {
+  const app = document.getElementById('app');
+
+  try {
+    const focusUser = await getDefaultFocusUser();
+    if (!focusUser || focusUser === '*') {
+      // Not in focus mode, redirect to home
+      navigateTo('/');
+      return;
+    }
+
+    // Show loading state
+    app.innerHTML = `
+      <div class="page-container">
+        <div class="loading">
+          <p>Loading artist information...</p>
+        </div>
+      </div>
+    `;
+
+    // Get artist settings/profile information for the focus user
+    const settings = await getFocusUserSettings(focusUser).catch(() => null);
+
+    const artistName = settings?.artist_name || focusUser;
+    const artistBio = settings?.artist_bio || '';
+    const contactEmail = settings?.contact_email || '';
+
+    app.innerHTML = `
+      <div class="about-page-container">
+        <div class="page-header">
+          <h1>About ${artistName}</h1>
+          <div class="page-actions">
+            <a href="/" class="btn btn-secondary">Back to Gallery</a>
+          </div>
+        </div>
+
+        <div class="about-content">
+          ${artistBio ? `
+            <section class="artist-statement">
+              <h2>Artist Statement</h2>
+              <div class="artist-bio">
+                ${artistBio.split('\n').map(paragraph => paragraph.trim() ? `<p>${paragraph}</p>` : '').join('')}
+              </div>
+            </section>
+          ` : `
+            <section class="artist-statement">
+              <h2>Artist Statement</h2>
+              <p>Artist statement coming soon...</p>
+            </section>
+          `}
+
+          ${contactEmail ? `
+            <section class="contact-info">
+              <h2>Contact</h2>
+              <p><strong>Email:</strong> <a href="mailto:${contactEmail}">${contactEmail}</a></p>
+            </section>
+          ` : ''}
+        </div>
+      </div>
+    `;
+
+  } catch (error) {
+    console.error('Error loading about page:', error);
+    app.innerHTML = `
+      <div class="page-container">
+        <div class="page-header">
+          <h1>Error</h1>
+        </div>
+        <div class="page-content">
+          <p>There was an error loading the about page.</p>
           <a href="/" class="btn btn-primary">Return to Gallery</a>
         </div>
       </div>
@@ -1783,7 +1909,13 @@ async function loadCurrentSettings() {
     // Populate form fields
     const fields = ['site_title', 'artist_name', 'artist_bio', 'contact_email', 'contact_phone', 'gallery_description', 'primary_color', 'secondary_color'];
     fields.forEach(field => {
-      const element = document.getElementById(field.replace('_', '-'));
+      // Handle special case for site_title which has ID 'site-title-setting'
+      let elementId = field.replace(/_/g, '-');
+      if (field === 'site_title') {
+        elementId = 'site-title-setting';
+      }
+
+      const element = document.getElementById(elementId);
       if (element && settings[field]) {
         element.value = settings[field];
       }
@@ -1837,7 +1969,7 @@ async function handleSettingsSubmit(e) {
       siteTitle.innerHTML = '';
       siteTitle.appendChild(iconElement);
       siteTitle.appendChild(document.createTextNode(settings.site_title));
-      
+
       // Update document title for saved shortcuts
       document.title = settings.site_title;
     }
