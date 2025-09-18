@@ -1568,3 +1568,140 @@ input[type="file"]:focus {
 .btn-danger .icon {
   margin-right: 0.25rem;
 }
+
+/* Artwork Detail Page Styles */
+.artwork-detail-container {
+  display: flex;
+  gap: 2rem;
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+.artwork-detail-image-section {
+  flex: 1;
+  max-width: 600px;
+}
+
+.artwork-detail-image-container {
+  background: var(--card-bg);
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 4px 8px var(--shadow-color);
+  position: relative;
+  aspect-ratio: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.artwork-detail-image {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  display: block;
+}
+
+.artwork-detail-info-section {
+  flex: 1;
+  min-width: 300px;
+}
+
+.artwork-detail-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.artwork-detail-title {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--text-color);
+  margin: 0;
+  line-height: 1.2;
+}
+
+.artwork-detail-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.artwork-detail-metadata {
+  margin-bottom: 2rem;
+}
+
+.artwork-detail-field {
+  margin-bottom: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.artwork-detail-field label {
+  font-weight: 600;
+  color: var(--text-color);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.artwork-detail-field span,
+.artwork-detail-field div {
+  color: var(--text-muted);
+  font-size: 1rem;
+  line-height: 1.4;
+}
+
+.artwork-price {
+  font-weight: 700;
+  color: var(--primary-color);
+  font-size: 1.1rem;
+}
+
+.artwork-description {
+  white-space: pre-wrap;
+  line-height: 1.6;
+}
+
+.artwork-detail-navigation {
+  display: flex;
+  gap: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border-color);
+}
+
+/* Responsive design for artwork detail */
+@media (max-width: 768px) {
+  .artwork-detail-container {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem;
+  }
+  
+  .artwork-detail-image-section {
+    max-width: 100%;
+  }
+  
+  .artwork-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  
+  .artwork-detail-title {
+    font-size: 1.5rem;
+  }
+  
+  .artwork-detail-actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+  
+  .artwork-detail-navigation {
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+}
