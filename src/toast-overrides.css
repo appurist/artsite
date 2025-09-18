@@ -1,0 +1,20 @@
+/* Override vanilla-toast transparency */
+#vanilla-toast {
+  background: rgb(0, 0, 0) !important; /* Fully opaque black */
+}
+
+#vanilla-toast.success {
+  background: rgb(92, 184, 92) !important; /* Fully opaque green */
+}
+
+#vanilla-toast.info {
+  background: rgb(91, 192, 222) !important; /* Fully opaque blue */
+}
+
+#vanilla-toast.warning {
+  background: rgb(236, 151, 31) !important; /* Fully opaque orange */
+}
+
+#vanilla-toast.error {
+  background: rgb(201, 48, 44) !important; /* Fully opaque red */
+}

@@ -4,6 +4,8 @@ import 'solid-devtools';
 
 import './style.css';
 import './avatar-styles.css';
+import 'vanilla-toast/vanilla-toast.css';
+import './toast-overrides.css';
 import App from './App';
 
 const root = document.getElementById('root');

@@ -14,13 +14,14 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@solidjs/router": "^0.15.1",
     "solid-js": "^1.9.5",
-    "@solidjs/router": "^0.15.1"
+    "vanilla-toast": "^0.5.0"
   },
   "devDependencies": {
+    "solid-devtools": "^0.34.3",
     "vite": "^7.1.5",
     "vite-plugin-solid": "^2.11.8",
-    "solid-devtools": "^0.34.3",
     "wrangler": "^4.36.0"
   }
 }
