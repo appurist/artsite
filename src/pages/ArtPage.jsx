@@ -115,10 +115,13 @@ function ArtPage() {
       }
 
       try {
+        const selectedComponents = ['artworks', 'settings', 'profile'];
+        const restoreMode = 'add';
+
         const formData = new FormData();
         formData.append('backup', file);
-        formData.append('components', JSON.stringify(['artworks', 'settings', 'profile']));
-        formData.append('mode', 'add');
+        formData.append('components', selectedComponents.join(','));
+        formData.append('restore_mode', restoreMode);
 
         const response = await fetch(`${API_BASE_URL}/api/backup/restore`, {
           method: 'POST',
@@ -128,13 +131,19 @@ function ArtPage() {
           body: formData
         });
 
+        const result = await response.json();
+
         if (!response.ok) {
-          const error = await response.json();
-          throw new Error(error.error || 'Restore failed');
+          throw new Error(result.error || 'Restore failed');
         }
 
-        const result = await response.json();
-        alert('Backup restored successfully! ' + (result.message || ''));
+        console.log('Restore completed!', 'Results:', Object.entries(result.results)
+          .map(([comp, res]) => `${comp}: ${res.success ? 'Success' : 'Failed - ' + res.error}`)
+          .join(', '));
+
+        alert('Backup restored successfully! ' + Object.entries(result.results)
+          .map(([comp, res]) => `${comp}: ${res.success ? 'Success' : 'Failed - ' + res.error}`)
+          .join(', '));
         
         // Reload artworks to show restored data
         window.location.reload();

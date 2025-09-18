@@ -17,11 +17,11 @@ database_id = "27fe6352-1275-486d-8f74-c684aac80253"
 binding = "ARTWORK_IMAGES"
 bucket_name = "artsite-images"
 
-# Environment variables
+# Environment variables (local development)
 [vars]
-FRONTEND_URL = "https://artsite.ca"
+FRONTEND_URL = "http://localhost:5173"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
+ARTWORK_IMAGES_BASE_URL = "http://localhost:8787/api/images"
 
 # Development environment
 [env.development]
