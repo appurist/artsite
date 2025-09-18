@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getArtworks, deleteArtwork, API_BASE_URL } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
 import RestoreModal from '../components/RestoreModal';
+import BackupModal from '../components/BackupModal';
 
 // Import icons
 import imagePlusIcon from '../assets/icons/image-plus.svg';
@@ -18,6 +19,7 @@ function ArtPage() {
   const [artworks, setArtworks] = createSignal([]);
   const [isLoading, setIsLoading] = createSignal(true);
   const [showRestoreModal, setShowRestoreModal] = createSignal(false);
+  const [showBackupModal, setShowBackupModal] = createSignal(false);
   const [error, setError] = createSignal(null);
 
   // Redirect if not authenticated (but wait for auth to load first)
@@ -69,39 +71,8 @@ function ArtPage() {
     }
   };
 
-  const handleBackup = async () => {
-    try {
-      const selectedComponents = ['artworks', 'settings', 'profile'];
-
-      const response = await fetch(`${API_BASE_URL}/api/backup/create?components=${selectedComponents.join(',')}`, {
-        method: 'GET',
-        headers: {
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        }
-      });
-
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Backup failed');
-      }
-
-      // Download the ZIP file
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = response.headers.get('Content-Disposition')?.match(/filename="([^"]+)"/)?.[1] || 'artsite-backup.zip';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-
-      vanillaToast.success('Backup created successfully!', { duration: 5000 });
-
-    } catch (error) {
-      console.error('Error creating backup:', error);
-      vanillaToast.error('Failed to create backup: ' + error.message, { duration: 5000 });
-    }
+  const handleBackup = () => {
+    setShowBackupModal(true);
   };
 
   const handleRestore = () => {
@@ -244,6 +215,11 @@ function ArtPage() {
     <RestoreModal
       isOpen={showRestoreModal()}
       onClose={() => setShowRestoreModal(false)}
+    />
+    
+    <BackupModal
+      isOpen={showBackupModal()}
+      onClose={() => setShowBackupModal(false)}
     />
     </>
   );
