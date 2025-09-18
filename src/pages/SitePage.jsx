@@ -1,4 +1,4 @@
-import { createSignal, onMount, Show } from 'solid-js';
+import { createSignal, createEffect, onMount, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { getSettings, updateSettings } from '../api.js';
@@ -8,7 +8,7 @@ import cancelIcon from '../assets/icons/cancel.svg';
 import contentSaveIcon from '../assets/icons/content-save.svg';
 
 function SitePage() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   // Form state
@@ -27,11 +27,12 @@ function SitePage() {
   const [statusMessage, setStatusMessage] = createSignal('');
   const [statusType, setStatusType] = createSignal('');
 
-  // Redirect if not authenticated
-  if (!isAuthenticated()) {
-    navigate('/login');
-    return null;
-  }
+  // Redirect if not authenticated (but wait for auth to load first)
+  createEffect(() => {
+    if (!authLoading() && !isAuthenticated()) {
+      navigate('/login');
+    }
+  });
 
   // Load current settings
   onMount(async () => {
