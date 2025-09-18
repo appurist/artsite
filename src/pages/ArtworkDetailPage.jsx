@@ -3,6 +3,7 @@ import { useParams, A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { getArtwork, deleteArtwork } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
+import LoadingSpinner from '../components/Spinner';
 
 // Import icons
 import pencilIcon from '../assets/icons/pencil.svg';
@@ -76,7 +77,7 @@ function ArtworkDetailPage() {
         when={!isLoading()}
         fallback={
           <div class="loading">
-            <p>Loading artwork...</p>
+            <LoadingSpinner size={40} />
           </div>
         }
       >

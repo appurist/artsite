@@ -5,6 +5,7 @@ import { getArtworks, deleteArtwork, API_BASE_URL } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
 import RestoreModal from '../components/RestoreModal';
 import BackupModal from '../components/BackupModal';
+import LoadingSpinner from '../components/Spinner';
 
 // Import icons
 import imagePlusIcon from '../assets/icons/image-plus.svg';
@@ -86,7 +87,7 @@ function ArtPage() {
       fallback={
         <div class="page-container">
           <div class="loading">
-            <p>Loading...</p>
+            <LoadingSpinner size={40} />
           </div>
         </div>
       }
@@ -140,7 +141,7 @@ function ArtPage() {
                   </div>
                 }>
                   <div class="loading">
-                    <p>Loading artworks...</p>
+                    <LoadingSpinner size={40} />
                   </div>
                 </Show>
               }

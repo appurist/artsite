@@ -1,8 +1,9 @@
-import { createSignal, createEffect, onMount, Show } from 'solid-js';
+import { createSignal, createEffect, onMount, Show, Suspense, createResource } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { getProfile, updateProfile, uploadFile } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
+import LoadingSpinner from '../components/Spinner';
 
 // Import icons
 import cancelIcon from '../assets/icons/cancel.svg';
@@ -21,7 +22,6 @@ function ProfilePage() {
   const [avatarUrl, setAvatarUrl] = createSignal('');
 
   // UI state
-  const [isLoading, setIsLoading] = createSignal(true);
   const [isSaving, setIsSaving] = createSignal(false);
   const [isUploadingAvatar, setIsUploadingAvatar] = createSignal(false);
 
@@ -32,24 +32,28 @@ function ProfilePage() {
     }
   });
 
-  // Load current profile
-  onMount(async () => {
-    try {
-      const profile = await getProfile(user().id);
-      
-      // Populate form with current profile data
-      setName(profile?.name || user()?.name || '');
-      setBio(profile?.bio || '');
-      setWebsite(profile?.website || '');
-      setLocation(profile?.location || '');
-      setAvatarUrl(profile?.avatar_url || '');
-    } catch (error) {
-      console.error('Error loading profile:', error);
-      vanillaToast.error('Error loading profile', { duration: 5000 });
-    } finally {
-      setIsLoading(false);
+  // Load current profile using createResource
+  const [profile] = createResource(
+    () => user()?.id, // Source signal - only run when user is available
+    async (userId) => {
+      try {
+        const profile = await getProfile(userId);
+        
+        // Populate form with current profile data
+        setName(profile?.name || user()?.name || '');
+        setBio(profile?.bio || '');
+        setWebsite(profile?.website || '');
+        setLocation(profile?.location || '');
+        setAvatarUrl(profile?.avatar_url || '');
+        
+        return profile;
+      } catch (error) {
+        console.error('Error loading profile:', error);
+        vanillaToast.error('Error loading profile', { duration: 5000 });
+        throw error;
+      }
     }
-  });
+  );
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -104,16 +108,6 @@ function ProfilePage() {
     }
   };
 
-  if (isLoading()) {
-    return (
-      <div class="page-container">
-        <div class="loading">
-          <p>Loading profile...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div class="page-container">
       <div class="page-header">
@@ -121,7 +115,10 @@ function ProfilePage() {
       </div>
 
       <div class="page-content">
+        <Suspense fallback={<div class="loading"><LoadingSpinner size={40} /></div>}>
         <form onSubmit={handleSubmit}>
+          {/* Trigger resource loading */}
+          <div style="display: none">{profile()}</div>
           <div class="form-group">
             <label for="avatar-upload">Profile Picture</label>
             <div class="avatar-upload-section">
@@ -208,6 +205,7 @@ function ProfilePage() {
             </button>
           </div>
         </form>
+        </Suspense>
       </div>
     </div>
   );

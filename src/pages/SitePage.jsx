@@ -2,6 +2,7 @@ import { createSignal, createEffect, onMount, Show } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { getSettings, updateSettings } from '../api.js';
+import LoadingSpinner from '../components/Spinner';
 
 // Import icons
 import cancelIcon from '../assets/icons/cancel.svg';
@@ -93,24 +94,22 @@ function SitePage() {
     }
   };
 
-  if (isLoading()) {
-    return (
-      <div class="page-container">
-        <div class="loading">
-          <p>Loading settings...</p>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div class="page-container">
-      <div class="page-header">
-        <h1>My Site Settings</h1>
-      </div>
+      <Show 
+        when={!isLoading()}
+        fallback={
+          <div class="loading">
+            <LoadingSpinner size={40} />
+          </div>
+        }
+      >
+        <div class="page-header">
+          <h1>My Site Settings</h1>
+        </div>
 
-      <div class="page-content">
-        <form onSubmit={handleSubmit}>
+        <div class="page-content">
+          <form onSubmit={handleSubmit}>
           <div class="form-group">
             <label for="site-title-setting">Site Title (e.g. Art Gallery)</label>
             <input 
@@ -220,8 +219,9 @@ function SitePage() {
               {isSaving() ? 'Saving...' : 'Save Settings'}
             </button>
           </div>
-        </form>
-      </div>
+          </form>
+        </div>
+      </Show>
     </div>
   );
 }
