@@ -15,6 +15,7 @@ import { handleSettings } from './settings/index.js';
 import { handleUpload } from './upload/index.js';
 import { handleDomains } from './domains/index.js';
 import { handleBackup } from './backup/index.js';
+import { handleHealth } from './health/index.js';
 
 /**
  * Handle image serving from R2 storage for local development only
@@ -98,6 +99,10 @@ export default {
       
       if (path.startsWith('/api/backup')) {
         return await handleBackup(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/health')) {
+        return await handleHealth(request, env, ctx);
       }
       
       if (path.startsWith('/api/images/')) {
