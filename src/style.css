@@ -334,6 +334,122 @@ body {
   font-size: 0.8rem;
 }
 
+/* Avatar selection interface */
+.avatar-section {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.avatar-preview-container {
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.avatar-type-label {
+  margin-top: 0.5rem;
+  color: var(--muted-text-color);
+  font-size: 0.8rem;
+  text-transform: capitalize;
+}
+
+.avatar-options {
+  flex: 1;
+}
+
+.avatar-options h4 {
+  margin: 0 0 1rem 0;
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.avatar-option {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  background-color: var(--background-color);
+}
+
+.avatar-option input[type="radio"] {
+  margin-right: 0.5rem;
+}
+
+.avatar-option label {
+  cursor: pointer;
+  display: block;
+  margin-bottom: 0.5rem;
+}
+
+.avatar-option:has(input:checked) {
+  border-color: var(--primary-color);
+  background-color: rgba(102, 126, 234, 0.05);
+}
+
+.upload-controls {
+  margin-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.upload-controls small {
+  color: var(--muted-text-color);
+  font-size: 0.8rem;
+}
+
+/* Profile sections styling */
+.profile-section {
+  margin-bottom: 2rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background-color: var(--card-background);
+}
+
+.profile-section h2 {
+  margin: 0 0 0.5rem 0;
+  color: var(--text-color);
+  font-size: 1.25rem;
+}
+
+.section-description {
+  margin: 0 0 1.5rem 0;
+  color: var(--muted-text-color);
+  font-size: 0.9rem;
+}
+
+.disabled-field {
+  background-color: var(--disabled-background);
+  color: var(--muted-text-color);
+  cursor: not-allowed;
+}
+
+.field-note {
+  display: block;
+  margin-top: 0.25rem;
+  color: var(--muted-text-color);
+  font-size: 0.8rem;
+}
+
+.account-management {
+  border-color: var(--warning-color);
+}
+
+.danger-zone {
+  margin-top: 1rem;
+  padding: 1rem;
+  border: 1px solid var(--danger-color);
+  border-radius: 6px;
+  background-color: rgba(220, 53, 69, 0.05);
+}
+
+.danger-zone h3 {
+  margin: 0 0 1rem 0;
+  color: var(--danger-color);
+  font-size: 1rem;
+}
+
 .profile-info {
   flex: 1;
 }

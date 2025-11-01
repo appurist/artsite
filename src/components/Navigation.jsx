@@ -1,7 +1,9 @@
-import { Show, createSignal, createEffect } from 'solid-js';
+import { Show, createSignal, createEffect, createResource } from 'solid-js';
 import { A, useLocation } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { useSettings } from '../contexts/SettingsContext';
+import { getProfile } from '../api.js';
+import { getAvatarUrl } from '../avatar-utils.js';
 import homeIcon from '../assets/icons/home.svg';
 import imageMultipleIcon from '../assets/icons/image-multiple.svg';
 import cogIcon from '../assets/icons/cog.svg';
@@ -14,6 +16,20 @@ function Navigation() {
   const { focusUser, siteTitle } = useSettings();
   const location = useLocation();
   const [isHidden, setIsHidden] = createSignal(false);
+  
+  // Get user profile for avatar
+  const [profile] = createResource(
+    () => user()?.id,
+    async (userId) => {
+      if (!userId) return null;
+      try {
+        return await getProfile(userId);
+      } catch (error) {
+        console.error('Error loading user profile for avatar:', error);
+        return null;
+      }
+    }
+  );
 
   // Hide navigation in focus mode
   createEffect(() => {
@@ -56,10 +72,10 @@ function Navigation() {
                 </A>
               </li>
               
-              <li classList={{ active: location.pathname === '/profile' }}>
-                <A href="/profile" class="nav-user-name">
-                  <img src={userIcon} alt="Profile" class="user-icon" aria-hidden="true" />
-                  {user()?.name || user()?.email}
+              <li>
+                <A href="/profile" class="nav-link" classList={{ active: location.pathname === '/profile' }}>
+                  <img src={getAvatarUrl(user(), profile())} alt="Profile" class="user-avatar" aria-hidden="true" />
+                  <span>{user()?.name || user()?.email}</span>
                 </A>
               </li>
             </Show>

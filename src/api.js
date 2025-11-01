@@ -220,6 +220,15 @@ export async function deleteArtwork(id) {
   });
 }
 
+/**
+ * Delete all artworks for the authenticated user
+ */
+export async function deleteAllArtworks() {
+  return await apiRequest('/api/artworks', {
+    method: 'DELETE'
+  });
+}
+
 // ===== PROFILES API =====
 
 /**
@@ -247,6 +256,15 @@ export async function updateProfile(profileData) {
     body: JSON.stringify(profileData)
   });
   return response.profile;
+}
+
+/**
+ * Delete user account and all associated data
+ */
+export async function deleteAccount() {
+  return await apiRequest('/api/auth/user', {
+    method: 'DELETE'
+  });
 }
 
 // ===== SETTINGS API =====
@@ -285,6 +303,39 @@ export async function updateSettings(settingsData) {
 /**
  * Upload image file
  */
+/**
+ * Update avatar type (icon, initials, gravatar, uploaded)
+ */
+export async function updateAvatarType(avatarType) {
+  return await apiRequest('/api/profile/avatar', {
+    method: 'PUT',
+    body: JSON.stringify({ avatar_type: avatarType })
+  });
+}
+
+/**
+ * Upload avatar image
+ */
+export async function uploadAvatar(file) {
+  const formData = new FormData();
+  formData.append('avatar', file);
+  
+  return await apiRequest('/api/profile/avatar/upload', {
+    method: 'POST',
+    body: formData,
+    headers: {} // Don't set Content-Type, let browser set it for FormData
+  });
+}
+
+/**
+ * Import Gravatar
+ */
+export async function importGravatar() {
+  return await apiRequest('/api/profile/avatar/gravatar', {
+    method: 'POST'
+  });
+}
+
 export async function uploadFile(file) {
   const formData = new FormData();
   formData.append('image', file);

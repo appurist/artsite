@@ -1,7 +1,7 @@
 import { createSignal, createEffect, Show, For } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
-import { getArtworks, deleteArtwork, API_BASE_URL } from '../api.js';
+import { getArtworks, deleteArtwork, deleteAllArtworks, API_BASE_URL } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
 import RestoreModal from '../components/RestoreModal';
 import BackupModal from '../components/BackupModal';
@@ -80,6 +80,27 @@ function ArtPage() {
     setShowRestoreModal(true);
   };
 
+  const handleDeleteAllArtworks = async () => {
+    if (!confirm('Are you sure you want to delete ALL your artworks? This action cannot be undone and will permanently remove all your uploaded art.')) {
+      return;
+    }
+
+    // Double confirmation for such a destructive action
+    if (!confirm('This will delete ALL your artworks permanently. Are you absolutely sure?')) {
+      return;
+    }
+
+    try {
+      await deleteAllArtworks();
+      vanillaToast.success('All artworks deleted successfully', { duration: 5000 });
+      // Clear the artworks list
+      setArtworks([]);
+    } catch (err) {
+      console.error('Error deleting all artworks:', err);
+      vanillaToast.error('Error deleting artworks: ' + err.message, { duration: 5000 });
+    }
+  };
+
   return (
     <>
     <Show
@@ -123,6 +144,10 @@ function ArtPage() {
               <button class="btn btn-secondary" onClick={handleRestore}>
                 <img src={uploadIcon} alt="Restore" class="icon" aria-hidden="true" />
                 Restore
+              </button>
+              <button class="btn btn-danger" onClick={handleDeleteAllArtworks}>
+                <img src={deleteIcon} alt="Delete All" class="icon" aria-hidden="true" />
+                Delete All Images
               </button>
               <A href="/art/upload" class="btn btn-success">
                 <img src={imagePlusIcon} alt="Upload" class="icon" aria-hidden="true" />
