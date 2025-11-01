@@ -308,7 +308,7 @@ export async function getCustomDomainUser(db, hostname) {
   // Clean up hostname (remove port if present)
   const cleanHostname = hostname.split(':')[0];
   
-  const query = `SELECT id FROM accounts WHERE focus_domain = ?`;
+  const query = `SELECT id FROM accounts WHERE domain = ?`;
   const result = await queryFirst(db, query, [cleanHostname]);
   
   return result ? result.id : undefined;
