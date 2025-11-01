@@ -5,7 +5,7 @@
 
 import { router } from './shared/router.js';
 import { corsHeaders } from './shared/cors.js';
-import { getFocusUser } from './shared/db.js';
+import { getCustomDomainUser } from './shared/db.js';
 
 // Import route handlers
 import { handleAuth } from './auth/index.js';
@@ -55,9 +55,9 @@ async function handleImageServing(request, env, ctx) {
 }
 
 /**
- * Handle focus user lookup for a domain
+ * Handle custom domain user lookup for a domain
  */
-async function handleFocusUser(request, env, ctx) {
+async function handleCustomDomainUser(request, env, ctx) {
   try {
     if (request.method !== 'GET') {
       return new Response(JSON.stringify({ error: 'Method not allowed' }), {
@@ -69,19 +69,19 @@ async function handleFocusUser(request, env, ctx) {
     const url = new URL(request.url);
     const hostname = url.searchParams.get('hostname') || request.headers.get('host') || 'localhost';
     
-    const focusUserId = await getFocusUser(env.DB, hostname);
+    const customDomainUserId = await getCustomDomainUser(env.DB, hostname);
     
     return new Response(JSON.stringify({ 
       hostname: hostname.split(':')[0], 
-      focus_user_id: focusUserId || '*' 
+      custom_domain_user_id: customDomainUserId || '*' 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
 
   } catch (error) {
-    console.error('Focus user lookup error:', error);
+    console.error('Custom domain user lookup error:', error);
     return new Response(JSON.stringify({ 
-      error: 'Failed to get focus user',
+      error: 'Failed to get custom domain user',
       details: error.message 
     }), {
       status: 500,
@@ -129,8 +129,8 @@ export default {
         return await handleUpload(request, env, ctx);
       }
       
-      if (path === '/api/focus-user') {
-        return await handleFocusUser(request, env, ctx);
+      if (path === '/api/custom-domain-user') {
+        return await handleCustomDomainUser(request, env, ctx);
       }
       
       if (path.startsWith('/api/backup')) {

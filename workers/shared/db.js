@@ -297,10 +297,10 @@ export async function cleanExpiredTokens(db) {
 }
 
 /**
- * Get focus user for a domain/hostname
- * Returns the user ID if the domain has a focus user, undefined otherwise
+ * Get custom domain user for a hostname
+ * Returns the user ID if the domain has a custom domain mapping, undefined otherwise
  */
-export async function getFocusUser(db, hostname) {
+export async function getCustomDomainUser(db, hostname) {
   if (!hostname) {
     return undefined;
   }

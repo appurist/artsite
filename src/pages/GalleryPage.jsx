@@ -5,19 +5,19 @@ import { useSettings } from '../contexts/SettingsContext';
 
 function GalleryPage() {
   const params = useParams();
-  const { focusUser } = useSettings();
+  const { customDomainUser } = useSettings();
   const [artworks, setArtworks] = createSignal([]);
   const [isLoading, setIsLoading] = createSignal(true);
   const [error, setError] = createSignal(null);
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
-    return params.userId || focusUser() || '*';
+    return params.userId || customDomainUser || undefined;
   };
 
   const galleryTitle = () => {
     const currentUser = getCurrentUser();
-    if (currentUser === '*') {
+    if (!currentUser) {
       return window.location.hostname;
     }
     return `@${currentUser}`;
@@ -25,7 +25,7 @@ function GalleryPage() {
 
   const gallerySubtitle = () => {
     const currentUser = getCurrentUser();
-    if (currentUser === '*') {
+    if (!currentUser) {
       return 'Original paintings and artwork';
     }
     return 'Art Portfolio';
@@ -39,7 +39,7 @@ function GalleryPage() {
 
     try {
       const fetchedArtworks = await getArtworks({ 
-        userId: currentUser === '*' ? undefined : currentUser 
+        userId: currentUser 
       });
       setArtworks(fetchedArtworks);
     } catch (err) {
@@ -92,7 +92,7 @@ function GalleryPage() {
       <div class="gallery-header">
         <h1 class="gallery-title">{galleryTitle()}</h1>
         <p class="gallery-subtitle">{gallerySubtitle()}</p>
-        <Show when={getCurrentUser() !== '*'}>
+        <Show when={getCurrentUser()}>
           <div class="gallery-actions">
             <a href="/about" class="btn btn-secondary">About {getCurrentUser()}</a>
           </div>

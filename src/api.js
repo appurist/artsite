@@ -278,9 +278,9 @@ export async function getSettings() {
 }
 
 /**
- * Get settings for a specific user (for focus mode)
+ * Get settings for a specific user (for custom domain mode)
  */
-export async function getFocusUserSettings(userId) {
+export async function getCustomDomainUserSettings(userId) {
   const response = await apiRequest(`/api/settings/${userId}`, {
     method: 'GET'
   });
@@ -398,26 +398,26 @@ export const getSession = getCurrentUser;
 export const deleteSession = logout;
 
 // =============================================================================
-// FOCUS USER API
+// CUSTOM DOMAIN API
 // =============================================================================
 
 /**
- * Get the focus user for this domain
- * Returns the user ID if domain has a focus user, undefined otherwise
+ * Get the custom domain user for this domain
+ * Returns the user ID if domain has a custom domain mapping, undefined otherwise
  */
-export async function getFocusUser(hostname = null) {
+export async function getCustomDomainUser(hostname = null) {
   try {
     const targetHostname = hostname || window.location.hostname;
     const searchParams = new URLSearchParams();
     searchParams.set('hostname', targetHostname);
     
-    const response = await apiRequest(`/api/focus-user?${searchParams.toString()}`);
+    const response = await apiRequest(`/api/custom-domain-user?${searchParams.toString()}`);
     
     // Return the user ID or undefined (not "*")
-    const focusUserId = response?.focus_user_id;
-    return focusUserId === '*' ? undefined : focusUserId;
+    const customDomainUserId = response?.custom_domain_user_id;
+    return customDomainUserId === '*' ? undefined : customDomainUserId;
   } catch (error) {
-    console.error('Error getting focus user:', error);
-    return undefined; // Fallback to no focus user
+    console.error('Error getting custom domain user:', error);
+    return undefined; // Fallback to no custom domain user
   }
 }

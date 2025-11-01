@@ -13,7 +13,7 @@ import logoutIcon from '../assets/icons/logout.svg';
 
 function Navigation() {
   const { user, isAuthenticated, logout } = useAuth();
-  const { focusUser, siteTitle } = useSettings();
+  const { customDomainUser, siteTitle } = useSettings();
   const location = useLocation();
   const [isHidden, setIsHidden] = createSignal(false);
   
@@ -31,9 +31,9 @@ function Navigation() {
     }
   );
 
-  // Hide navigation in focus mode
+  // Hide navigation in custom domain mode
   createEffect(() => {
-    setIsHidden(focusUser() !== '*');
+    setIsHidden(customDomainUser);
   });
 
   const handleLogout = async (e) => {

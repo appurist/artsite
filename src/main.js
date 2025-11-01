@@ -10,7 +10,7 @@ import {
   uploadFile,
   getArtwork,
   getSettings,
-  getFocusUserSettings,
+  getCustomDomainUserSettings,
   updateSettings,
   getProfiles,
   getProfile,
@@ -19,7 +19,7 @@ import {
   updateArtwork,
   apiRequest,
   API_BASE_URL,
-  getFocusUser
+  getCustomDomainUser
 } from './api.js'
 
 // Import icons
@@ -126,8 +126,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   // Check authentication status and update navigation
   await updateNavigationAuth();
 
-  // Check if we're in focus mode and hide navigation if needed
-  await checkFocusModeAndHideNav();
+  // Check if we're in custom domain mode and hide navigation if needed
+  await checkCustomDomainModeAndHideNav();
 
   // Handle browser back/forward
   window.addEventListener('popstate', handleRoute);
@@ -166,9 +166,9 @@ async function handleRoute() {
     if (userId) {
       loadUserGallery(userId);
     } else {
-      // Get default focus user for this domain
-      const focusUser = await getFocusUser();
-      loadGalleryPage(focusUser);
+      // Get default custom domain user for this domain
+      const customDomainUser = await getCustomDomainUser();
+      loadGalleryPage(customDomainUser);
     }
   } else if (path === '/art') {
     // Art management route
@@ -192,34 +192,34 @@ async function handleRoute() {
     // Profile route
     loadProfilePage();
   } else if (path === '/login') {
-    // Check if we're in focus mode and redirect to main site
-    const focusUser = await getFocusUser();
-    if (focusUser) {
+    // Check if we're in custom domain mode and redirect to main site
+    const customDomainUser = await getCustomDomainUser();
+    if (customDomainUser) {
       window.location.href = 'https://artsite.ca/login';
       return;
     }
     // Login route - show dedicated login page
     loadLoginPage();
   } else if (path === '/register') {
-    // Check if we're in focus mode and redirect to main site
-    const focusUser = await getFocusUser();
-    if (focusUser) {
+    // Check if we're in custom domain mode and redirect to main site
+    const customDomainUser = await getCustomDomainUser();
+    if (customDomainUser) {
       window.location.href = 'https://artsite.ca/register';
       return;
     }
     // Register route - show dedicated registration page
     loadRegisterPage()
   } else if (path === '/about') {
-    // About route - show artist's statement for focus user
+    // About route - show artist's statement for custom domain user
     loadAboutPage();
   } else if (path === '/logout') {
     // Logout route - perform logout and redirect to home
     await logout();
     navigateTo('/');
   } else {
-    // Default route (home) - use domain's focus user
-    const focusUser = await getFocusUser();
-    loadGalleryPage(focusUser);
+    // Default route (home) - use domain's custom domain user
+    const customDomainUser = await getCustomDomainUser();
+    loadGalleryPage(customDomainUser);
   }
 
   // Update navigation for current route
@@ -325,11 +325,11 @@ async function updateNavigationAuth() {
 async function loadSiteTitle() {
   try {
     console.log("loadSiteTitle")
-    // Only apply custom site title if we're in focus mode with a specific user
-    const focusUser = await getFocusUser();
-    if (focusUser) {
-      // In focus mode - get settings for the focus user (not current user)
-      const settings = await getFocusUserSettings(focusUser);
+    // Only apply custom site title if we're in custom domain mode with a specific user
+    const customDomainUser = await getCustomDomainUser();
+    if (customDomainUser) {
+      // In custom domain mode - get settings for the custom domain user (not current user)
+      const settings = await getCustomDomainUserSettings(customDomainUser);
       if (settings && settings.site_title) {
         // Update document title
         document.title = settings.site_title;
@@ -356,22 +356,22 @@ async function loadSiteTitle() {
   document.title = window.location.hostname;
 }
 
-// Check if we're in focus mode and hide navigation if needed
-async function checkFocusModeAndHideNav() {
+// Check if we're in custom domain mode and hide navigation if needed
+async function checkCustomDomainModeAndHideNav() {
   try {
-    const focusUser = await getFocusUser();
-    if (focusUser) {
-      // We're in focus mode - hide the navigation completely
+    const customDomainUser = await getCustomDomainUser();
+    if (customDomainUser) {
+      // We're in custom domain mode - hide the navigation completely
       const nav = document.getElementById('main-nav');
       if (nav) {
         nav.style.display = 'none';
       }
 
-      // Store focus user for other functions to use
-      window.currentFocusUser = focusUser;
+      // Store custom domain user for other functions to use
+      window.currentCustomDomainUser = customDomainUser;
     }
   } catch (error) {
-    console.log('Could not determine focus mode, showing navigation');
+    console.log('Could not determine custom domain mode, showing navigation');
   }
 }
 
@@ -556,15 +556,15 @@ function updateActiveNavigation() {
 }
 
 // Load gallery page
-async function loadGalleryPage(focusUser = undefined) {
+async function loadGalleryPage(customDomainUser = undefined) {
   const app = document.getElementById('app');
 
-  // Determine gallery title based on focus user
+  // Determine gallery title based on custom domain user
   let galleryTitle = window.location.hostname;
   let gallerySubtitle = 'Original paintings and artwork';
 
-  if (focusUser) {
-    galleryTitle = `@${focusUser}`;
+  if (customDomainUser) {
+    galleryTitle = `@${customDomainUser}`;
     gallerySubtitle = 'Art Portfolio';
   }
 
@@ -573,8 +573,8 @@ async function loadGalleryPage(focusUser = undefined) {
     <div class="gallery-header">
       <h1 class="gallery-title">${galleryTitle}</h1>
       <p class="gallery-subtitle">${gallerySubtitle}</p>
-      ${focusUser ? `<div class="gallery-actions">
-        <a href="/about" class="btn btn-secondary">About ${focusUser}</a>
+      ${customDomainUser ? `<div class="gallery-actions">
+        <a href="/about" class="btn btn-secondary">About ${customDomainUser}</a>
       </div>` : ''}
     </div>
 
@@ -586,8 +586,8 @@ async function loadGalleryPage(focusUser = undefined) {
   `;
 
   try {
-    // Fetch artworks for the focus user
-    const artworks = await getArtworks({ userId: !focusUser ? undefined : focusUser });
+    // Fetch artworks for the custom domain user
+    const artworks = await getArtworks({ userId: !customDomainUser ? undefined : customDomainUser });
 
     if (artworks.length === 0) {
       // Show empty state
@@ -606,9 +606,9 @@ async function loadGalleryPage(focusUser = undefined) {
       `;
     } else {
       // Show gallery with artworks
-      // Fetch profiles for artist names when displaying all artists (no focus user)
+      // Fetch profiles for artist names when displaying all artists (no custom domain user)
       let profileMap = {};
-      if (!focusUser) {
+      if (!customDomainUser) {
         // Get unique user IDs from artworks
         const userIds = [...new Set(artworks.map(artwork => artwork.account_id))];
         const allProfiles = await getProfiles();
@@ -620,7 +620,7 @@ async function loadGalleryPage(focusUser = undefined) {
 
       // Build artist filter dropdown for multi-artist galleries
       let artistFilter = '';
-      if (!focusUser) {
+      if (!customDomainUser) {
         const artistProfiles = await getProfiles();
         if (artistProfiles.length > 1) {
           const artistOptions = artistProfiles.map(profile =>
@@ -951,11 +951,11 @@ async function loadArtworkPage(artworkId) {
   `;
 
   try {
-    // Get artwork details, current user, and check focus mode
-    const [artwork, currentUser, focusUser] = await Promise.all([
+    // Get artwork details, current user, and check custom domain mode
+    const [artwork, currentUser, customDomainUser] = await Promise.all([
       getArtwork(artworkId),
       getCurrentUser().catch(() => null),
-      getFocusUser().catch(() => undefined)
+      getCustomDomainUser().catch(() => undefined)
     ]);
 
     if (!artwork) {
@@ -1001,7 +1001,7 @@ async function loadArtworkPage(artworkId) {
             ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
 
             <div class="artwork-metadata">
-              ${!focusUser ? `<!-- Artist name will be looked up from profiles cache -->` : ''}
+              ${!customDomainUser ? `<!-- Artist name will be looked up from profiles cache -->` : ''}
               ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
               ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
               ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
@@ -1029,14 +1029,14 @@ async function loadArtworkPage(artworkId) {
   }
 }
 
-// Load about page for focus user
+// Load about page for custom domain user
 async function loadAboutPage() {
   const app = document.getElementById('app');
 
   try {
-    const focusUser = await getFocusUser();
-    if (!focusUser) {
-      // Not in focus mode, redirect to home
+    const customDomainUser = await getCustomDomainUser();
+    if (!customDomainUser) {
+      // Not in custom domain mode, redirect to home
       navigateTo('/');
       return;
     }
@@ -1050,10 +1050,10 @@ async function loadAboutPage() {
       </div>
     `;
 
-    // Get artist settings/profile information for the focus user
-    const settings = await getFocusUserSettings(focusUser).catch(() => null);
+    // Get artist settings/profile information for the custom domain user
+    const settings = await getCustomDomainUserSettings(customDomainUser).catch(() => null);
 
-    const artistName = settings?.artist_name || focusUser;
+    const artistName = settings?.artist_name || customDomainUser;
     const artistBio = settings?.artist_bio || '';
     const contactEmail = settings?.contact_email || '';
 
@@ -1112,14 +1112,14 @@ window.filterArtworksByArtist = async function(userId) {
   try {
     console.log('Filtering by artist:', userId);
 
-    // Get current focus user from the URL or default
+    // Get current custom domain user from the URL or default
     const path = window.location.pathname;
-    let focusUser = undefined;
+    let customDomainUser = undefined;
 
     if (path.startsWith('/@')) {
-      focusUser = path.slice(2);
+      customDomainUser = path.slice(2);
     } else {
-      focusUser = await getFocusUser();
+      customDomainUser = await getCustomDomainUser();
     }
 
     // If filtering by specific user, redirect to their gallery page
@@ -1129,7 +1129,7 @@ window.filterArtworksByArtist = async function(userId) {
     }
 
     // If showing all artists, reload the current gallery page
-    if (!focusUser) {
+    if (!customDomainUser) {
       loadGalleryPage('*');
     } else {
       navigateTo('/');  // Go to home page to show all artists

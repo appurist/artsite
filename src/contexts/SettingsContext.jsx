@@ -1,31 +1,31 @@
 import { createContext, useContext, createSignal, createEffect } from 'solid-js';
-import { getSettings, getFocusUser, getFocusUserSettings } from '../api.js';
+import { getSettings, getCustomDomainUser, getCustomDomainUserSettings } from '../api.js';
 
 const SettingsContext = createContext();
 
 export function SettingsProvider(props) {
   const [settings, setSettings] = createSignal({});
-  const [focusUser, setFocusUser] = createSignal(undefined);
+  const [customDomainUser, setCustomDomainUser] = createSignal(undefined);
   const [siteTitle, setSiteTitle] = createSignal(window.location.hostname);
 
-  // Load focus user and settings on mount
+  // Load custom domain user and settings on mount
   createEffect(async () => {
     try {
-      const currentFocusUser = await getFocusUser();
-      setFocusUser(currentFocusUser);
+      const currentCustomDomainUser = await getCustomDomainUser();
+      setCustomDomainUser(currentCustomDomainUser);
 
-      // Load site title based on focus mode
-      if (currentFocusUser) {
-        const focusSettings = await getFocusUserSettings(currentFocusUser);
-        if (focusSettings?.site_title) {
-          setSiteTitle(focusSettings.site_title);
-          document.title = focusSettings.site_title;
+      // Load site title based on custom domain mode
+      if (currentCustomDomainUser) {
+        const customDomainSettings = await getCustomDomainUserSettings(currentCustomDomainUser);
+        if (customDomainSettings?.site_title) {
+          setSiteTitle(customDomainSettings.site_title);
+          document.title = customDomainSettings.site_title;
         }
       } else {
         document.title = window.location.hostname;
       }
     } catch (error) {
-      console.log('Could not load focus user or settings');
+      console.log('Could not load custom domain user or settings');
     }
   });
 
@@ -43,7 +43,7 @@ export function SettingsProvider(props) {
   const settingsContextValue = {
     settings,
     setSettings,
-    focusUser,
+    customDomainUser,
     siteTitle,
     setSiteTitle,
     loadSettings
