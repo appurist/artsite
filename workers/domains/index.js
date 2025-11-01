@@ -38,30 +38,23 @@ async function getDomainConfig(request, env) {
     
     console.log('Looking up domain config for:', cleanHostname);
 
-    // Query the domains table for this hostname
+    // Query the accounts table for a user with this focus_domain
     const query = `
-      SELECT hostname, focus_user_id, record 
-      FROM domains 
-      WHERE hostname = ?
+      SELECT id, email, focus_domain 
+      FROM accounts 
+      WHERE focus_domain = ?
     `;
     
     const result = await env.DB.prepare(query).bind(cleanHostname).first();
     
     if (result) {
-      console.log('Found domain config:', result);
-      // Parse the JSON record and combine with promoted fields
-      let recordData = {};
-      try {
-        recordData = result.record ? JSON.parse(result.record) : {};
-      } catch (parseError) {
-        console.error('Error parsing domain record JSON:', parseError);
-        recordData = {};
-      }
+      console.log('Found domain config for user:', result.id);
       
       const response = {
-        hostname: result.hostname,
-        focus_user_id: result.focus_user_id,
-        ...recordData // Include all additional configuration from JSON record
+        hostname: cleanHostname,
+        focus_user_id: result.id,
+        site_title: null,
+        site_description: null
       };
       
       console.log('Returning domain config:', response);
