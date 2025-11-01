@@ -5,6 +5,7 @@
 
 import { router } from './shared/router.js';
 import { corsHeaders } from './shared/cors.js';
+import { getFocusUser } from './shared/db.js';
 
 // Import route handlers
 import { handleAuth } from './auth/index.js';
@@ -13,7 +14,6 @@ import { handleProfiles } from './profiles/index.js';
 import { handleProfile } from './profile/index.js';
 import { handleSettings } from './settings/index.js';
 import { handleUpload } from './upload/index.js';
-import { handleDomains } from './domains/index.js';
 import { handleBackup } from './backup/index.js';
 import { handleHealth } from './health/index.js';
 
@@ -51,6 +51,42 @@ async function handleImageServing(request, env, ctx) {
   } catch (error) {
     console.error('Image serving error:', error);
     return new Response('Internal Server Error', { status: 500 });
+  }
+}
+
+/**
+ * Handle focus user lookup for a domain
+ */
+async function handleFocusUser(request, env, ctx) {
+  try {
+    if (request.method !== 'GET') {
+      return new Response(JSON.stringify({ error: 'Method not allowed' }), {
+        status: 405,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+      });
+    }
+
+    const url = new URL(request.url);
+    const hostname = url.searchParams.get('hostname') || request.headers.get('host') || 'localhost';
+    
+    const focusUserId = await getFocusUser(env.DB, hostname);
+    
+    return new Response(JSON.stringify({ 
+      hostname: hostname.split(':')[0], 
+      focus_user_id: focusUserId || '*' 
+    }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
+
+  } catch (error) {
+    console.error('Focus user lookup error:', error);
+    return new Response(JSON.stringify({ 
+      error: 'Failed to get focus user',
+      details: error.message 
+    }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    });
   }
 }
 
@@ -93,8 +129,8 @@ export default {
         return await handleUpload(request, env, ctx);
       }
       
-      if (path.startsWith('/api/domains')) {
-        return await handleDomains(request, env, ctx);
+      if (path === '/api/focus-user') {
+        return await handleFocusUser(request, env, ctx);
       }
       
       if (path.startsWith('/api/backup')) {

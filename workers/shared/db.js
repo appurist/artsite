@@ -295,3 +295,21 @@ export async function cleanExpiredTokens(db) {
   const query = `DELETE FROM verifications WHERE expires_at IS NOT NULL AND expires_at < ?`;
   await executeQuery(db, query, [now]);
 }
+
+/**
+ * Get focus user for a domain/hostname
+ * Returns the user ID if the domain has a focus user, undefined otherwise
+ */
+export async function getFocusUser(db, hostname) {
+  if (!hostname) {
+    return undefined;
+  }
+  
+  // Clean up hostname (remove port if present)
+  const cleanHostname = hostname.split(':')[0];
+  
+  const query = `SELECT id FROM accounts WHERE focus_domain = ?`;
+  const result = await queryFirst(db, query, [cleanHostname]);
+  
+  return result ? result.id : undefined;
+}

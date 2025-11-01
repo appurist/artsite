@@ -19,7 +19,7 @@ import {
   updateArtwork,
   apiRequest,
   API_BASE_URL,
-  getDefaultFocusUser
+  getFocusUser
 } from './api.js'
 
 // Import icons
@@ -167,7 +167,7 @@ async function handleRoute() {
       loadUserGallery(userId);
     } else {
       // Get default focus user for this domain
-      const focusUser = await getDefaultFocusUser();
+      const focusUser = await getFocusUser();
       loadGalleryPage(focusUser);
     }
   } else if (path === '/art') {
@@ -193,8 +193,8 @@ async function handleRoute() {
     loadProfilePage();
   } else if (path === '/login') {
     // Check if we're in focus mode and redirect to main site
-    const focusUser = await getDefaultFocusUser();
-    if (focusUser && focusUser !== '*') {
+    const focusUser = await getFocusUser();
+    if (focusUser) {
       window.location.href = 'https://artsite.ca/login';
       return;
     }
@@ -202,8 +202,8 @@ async function handleRoute() {
     loadLoginPage();
   } else if (path === '/register') {
     // Check if we're in focus mode and redirect to main site
-    const focusUser = await getDefaultFocusUser();
-    if (focusUser && focusUser !== '*') {
+    const focusUser = await getFocusUser();
+    if (focusUser) {
       window.location.href = 'https://artsite.ca/register';
       return;
     }
@@ -218,7 +218,7 @@ async function handleRoute() {
     navigateTo('/');
   } else {
     // Default route (home) - use domain's focus user
-    const focusUser = await getDefaultFocusUser();
+    const focusUser = await getFocusUser();
     loadGalleryPage(focusUser);
   }
 
@@ -326,8 +326,8 @@ async function loadSiteTitle() {
   try {
     console.log("loadSiteTitle")
     // Only apply custom site title if we're in focus mode with a specific user
-    const focusUser = await getDefaultFocusUser();
-    if (focusUser && focusUser !== '*') {
+    const focusUser = await getFocusUser();
+    if (focusUser) {
       // In focus mode - get settings for the focus user (not current user)
       const settings = await getFocusUserSettings(focusUser);
       if (settings && settings.site_title) {
@@ -359,8 +359,8 @@ async function loadSiteTitle() {
 // Check if we're in focus mode and hide navigation if needed
 async function checkFocusModeAndHideNav() {
   try {
-    const focusUser = await getDefaultFocusUser();
-    if (focusUser && focusUser !== '*') {
+    const focusUser = await getFocusUser();
+    if (focusUser) {
       // We're in focus mode - hide the navigation completely
       const nav = document.getElementById('main-nav');
       if (nav) {
@@ -556,14 +556,14 @@ function updateActiveNavigation() {
 }
 
 // Load gallery page
-async function loadGalleryPage(focusUser = '*') {
+async function loadGalleryPage(focusUser = undefined) {
   const app = document.getElementById('app');
 
   // Determine gallery title based on focus user
   let galleryTitle = window.location.hostname;
   let gallerySubtitle = 'Original paintings and artwork';
 
-  if (focusUser !== '*') {
+  if (focusUser) {
     galleryTitle = `@${focusUser}`;
     gallerySubtitle = 'Art Portfolio';
   }
@@ -573,7 +573,7 @@ async function loadGalleryPage(focusUser = '*') {
     <div class="gallery-header">
       <h1 class="gallery-title">${galleryTitle}</h1>
       <p class="gallery-subtitle">${gallerySubtitle}</p>
-      ${focusUser !== '*' ? `<div class="gallery-actions">
+      ${focusUser ? `<div class="gallery-actions">
         <a href="/about" class="btn btn-secondary">About ${focusUser}</a>
       </div>` : ''}
     </div>
@@ -587,7 +587,7 @@ async function loadGalleryPage(focusUser = '*') {
 
   try {
     // Fetch artworks for the focus user
-    const artworks = await getArtworks({ userId: focusUser === '*' ? undefined : focusUser });
+    const artworks = await getArtworks({ userId: !focusUser ? undefined : focusUser });
 
     if (artworks.length === 0) {
       // Show empty state
@@ -608,7 +608,7 @@ async function loadGalleryPage(focusUser = '*') {
       // Show gallery with artworks
       // Fetch profiles for artist names when displaying all artists (no focus user)
       let profileMap = {};
-      if (focusUser === '*') {
+      if (!focusUser) {
         // Get unique user IDs from artworks
         const userIds = [...new Set(artworks.map(artwork => artwork.account_id))];
         const allProfiles = await getProfiles();
@@ -620,7 +620,7 @@ async function loadGalleryPage(focusUser = '*') {
 
       // Build artist filter dropdown for multi-artist galleries
       let artistFilter = '';
-      if (focusUser === '*') {
+      if (!focusUser) {
         const artistProfiles = await getProfiles();
         if (artistProfiles.length > 1) {
           const artistOptions = artistProfiles.map(profile =>
@@ -955,10 +955,8 @@ async function loadArtworkPage(artworkId) {
     const [artwork, currentUser, focusUser] = await Promise.all([
       getArtwork(artworkId),
       getCurrentUser().catch(() => null),
-      getDefaultFocusUser().catch(() => '*')
+      getFocusUser().catch(() => undefined)
     ]);
-
-    const isInFocusMode = focusUser && focusUser !== '*';
 
     if (!artwork) {
       app.innerHTML = `
@@ -1003,7 +1001,7 @@ async function loadArtworkPage(artworkId) {
             ${artwork.description ? `<p class="artwork-description">${artwork.description}</p>` : ''}
 
             <div class="artwork-metadata">
-              ${!isInFocusMode ? `<!-- Artist name will be looked up from profiles cache -->` : ''}
+              ${!focusUser ? `<!-- Artist name will be looked up from profiles cache -->` : ''}
               ${artwork.medium ? `<p><strong>Medium:</strong> ${artwork.medium}</p>` : ''}
               ${artwork.dimensions ? `<p><strong>Dimensions:</strong> ${artwork.dimensions}</p>` : ''}
               ${artwork.year_created ? `<p><strong>Year:</strong> ${artwork.year_created}</p>` : ''}
@@ -1036,8 +1034,8 @@ async function loadAboutPage() {
   const app = document.getElementById('app');
 
   try {
-    const focusUser = await getDefaultFocusUser();
-    if (!focusUser || focusUser === '*') {
+    const focusUser = await getFocusUser();
+    if (!focusUser) {
       // Not in focus mode, redirect to home
       navigateTo('/');
       return;
@@ -1116,12 +1114,12 @@ window.filterArtworksByArtist = async function(userId) {
 
     // Get current focus user from the URL or default
     const path = window.location.pathname;
-    let focusUser = '*';
+    let focusUser = undefined;
 
     if (path.startsWith('/@')) {
       focusUser = path.slice(2);
     } else {
-      focusUser = await getDefaultFocusUser();
+      focusUser = await getFocusUser();
     }
 
     // If filtering by specific user, redirect to their gallery page
@@ -1131,7 +1129,7 @@ window.filterArtworksByArtist = async function(userId) {
     }
 
     // If showing all artists, reload the current gallery page
-    if (focusUser === '*') {
+    if (!focusUser) {
       loadGalleryPage('*');
     } else {
       navigateTo('/');  // Go to home page to show all artists

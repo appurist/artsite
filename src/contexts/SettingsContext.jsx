@@ -1,22 +1,22 @@
 import { createContext, useContext, createSignal, createEffect } from 'solid-js';
-import { getSettings, getDefaultFocusUser, getFocusUserSettings } from '../api.js';
+import { getSettings, getFocusUser, getFocusUserSettings } from '../api.js';
 
 const SettingsContext = createContext();
 
 export function SettingsProvider(props) {
   const [settings, setSettings] = createSignal({});
-  const [focusUser, setFocusUser] = createSignal('*');
+  const [focusUser, setFocusUser] = createSignal(undefined);
   const [siteTitle, setSiteTitle] = createSignal(window.location.hostname);
 
   // Load focus user and settings on mount
   createEffect(async () => {
     try {
-      const defaultFocusUser = await getDefaultFocusUser();
-      setFocusUser(defaultFocusUser);
+      const currentFocusUser = await getFocusUser();
+      setFocusUser(currentFocusUser);
 
       // Load site title based on focus mode
-      if (defaultFocusUser && defaultFocusUser !== '*') {
-        const focusSettings = await getFocusUserSettings(defaultFocusUser);
+      if (currentFocusUser) {
+        const focusSettings = await getFocusUserSettings(currentFocusUser);
         if (focusSettings?.site_title) {
           setSiteTitle(focusSettings.site_title);
           document.title = focusSettings.site_title;

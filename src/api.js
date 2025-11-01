@@ -398,39 +398,26 @@ export const getSession = getCurrentUser;
 export const deleteSession = logout;
 
 // =============================================================================
-// DOMAIN CONFIGURATION API
+// FOCUS USER API
 // =============================================================================
 
 /**
- * Get domain configuration for the current hostname
+ * Get the focus user for this domain
+ * Returns the user ID if domain has a focus user, undefined otherwise
  */
-export async function getDomainConfig(hostname) {
+export async function getFocusUser(hostname = null) {
   try {
+    const targetHostname = hostname || window.location.hostname;
     const searchParams = new URLSearchParams();
-    if (hostname) {
-      searchParams.set('hostname', hostname);
-    }
+    searchParams.set('hostname', targetHostname);
     
-    const response = await apiRequest(`/api/domains/config?${searchParams.toString()}`);
-    return response;
-  } catch (error) {
-    console.error('Error getting domain config:', error);
-    throw error;
-  }
-}
-
-/**
- * Get the default focus user for this domain
- */
-export async function getDefaultFocusUser() {
-  try {
-    const hostname = window.location.hostname;
-    const domainConfig = await getDomainConfig(hostname);
+    const response = await apiRequest(`/api/focus-user?${searchParams.toString()}`);
     
-    // Return the focus_user_id from domain config, or '*' as default
-    return domainConfig?.focus_user_id || '*';
+    // Return the user ID or undefined (not "*")
+    const focusUserId = response?.focus_user_id;
+    return focusUserId === '*' ? undefined : focusUserId;
   } catch (error) {
-    console.error('Error getting default focus user:', error);
-    return '*'; // Fallback to show all artists
+    console.error('Error getting focus user:', error);
+    return undefined; // Fallback to no focus user
   }
 }
