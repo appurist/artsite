@@ -52,6 +52,19 @@ function GalleryPage() {
 
   const createArtworkCard = (artwork) => {
     const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
+    
+    // Extract artist name from profile record if available
+    const getArtistName = () => {
+      if (!artwork.profile_record) return null;
+      try {
+        const profile = JSON.parse(artwork.profile_record);
+        return profile.name || profile.display_name || null;
+      } catch {
+        return null;
+      }
+    };
+
+    const showArtistName = !getCurrentUser() && getArtistName();
 
     return (
       <div class="artwork-item" data-id={artwork.id}>
@@ -64,6 +77,9 @@ function GalleryPage() {
           </div>
           <div class="artwork-details">
             <h3 class="artwork-title">{artwork.title}</h3>
+            <Show when={showArtistName}>
+              <p class="artwork-artist">by {getArtistName()}</p>
+            </Show>
             <Show when={artwork.medium || artwork.year_created}>
               <p class="artwork-medium-year">
                 {artwork.medium || ''}
