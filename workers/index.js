@@ -73,7 +73,7 @@ async function handleCustomDomainUser(request, env, ctx) {
     
     return new Response(JSON.stringify({ 
       hostname: hostname.split(':')[0], 
-      custom_domain_user_id: customDomainUserId || '*' 
+      custom_domain_user_id: customDomainUserId 
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });

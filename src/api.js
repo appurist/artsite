@@ -40,9 +40,13 @@ export async function apiRequest(endpoint, options = {}) {
   const token = getAuthToken();
 
   const headers = {
-    'Content-Type': 'application/json',
     ...options.headers
   };
+
+  // Only set default Content-Type for non-FormData requests
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
 
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

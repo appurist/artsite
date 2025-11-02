@@ -6,16 +6,18 @@ compatibility_date = "2025-09-16"
 directory = "./dist"
 not_found_handling = "single-page-application"
 
-# Local development database
+# Local development database (uses remote artsite-dev)
 [[d1_databases]]
 binding = "DB"
-database_name = "artsite-local"
-database_id = "27fe6352-1275-486d-8f74-c684aac80253"
+database_name = "artsite-dev"
+database_id = "838eb3fb-0a38-4118-9bee-d62a149f0503"
+preview_database_id = "838eb3fb-0a38-4118-9bee-d62a149f0503"
 
 # R2 Storage bindings
 [[r2_buckets]]
 binding = "ARTWORK_IMAGES"
 bucket_name = "artsite-images"
+preview_bucket_name = "artsite-images"
 
 # Environment variables (local development)
 [vars]

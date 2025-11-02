@@ -118,7 +118,7 @@ async function getProfile(request, env) {
     const profile = await queryFirst(
       env.DB,
       `
-        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain
         FROM profiles p
         JOIN accounts a ON p.id = a.id
         WHERE p.id = ?
@@ -178,6 +178,7 @@ async function getProfile(request, env) {
       responseProfile.public_profile = profile.public_profile;
       responseProfile.name = accountData.name;
       responseProfile.email = accountData.email;
+      responseProfile.custom_domain = profile.domain;
     }
 
     return withCors(new Response(JSON.stringify({
@@ -271,6 +272,12 @@ async function updateProfile(request, env) {
       const query = `UPDATE profiles SET record = json_set(record, ${updateFields.join(', ')})${publicProfileUpdate} WHERE id = ?`;
       await executeQuery(env.DB, query, params);
 
+      // Handle custom domain separately (updates accounts table)
+      if (profileData.customDomain !== undefined) {
+        const domainValue = profileData.customDomain ? profileData.customDomain.trim() || null : null;
+        await executeQuery(env.DB, 'UPDATE accounts SET domain = ? WHERE id = ?', [domainValue, user.account_id]);
+      }
+
     } else {
       // Create new profile
       const profileRecord = {
@@ -296,13 +303,19 @@ async function updateProfile(request, env) {
         now,
         JSON.stringify(profileRecord)
       ]);
+
+      // Handle custom domain separately (updates accounts table)
+      if (profileData.customDomain !== undefined) {
+        const domainValue = profileData.customDomain ? profileData.customDomain.trim() || null : null;
+        await executeQuery(env.DB, 'UPDATE accounts SET domain = ? WHERE id = ?', [domainValue, user.account_id]);
+      }
     }
 
     // Fetch updated profile
     const updatedProfile = await queryFirst(
       env.DB,
       `
-        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain
         FROM profiles p
         JOIN accounts a ON p.id = a.id
         WHERE p.id = ?
@@ -319,7 +332,8 @@ async function updateProfile(request, env) {
         ...updatedProfileData,
         public_profile: updatedProfile.public_profile,
         name: accountData.name,
-        email: accountData.email
+        email: accountData.email,
+        custom_domain: updatedProfile.domain
       }
     }), {
       headers: { 'Content-Type': 'application/json' }

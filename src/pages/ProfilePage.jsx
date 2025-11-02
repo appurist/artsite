@@ -18,6 +18,7 @@ function ProfilePage() {
   // Form state
   const [name, setName] = createSignal('');
   const [bio, setBio] = createSignal('');
+  const [customDomain, setCustomDomain] = createSignal('');
   const [website, setWebsite] = createSignal('');
   const [location, setLocation] = createSignal('');
   const [avatarType, setAvatarType] = createSignal('initials');
@@ -43,6 +44,7 @@ function ProfilePage() {
         // Populate form with current profile data
         setName(profile?.name || user()?.name || '');
         setBio(profile?.bio || '');
+        setCustomDomain(profile?.custom_domain || '');
         setWebsite(profile?.website || '');
         setLocation(profile?.location || '');
         setAvatarType(profile?.avatar_type || 'initials');
@@ -56,6 +58,21 @@ function ProfilePage() {
     }
   );
 
+  // Function to clean custom domain input
+  const cleanCustomDomain = (domain) => {
+    if (!domain || !domain.trim()) return null;
+    
+    let cleaned = domain.trim();
+    
+    // Remove http:// or https:// prefix
+    cleaned = cleaned.replace(/^https?:\/\//, '');
+    
+    // Remove trailing slash and any path
+    cleaned = cleaned.split('/')[0];
+    
+    return cleaned || null;
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -64,6 +81,7 @@ function ProfilePage() {
       const profileData = {
         name: name().trim() || null,
         bio: bio().trim() || null,
+        customDomain: cleanCustomDomain(customDomain()),
         website: website().trim() || null,
         location: location().trim() || null,
         avatar_url: getAvatarUrl(user(), profile()) || null,
@@ -233,7 +251,19 @@ function ProfilePage() {
           </div>
 
           <div class="form-group">
-            <label for="profile-website">Website</label>
+            <label for="profile-custom-domain">Custom Artsite Domain</label>
+            <input
+              type="text"
+              id="profile-custom-domain"
+              placeholder="yourdomain.com (optional)"
+              value={customDomain()}
+              onInput={(e) => setCustomDomain(e.target.value)}
+            />
+            <small class="field-note">Optional: Your own domain that will display your artworks exclusively</small>
+          </div>
+
+          <div class="form-group">
+            <label for="profile-website">External Website</label>
             <input
               type="url"
               id="profile-website"
