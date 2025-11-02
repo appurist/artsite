@@ -22,6 +22,7 @@ function ProfilePage() {
   const [website, setWebsite] = createSignal('');
   const [location, setLocation] = createSignal('');
   const [avatarType, setAvatarType] = createSignal('initials');
+  const [avatarUrl, setAvatarUrl] = createSignal(null);
 
   // UI state
   const [isSaving, setIsSaving] = createSignal(false);
@@ -35,7 +36,7 @@ function ProfilePage() {
   });
 
   // Load current profile using createResource
-  const [profile] = createResource(
+  const [profile, profileActions] = createResource(
     () => user()?.id, // Source signal - only run when user is available
     async (userId) => {
       try {
@@ -48,6 +49,7 @@ function ProfilePage() {
         setWebsite(profile?.website || '');
         setLocation(profile?.location || '');
         setAvatarType(profile?.avatar_type || 'initials');
+        setAvatarUrl(profile?.avatar_url || null);
 
         return profile;
       } catch (error) {
@@ -57,6 +59,18 @@ function ProfilePage() {
       }
     }
   );
+
+  // Create a computed profile that merges loaded profile with current avatar state
+  const currentProfile = () => {
+    const loadedProfile = profile();
+    if (!loadedProfile) return null;
+    
+    return {
+      ...loadedProfile,
+      avatar_type: avatarType(),
+      avatar_url: avatarUrl()
+    };
+  };
 
   // Function to clean custom domain input
   const cleanCustomDomain = (domain) => {
@@ -84,7 +98,7 @@ function ProfilePage() {
         customDomain: cleanCustomDomain(customDomain()),
         website: website().trim() || null,
         location: location().trim() || null,
-        avatar_url: getAvatarUrl(user(), profile()) || null,
+        avatar_url: getAvatarUrl(user(), currentProfile()) || null,
       };
 
       await updateProfile(profileData);
@@ -101,6 +115,10 @@ function ProfilePage() {
     try {
       await updateAvatarType(newAvatarType);
       setAvatarType(newAvatarType);
+      // Clear avatar URL for non-uploaded types
+      if (newAvatarType !== 'uploaded') {
+        setAvatarUrl(null);
+      }
       vanillaToast.success('Avatar type updated successfully!', { duration: 5000 });
     } catch (error) {
       console.error('Error updating avatar type:', error);
@@ -127,8 +145,10 @@ function ProfilePage() {
     setIsUploadingAvatar(true);
 
     try {
-      await uploadAvatar(file);
+      const result = await uploadAvatar(file);
       setAvatarType('uploaded');
+      setAvatarUrl(result.avatar_url);
+      
       vanillaToast.success('Avatar uploaded successfully!', { duration: 5000 });
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -140,8 +160,10 @@ function ProfilePage() {
 
   const handleGravatarImport = async () => {
     try {
-      await importGravatar();
+      const result = await importGravatar();
       setAvatarType('gravatar');
+      // Clear uploaded avatar URL since we're using Gravatar
+      setAvatarUrl(null);
       vanillaToast.success('Gravatar imported successfully!', { duration: 5000 });
     } catch (error) {
       console.error('Error importing Gravatar:', error);
@@ -195,7 +217,7 @@ function ProfilePage() {
           <div class="form-group">
             <div style="display: flex; align-items: flex-start; gap: 2rem;">
               <img
-                src={getAvatarUrl(user(), profile())}
+                src={getAvatarUrl(user(), currentProfile())}
                 alt="Avatar"
                 class="avatar-preview"
               />
