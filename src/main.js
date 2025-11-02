@@ -624,7 +624,7 @@ async function loadGalleryPage(customDomainUser = undefined) {
         const artistProfiles = await getProfiles();
         if (artistProfiles.length > 1) {
           const artistOptions = artistProfiles.map(profile =>
-            `<option value="${profile.account_id}">${profile.display_name}</option>`
+            `<option value="${profile.account_id}">${profile.display_name || 'Unknown Artist'}</option>`
           ).join('');
 
           artistFilter = `
@@ -926,11 +926,11 @@ function createArtworkCard(artwork) {
           </div>
         </div>
         <div class="artwork-details">
-          <h3 class="artwork-title">${artwork.title}</h3>
+          <h3 class="artwork-title">${artwork.title || ''}</h3>
           ${artwork.medium || artwork.year_created ? `<p class="artwork-medium-year">${artwork.medium || ''}${artwork.medium && artwork.year_created ? ` (${artwork.year_created})` : artwork.year_created ? `(${artwork.year_created})` : ''}</p>` : ''}
           <!-- Artist name will be looked up from profiles cache -->
-          ${artwork.price && artwork.price.trim() !== '' ? `<p class="artwork-price">${artwork.price}</p>` : ''}
-          ${artwork.tags ? `<div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.replace(/"/g, '').trim()}</span>`).join('')}</div>` : ''}
+          ${artwork.price && typeof artwork.price === 'string' && artwork.price.trim() !== '' ? `<p class="artwork-price">${artwork.price}</p>` : ''}
+          ${artwork.tags && typeof artwork.tags === 'string' ? `<div class="artwork-tags">${artwork.tags.split(',').map(tag => `<span class="tag-pill">${tag.replace(/"/g, '').trim()}</span>`).join('')}</div>` : ''}
         </div>
       </a>
     </div>

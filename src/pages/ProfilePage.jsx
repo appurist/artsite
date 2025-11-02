@@ -72,6 +72,9 @@ function ProfilePage() {
     };
   };
 
+  // Create a reactive avatar URL computation
+  const currentAvatarUrl = () => getAvatarUrl(user(), currentProfile());
+
   // Function to clean custom domain input
   const cleanCustomDomain = (domain) => {
     if (!domain || !domain.trim()) return null;
@@ -98,7 +101,7 @@ function ProfilePage() {
         customDomain: cleanCustomDomain(customDomain()),
         website: website().trim() || null,
         location: location().trim() || null,
-        avatar_url: getAvatarUrl(user(), currentProfile()) || null,
+        avatar_url: currentAvatarUrl() || null,
       };
 
       await updateProfile(profileData);
@@ -147,7 +150,9 @@ function ProfilePage() {
     try {
       const result = await uploadAvatar(file);
       setAvatarType('uploaded');
-      setAvatarUrl(result.avatar_url);
+      // Add cache-busting parameter to force browser to reload the image
+      const avatarUrlWithCacheBust = `${result.avatar_url}?t=${Date.now()}`;
+      setAvatarUrl(avatarUrlWithCacheBust);
       
       vanillaToast.success('Avatar uploaded successfully!', { duration: 5000 });
     } catch (error) {
@@ -208,16 +213,13 @@ function ProfilePage() {
       <div class="page-content">
         <Suspense fallback={<div class="loading"><LoadingSpinner size={40} /></div>}>
         <form onSubmit={handleSubmit}>
-          {/* Trigger resource loading */}
-          <div style="display: none">{profile()}</div>
-
           {/* Public Profile Section */}
           <div class="profile-section">
             <h2>Profile (Public)</h2>
           <div class="form-group">
             <div style="display: flex; align-items: flex-start; gap: 2rem;">
               <img
-                src={getAvatarUrl(user(), currentProfile())}
+                src={currentAvatarUrl()}
                 alt="Avatar"
                 class="avatar-preview"
               />

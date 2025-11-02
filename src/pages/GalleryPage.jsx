@@ -12,7 +12,7 @@ function GalleryPage() {
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
-    return params.userId || customDomainUser || undefined;
+    return params.userId || customDomainUser() || undefined;
   };
 
   const galleryTitle = () => {
