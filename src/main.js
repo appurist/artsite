@@ -2205,8 +2205,40 @@ async function performBackup() {
     });
 
     if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'Backup failed');
+      let errorMessage = `Backup failed (${response.status} ${response.statusText})`;
+      
+      try {
+        const responseText = await response.text();
+        
+        // If response starts with <, it's HTML (error page) - ignore body
+        if (responseText.trim().startsWith('<')) {
+          // HTML response - provide helpful message based on status code
+          if (response.status === 503) {
+            errorMessage = 'Service temporarily unavailable. The backup process exceeded resource limits. Please try again later.';
+          } else if (response.status === 502) {
+            errorMessage = 'Bad gateway. Please try again later.';
+          } else if (response.status === 504) {
+            errorMessage = 'Gateway timeout. The backup process took too long. Please try again later.';
+          }
+          // Keep default message for other HTML responses
+        } else {
+          // Try to parse as JSON
+          try {
+            const error = JSON.parse(responseText);
+            errorMessage = error.error || error.message || errorMessage;
+          } catch (jsonError) {
+            // Not JSON, use the response text if it's short
+            if (responseText.length < 200) {
+              errorMessage = responseText || errorMessage;
+            }
+          }
+        }
+      } catch (parseError) {
+        // If we can't read the response, use the default message
+        console.warn('Failed to parse error response:', parseError);
+      }
+      
+      throw new Error(errorMessage);
     }
 
     // Download the ZIP file

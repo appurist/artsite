@@ -279,25 +279,51 @@ async function backupArtworksComponent(user, env, files) {
     data: JSON.stringify(artworksData, null, 2)
   });
 
-  // Add image files to art/images/
+  // Process images with memory management - limit to 5 images max to stay under limits
   let imageCount = 0;
+  const maxImages = 5; // Conservative limit to avoid memory issues
+  let processedCount = 0;
+  
   for (const artwork of artworks) {
-    if (artwork.storage_path) {
+    if (artwork.storage_path && imageCount < maxImages) {
       try {
         const imageObject = await env.ARTWORK_IMAGES.get(artwork.storage_path);
         if (imageObject) {
-          const imageBuffer = await imageObject.arrayBuffer();
-          const filename = `art/images/${artwork.id}-${artwork.title.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
-          files.push({
-            path: filename,
-            data: new Uint8Array(imageBuffer)
-          });
-          imageCount++;
+          // Check file size before loading into memory
+          const size = imageObject.size;
+          if (size && size < 5 * 1024 * 1024) { // Only include images under 5MB
+            const imageBuffer = await imageObject.arrayBuffer();
+            const filename = `art/images/${artwork.id}-${artwork.title.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
+            files.push({
+              path: filename,
+              data: new Uint8Array(imageBuffer)
+            });
+            imageCount++;
+          }
         }
       } catch (error) {
         console.warn(`Failed to backup image for artwork ${artwork.id}:`, error);
       }
     }
+    processedCount++;
+  }
+
+  // Add a note about image limitations
+  if (artworks.length > maxImages || processedCount > imageCount) {
+    files.push({
+      path: 'art/IMAGES_NOTE.txt',
+      data: `Image Backup Information
+
+Due to Cloudflare Workers resource limits, only the first ${maxImages} images under 5MB each are included.
+
+Total artworks: ${artworks.length}
+Images included: ${imageCount}
+Images skipped: ${artworks.length - imageCount}
+
+All artwork metadata is preserved. Skipped images remain accessible via their original URLs.
+Generated: ${new Date().toISOString()}
+`
+    });
   }
 
   return { count: artworks.length, images: imageCount };
@@ -422,20 +448,20 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
         }
       }
 
-      // Restore image if present, or update URLs to current environment
+      // Handle image restoration based on backup format
       let storage_path = null;
       let image_url = null;
       const imagePath = `art/images/${artwork.id}-${artwork.title.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
       
       if (entries[imagePath]) {
-        // Image file exists in backup - restore it
+        // Legacy backup with image files - restore them
         storage_path = `artworks/${user.account_id}/${artwork.id}/restored.jpg`;
         await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
           httpMetadata: { contentType: 'image/jpeg' }
         });
         image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
       } else if (artwork.storage_path) {
-        // No image file in backup, but metadata has storage info
+        // New backup format - preserve original image references
         // Update storage path and URL to match current user and environment
         const pathParts = artwork.storage_path.split('/');
         if (pathParts.length >= 3) {
