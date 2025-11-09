@@ -1346,6 +1346,7 @@ input[type="file"]:focus {
 
 .modal-spacer {
   /* Empty column for centering */
+  box-sizing: border-box;
 }
 
 .modal-image-container {
@@ -1723,7 +1724,7 @@ input[type="file"]:focus {
 }
 
 /* Dark theme example (can be activated by adding data-theme="dark" to <html> or <body>) */
-/*
+
 [data-theme="dark"] {
   /* Primary theme colors */
   --primary-color: #7c93f5;
@@ -1774,7 +1775,7 @@ input[type="file"]:focus {
   --gallery-header-text: var(--text-color);
   --gallery-header-subtitle: var(--text-muted);
 }
-*/
+
 
 /* Danger styling */
 .danger-card {
