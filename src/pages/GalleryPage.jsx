@@ -12,6 +12,8 @@ function GalleryPage() {
   const [userDisplayName, setUserDisplayName] = createSignal(null);
   const [galleryDescription, setGalleryDescription] = createSignal(null);
   const [artistBio, setArtistBio] = createSignal(null);
+  const [primaryColor, setPrimaryColor] = createSignal(null);
+  const [secondaryColor, setSecondaryColor] = createSignal(null);
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
@@ -57,6 +59,8 @@ function GalleryPage() {
       setUserDisplayName(null);
       setGalleryDescription(null);
       setArtistBio(null);
+      setPrimaryColor(null);
+      setSecondaryColor(null);
 
       try {
         // Load artworks
@@ -77,6 +81,12 @@ function GalleryPage() {
             }
             if (settings?.artist_bio) {
               setArtistBio(settings.artist_bio);
+            }
+            if (settings?.primary_color) {
+              setPrimaryColor(settings.primary_color);
+            }
+            if (settings?.secondary_color) {
+              setSecondaryColor(settings.secondary_color);
             }
           } catch (settingsError) {
             console.log('Could not load user display name:', settingsError);
@@ -117,7 +127,7 @@ function GalleryPage() {
             </div>
           </div>
           <div class="artwork-details">
-            <h3 class="artwork-title">{artwork.title}</h3>
+            <h3 class="artwork-title" style={primaryColor() ? `color: ${primaryColor()}` : undefined}>{artwork.title}</h3>
             <Show when={showArtistName}>
               <p class="artwork-artist">by {getArtistName()}</p>
             </Show>
@@ -134,7 +144,7 @@ function GalleryPage() {
             <Show when={artwork.tags}>
               <div class="artwork-tags">
                 {artwork.tags.split(',').map(tag => 
-                  <span class="tag-pill">{tag.replace(/"/g, '').trim()}</span>
+                  <span class="tag-pill" style={secondaryColor() ? `background-color: ${secondaryColor()}; color: white` : undefined}>{tag.replace(/"/g, '').trim()}</span>
                 )}
               </div>
             </Show>
