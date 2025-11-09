@@ -11,6 +11,7 @@ function GalleryPage() {
   const [error, setError] = createSignal(null);
   const [userDisplayName, setUserDisplayName] = createSignal(null);
   const [galleryDescription, setGalleryDescription] = createSignal(null);
+  const [artistBio, setArtistBio] = createSignal(null);
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
@@ -55,6 +56,7 @@ function GalleryPage() {
       setError(null);
       setUserDisplayName(null);
       setGalleryDescription(null);
+      setArtistBio(null);
 
       try {
         // Load artworks
@@ -72,6 +74,9 @@ function GalleryPage() {
             }
             if (settings?.gallery_description) {
               setGalleryDescription(settings.gallery_description);
+            }
+            if (settings?.artist_bio) {
+              setArtistBio(settings.artist_bio);
             }
           } catch (settingsError) {
             console.log('Could not load user display name:', settingsError);
@@ -144,10 +149,17 @@ function GalleryPage() {
       <div class="gallery-header">
         <h1 class="gallery-title">{galleryTitle()}</h1>
         <p class="gallery-subtitle">{gallerySubtitle()}</p>
-        <Show when={getCurrentUser()}>
-          <div class="gallery-actions">
-            <a href="/about" class="btn btn-secondary">About {userDisplayName() || getCurrentUser()}</a>
-          </div>
+        <Show when={customDomainUser() === getCurrentUser()}>
+          <Show when={artistBio() && artistBio().trim() !== ''}>
+            <div class="gallery-bio">
+              <p>{artistBio()}</p>
+            </div>
+          </Show>
+          <Show when={galleryDescription() && galleryDescription().trim() !== ''}>
+            <div class="gallery-site-description">
+              <p>{galleryDescription()}</p>
+            </div>
+          </Show>
         </Show>
       </div>
 
