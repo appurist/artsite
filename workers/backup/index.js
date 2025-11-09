@@ -461,13 +461,33 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
         });
         image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
       } else if (artwork.storage_path) {
-        // New backup format - preserve original image references
-        // Update storage path and URL to match current user and environment
-        const pathParts = artwork.storage_path.split('/');
-        if (pathParts.length >= 3) {
-          // Update account_id in storage path: artworks/[old_account_id]/[artwork_id]/file.ext
-          storage_path = `artworks/${user.account_id}/${pathParts[2]}/${pathParts[3] || 'original.jpg'}`;
-          image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+        // New backup format - check if we can copy the image from source
+        try {
+          // Try to fetch the image from the original URL if it exists
+          if (artwork.image_url) {
+            const imageResponse = await fetch(artwork.image_url);
+            if (imageResponse.ok) {
+              const imageBuffer = await imageResponse.arrayBuffer();
+              storage_path = `artworks/${user.account_id}/${artwork.id}/restored.jpg`;
+              await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
+                httpMetadata: { contentType: 'image/jpeg' }
+              });
+              image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+            } else {
+              // Image not accessible, clear the image references
+              storage_path = null;
+              image_url = null;
+            }
+          } else {
+            // No image URL available, clear references
+            storage_path = null;
+            image_url = null;
+          }
+        } catch (error) {
+          console.warn(`Failed to fetch image for artwork ${artwork.id}:`, error);
+          // Clear image references if we can't fetch the image
+          storage_path = null;
+          image_url = null;
         }
       }
 
