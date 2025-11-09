@@ -229,7 +229,7 @@ export async function deleteArtwork(id) {
  * Delete all artworks for the authenticated user
  */
 export async function deleteAllArtworks() {
-  return await apiRequest('/api/artworks', {
+  return await apiRequest('/api/artworks/all', {
     method: 'DELETE'
   });
 }
