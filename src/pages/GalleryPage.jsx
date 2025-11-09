@@ -40,9 +40,9 @@ function GalleryPage() {
       return 'Original paintings and artwork';
     }
     
-    // For custom domain users, show the gallery description from settings
+    // For custom domain users, don't show subtitle since we display bio/description inline
     if (customDomainUser() === currentUser) {
-      return galleryDescription() || 'Art Portfolio';
+      return null;
     }
     
     return 'Art Portfolio';
@@ -148,7 +148,9 @@ function GalleryPage() {
     <div>
       <div class="gallery-header">
         <h1 class="gallery-title">{galleryTitle()}</h1>
-        <p class="gallery-subtitle">{gallerySubtitle()}</p>
+        <Show when={gallerySubtitle()}>
+          <p class="gallery-subtitle">{gallerySubtitle()}</p>
+        </Show>
         <Show when={customDomainUser() === getCurrentUser()}>
           <Show when={artistBio() && artistBio().trim() !== ''}>
             <div class="gallery-bio">
