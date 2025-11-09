@@ -12,7 +12,10 @@ export default defineConfig({
   },
   server: {
     port: 5173,
-    strictPort: true  // Fail if port is in use instead of trying another port
+    strictPort: true,  // Fail if port is in use instead of trying another port
+    allowedHosts: [
+      "viktoriasart.local"
+    ]
   },
   build: {
     target: 'esnext',

@@ -3,10 +3,11 @@
  * Replaces Appwrite SDK
  */
 
-// Auto-detect environment for API base URL
-const API_BASE_URL = window.location.hostname === 'localhost'
-  ? 'http://localhost:8787'  // Local Workers dev server
-  : '';  // Production/staging (same origin)
+// For production: same origin (empty string)
+// For local dev: explicit backend URL
+const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.local')
+  ? 'http://localhost:8787'
+  : '';
 
 export { API_BASE_URL };
 
