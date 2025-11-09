@@ -1,14 +1,16 @@
 import { createSignal, createEffect, Show } from 'solid-js';
 import { useParams } from '@solidjs/router';
-import { getArtworks } from '../api.js';
+import { getArtworks, getCustomDomainUserSettings } from '../api.js';
 import { useSettings } from '../contexts/SettingsContext';
 
 function GalleryPage() {
   const params = useParams();
-  const { customDomainUser } = useSettings();
+  const { customDomainUser, siteTitle } = useSettings();
   const [artworks, setArtworks] = createSignal([]);
   const [isLoading, setIsLoading] = createSignal(true);
   const [error, setError] = createSignal(null);
+  const [userDisplayName, setUserDisplayName] = createSignal(null);
+  const [galleryDescription, setGalleryDescription] = createSignal(null);
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
@@ -20,7 +22,15 @@ function GalleryPage() {
     if (!currentUser) {
       return window.location.hostname;
     }
-    return `@${currentUser}`;
+    
+    // For custom domain users, show the site title from settings instead of @username
+    if (customDomainUser() === currentUser) {
+      return siteTitle() || window.location.hostname;
+    }
+    
+    // For regular user pages, show @username format
+    const displayName = userDisplayName();
+    return displayName ? `@${displayName}` : `@${currentUser}`;
   };
 
   const gallerySubtitle = () => {
@@ -28,26 +38,52 @@ function GalleryPage() {
     if (!currentUser) {
       return 'Original paintings and artwork';
     }
+    
+    // For custom domain users, show the gallery description from settings
+    if (customDomainUser() === currentUser) {
+      return galleryDescription() || 'Art Portfolio';
+    }
+    
     return 'Art Portfolio';
   };
 
-  // Load artworks when component mounts or user changes
-  createEffect(async () => {
-    const currentUser = getCurrentUser();
-    setIsLoading(true);
-    setError(null);
+  // Load artworks and user display name when component mounts or user changes
+  createEffect(() => {
+    (async () => {
+      const currentUser = getCurrentUser();
+      setIsLoading(true);
+      setError(null);
+      setUserDisplayName(null);
+      setGalleryDescription(null);
 
-    try {
-      const fetchedArtworks = await getArtworks({ 
-        userId: currentUser 
-      });
-      setArtworks(fetchedArtworks);
-    } catch (err) {
-      console.error('Error loading gallery:', err);
-      setError('Unable to load gallery');
-    } finally {
-      setIsLoading(false);
-    }
+      try {
+        // Load artworks
+        const fetchedArtworks = await getArtworks({ 
+          userId: currentUser 
+        });
+        setArtworks(fetchedArtworks);
+
+        // Load user display name and gallery settings if we have a specific user
+        if (currentUser) {
+          try {
+            const settings = await getCustomDomainUserSettings(currentUser);
+            if (settings?.artist_name) {
+              setUserDisplayName(settings.artist_name);
+            }
+            if (settings?.gallery_description) {
+              setGalleryDescription(settings.gallery_description);
+            }
+          } catch (settingsError) {
+            console.log('Could not load user display name:', settingsError);
+          }
+        }
+      } catch (err) {
+        console.error('Error loading gallery:', err);
+        setError('Unable to load gallery');
+      } finally {
+        setIsLoading(false);
+      }
+    })();
   });
 
   const createArtworkCard = (artwork) => {
@@ -110,7 +146,7 @@ function GalleryPage() {
         <p class="gallery-subtitle">{gallerySubtitle()}</p>
         <Show when={getCurrentUser()}>
           <div class="gallery-actions">
-            <a href="/about" class="btn btn-secondary">About {getCurrentUser()}</a>
+            <a href="/about" class="btn btn-secondary">About {userDisplayName() || getCurrentUser()}</a>
           </div>
         </Show>
       </div>

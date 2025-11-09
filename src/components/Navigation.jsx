@@ -33,7 +33,7 @@ function Navigation() {
 
   // Hide navigation in custom domain mode
   createEffect(() => {
-    setIsHidden(customDomainUser);
+    setIsHidden(!!customDomainUser());
   });
 
   const handleLogout = async (e) => {

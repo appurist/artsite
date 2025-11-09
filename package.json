@@ -5,7 +5,7 @@
   "type": "module",
   "author": "Paul Whittemore <dev@appurist.com>",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --host",
     "dev:backend": "cd workers && wrangler dev",
     "build": "vite build",
     "deploy:prod": "node scripts/deploy.js production",

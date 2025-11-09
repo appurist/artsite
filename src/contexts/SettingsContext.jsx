@@ -9,24 +9,26 @@ export function SettingsProvider(props) {
   const [siteTitle, setSiteTitle] = createSignal(window.location.hostname);
 
   // Load custom domain user and settings on mount
-  createEffect(async () => {
-    try {
-      const currentCustomDomainUser = await getCustomDomainUser();
-      setCustomDomainUser(currentCustomDomainUser);
+  createEffect(() => {
+    (async () => {
+      try {
+        const currentCustomDomainUser = await getCustomDomainUser();
+        setCustomDomainUser(currentCustomDomainUser);
 
-      // Load site title based on custom domain mode
-      if (currentCustomDomainUser) {
-        const customDomainSettings = await getCustomDomainUserSettings(currentCustomDomainUser);
-        if (customDomainSettings?.site_title) {
-          setSiteTitle(customDomainSettings.site_title);
-          document.title = customDomainSettings.site_title;
+        // Load site title based on custom domain mode
+        if (currentCustomDomainUser) {
+          const customDomainSettings = await getCustomDomainUserSettings(currentCustomDomainUser);
+          if (customDomainSettings?.site_title) {
+            setSiteTitle(customDomainSettings.site_title);
+            document.title = customDomainSettings.site_title;
+          }
+        } else {
+          document.title = window.location.hostname;
         }
-      } else {
-        document.title = window.location.hostname;
+      } catch (error) {
+        console.log('Could not load custom domain user or settings');
       }
-    } catch (error) {
-      console.log('Could not load custom domain user or settings');
-    }
+    })();
   });
 
   const loadSettings = async () => {
