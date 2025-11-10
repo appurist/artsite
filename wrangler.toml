@@ -24,6 +24,10 @@ preview_bucket_name = "artsite-images"
 FRONTEND_URL = "http://localhost:5173"
 EMAIL_FROM = "noreply@artsite.ca"
 ARTWORK_IMAGES_BASE_URL = "http://localhost:8787/api/images"
+# Cloudflare Images configuration (stored as secrets for consistency)
+# CLOUDFLARE_ACCOUNT_ID - public identifier, stored as secret for consistency
+# CLOUDFLARE_IMAGES_TOKEN - actual secret, requires secure storage
+# CLOUDFLARE_ACCOUNT_HASH - public identifier (visible in image URLs), stored as secret for consistency
 
 # Development environment
 [env.development]
@@ -43,6 +47,10 @@ bucket_name = "artsite-images"
 FRONTEND_URL = "https://dev.artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
 ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
+# Cloudflare Images configuration (stored as secrets for consistency)
+# CLOUDFLARE_ACCOUNT_ID - public identifier, stored as secret for consistency
+# CLOUDFLARE_IMAGES_TOKEN - actual secret, requires secure storage
+# CLOUDFLARE_ACCOUNT_HASH - public identifier (visible in image URLs), stored as secret for consistency
 
 # Production environment
 [env.production]
@@ -65,3 +73,7 @@ bucket_name = "artsite-images"
 FRONTEND_URL = "https://artsite.ca"
 EMAIL_FROM = "noreply@artsite.ca"
 ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
+# Cloudflare Images configuration (stored as secrets for consistency)
+# CLOUDFLARE_ACCOUNT_ID - public identifier, stored as secret for consistency
+# CLOUDFLARE_IMAGES_TOKEN - actual secret, requires secure storage
+# CLOUDFLARE_ACCOUNT_HASH - public identifier (visible in image URLs), stored as secret for consistency

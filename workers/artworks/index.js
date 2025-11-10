@@ -138,10 +138,8 @@ async function createArtworkHandler(request, env) {
       tags: artworkData.tags || [],
       imageUrl: artworkData.image_url,
       thumbnailUrl: artworkData.thumbnail_url,
-      storagePath: artworkData.storage_path,
-      imageId: artworkData.image_id,
       originalUrl: artworkData.original_url,
-      originalFilename: artworkData.original_filename,
+      storagePath: artworkData.storage_path,
       status: artworkData.status || 'published'
     });
 

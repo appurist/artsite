@@ -50,7 +50,8 @@ export function getAvatarUrl(user, profile) {
       
     case 'uploaded':
       if (profile?.avatar_url) {
-        return profile.avatar_url;
+        // For getAvatarUrl, return medium size as default
+        return profile.avatar_medium_url || profile.avatar_url;
       }
       // Fallback to initials if no uploaded image
       const fallbackInitials = generateInitials(user?.name || profile?.display_name);
@@ -101,7 +102,16 @@ export function generateAvatarHtml(user, profile, size = 64) {
       
     case 'uploaded':
       if (profile?.avatar_url) {
-        return `<img src="${profile.avatar_url}" alt="Avatar" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;" />`;
+        // Use optimized avatar URLs based on size
+        let avatarUrl = profile.avatar_url; // Default fallback
+        
+        if (size <= 48 && profile.avatar_small_url) {
+          avatarUrl = profile.avatar_small_url;
+        } else if (size <= 128 && profile.avatar_medium_url) {
+          avatarUrl = profile.avatar_medium_url;
+        }
+        
+        return `<img src="${avatarUrl}" alt="Avatar" style="width: ${size}px; height: ${size}px; border-radius: 50%; object-fit: cover;" />`;
       }
       // Fallback to initials
       const uploadFallbackInitials = generateInitials(user?.name || profile?.display_name);

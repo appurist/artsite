@@ -913,14 +913,25 @@ async function loadUserGallery(userId) {
 
 // Create artwork card HTML
 function createArtworkCard(artwork) {
-  // Get the thumbnail URL - using thumbnailUrl from R2 storage
+  // Get optimized image URLs - using Cloudflare Images optimized variants
   const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
+  const displayUrl = artwork.image_url || thumbnailUrl;
+  
+  // Create responsive srcset for better performance
+  const srcset = `${thumbnailUrl} 300w${displayUrl !== thumbnailUrl ? `, ${displayUrl} 1200w` : ''}`;
+  const sizes = "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 300px";
 
   return `
     <div class="artwork-item" data-id="${artwork.id}">
       <a href="/art/${artwork.id}" class="artwork-link">
         <div class="artwork-image-container">
-          <img src="${thumbnailUrl}" alt="${artwork.title}" class="artwork-image" loading="lazy">
+          <img 
+            srcset="${srcset}" 
+            sizes="${sizes}"
+            src="${thumbnailUrl}" 
+            alt="${artwork.title}" 
+            class="artwork-image" 
+            loading="lazy">
           <div class="artwork-overlay">
             <span>View Details</span>
           </div>

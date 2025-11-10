@@ -1874,6 +1874,29 @@ input[type="file"]:focus {
   display: block;
 }
 
+.artwork-full-size-link {
+  position: absolute;
+  bottom: 1rem;
+  right: 1rem;
+  z-index: 10;
+}
+
+.artwork-full-size-link .btn {
+  background: rgba(0, 0, 0, 0.7);
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  text-decoration: none;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.artwork-full-size-link .btn:hover {
+  background: rgba(0, 0, 0, 0.9);
+  color: white;
+}
+
 .artwork-detail-info-section {
   flex: 1;
   min-width: 300px;

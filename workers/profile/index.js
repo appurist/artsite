@@ -199,10 +199,14 @@ async function uploadAvatar(request, env) {
       }
     }
 
-    // Generate filename based on file type with timestamp to avoid caching issues
-    const fileExtension = avatarFile.type === 'image/png' ? 'png' : 'jpg';
+    // Convert file to buffer for Cloudflare Images
+    const fileBuffer = await avatarFile.arrayBuffer();
+    const uint8Array = new Uint8Array(fileBuffer);
+    
+    // Generate a unique ID for the image
+    const imageId = generateId();
     const timestamp = Date.now();
-    const fileName = createStoragePath(env, `avatars/${userId}-${timestamp}.${fileExtension}`);
+    const filename = `avatar-${userId}-${timestamp}`;
 
     // Delete old avatar if it exists
     if (oldAvatarPath) {
@@ -215,20 +219,62 @@ async function uploadAvatar(request, env) {
       }
     }
 
-    // Upload to R2
-    await env.ARTWORK_IMAGES.put(fileName, avatarFile.stream(), {
-      httpMetadata: {
-        contentType: avatarFile.type
+    // Process image with Cloudflare Images
+    let avatarUrl, smallAvatarUrl, mediumAvatarUrl;
+    
+    try {
+      // Upload to Cloudflare Images
+      const uploadResult = await uploadAvatarToCloudflareImages(
+        uint8Array, 
+        filename, 
+        avatarFile.type, 
+        env
+      );
+      
+      if (uploadResult.success && uploadResult.result?.id) {
+        const accountHash = env.CLOUDFLARE_ACCOUNT_HASH;
+        const imageId = uploadResult.result.id;
+        const baseUrl = `https://imagedelivery.net/${accountHash}/${imageId}`;
+        
+        // Generate URLs for different avatar sizes
+        smallAvatarUrl = `${baseUrl}/avatarsmall`;
+        mediumAvatarUrl = `${baseUrl}/avatarmedium`;
+        avatarUrl = `${baseUrl}/original`; // Fallback to original
+        
+        console.log('Avatar processed with Cloudflare Images:', {
+          imageId,
+          smallAvatarUrl,
+          mediumAvatarUrl,
+          avatarUrl
+        });
+      } else {
+        throw new Error('Cloudflare Images upload failed: ' + JSON.stringify(uploadResult));
       }
-    });
-
-    // Generate the avatar URL using environment configuration
-    const avatarUrl = `${env.ARTWORK_IMAGES_BASE_URL}/${fileName}`;
+    } catch (cfError) {
+      console.warn('Cloudflare Images processing failed, falling back to R2:', cfError);
+      
+      // Fallback to direct R2 upload
+      const fileExtension = avatarFile.type === 'image/png' ? 'png' : 'jpg';
+      const fileName = createStoragePath(env, `avatars/${userId}-${timestamp}.${fileExtension}`);
+      
+      await env.ARTWORK_IMAGES.put(fileName, new Uint8Array(fileBuffer), {
+        httpMetadata: {
+          contentType: avatarFile.type
+        }
+      });
+      
+      avatarUrl = `${env.ARTWORK_IMAGES_BASE_URL}/${fileName}`;
+      smallAvatarUrl = avatarUrl;
+      mediumAvatarUrl = avatarUrl;
+    }
 
     // Update the existing profile data (already queried above)
     const profileData = JSON.parse(currentProfile.record);
     profileData.avatar_type = 'uploaded';
     profileData.avatar_url = avatarUrl;
+    // Store optimized URLs for different sizes
+    profileData.avatar_small_url = smallAvatarUrl;
+    profileData.avatar_medium_url = mediumAvatarUrl;
     profileData.updated_at = getCurrentTimestamp();
 
     await executeQuery(
@@ -240,6 +286,8 @@ async function uploadAvatar(request, env) {
     return withCors(new Response(JSON.stringify({
       message: 'Avatar uploaded successfully',
       avatar_url: avatarUrl,
+      avatar_small_url: smallAvatarUrl,
+      avatar_medium_url: mediumAvatarUrl,
       avatar_type: 'uploaded'
     }), {
       headers: { 'Content-Type': 'application/json' }
@@ -537,4 +585,25 @@ function generateGravatarHash(text) {
   }
   
   return md5(text.toLowerCase().trim());
+}
+
+/**
+ * Upload avatar to Cloudflare Images
+ */
+async function uploadAvatarToCloudflareImages(imageBuffer, filename, mimeType, env) {
+  const formData = new FormData();
+  const blob = new Blob([imageBuffer], { type: mimeType });
+  formData.append('file', blob, filename);
+
+  const uploadUrl = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/images/v1`;
+  
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.CLOUDFLARE_IMAGES_TOKEN}`,
+    },
+    body: formData,
+  });
+
+  return await response.json();
 }

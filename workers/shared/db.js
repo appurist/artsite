@@ -186,10 +186,10 @@ export async function createArtwork(db, artworkData) {
   const query = `
     INSERT INTO artworks (
       id, account_id, title, description, medium, dimensions, 
-      year_created, price, tags, image_url, thumbnail_url, 
+      year_created, price, tags, image_url, thumbnail_url, original_url,
       storage_path, status, created_at, updated_at
     )
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `;
   
   await executeQuery(db, query, [
@@ -204,6 +204,7 @@ export async function createArtwork(db, artworkData) {
     JSON.stringify(artworkData.tags || []),
     artworkData.imageUrl,
     artworkData.thumbnailUrl || null,
+    artworkData.originalUrl || null,
     artworkData.storagePath || null,
     artworkData.status || 'published',
     now,

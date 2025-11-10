@@ -118,6 +118,18 @@ function ArtworkDetailPage() {
                     alt={artwork().title}
                     class="artwork-detail-image"
                   />
+                  <Show when={artwork().original_url}>
+                    <div class="artwork-full-size-link">
+                      <a 
+                        href={artwork().original_url} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        class="btn btn-secondary"
+                      >
+                        View Full Size
+                      </a>
+                    </div>
+                  </Show>
                 </div>
               </div>
 

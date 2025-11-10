@@ -107,42 +107,65 @@ async function uploadImage(request, env) {
       }
     });
 
-    // Generate display and thumbnail versions
-    // Note: This is a simplified version. In production, you might want to use 
-    // Cloudflare Images or implement resizing in the Worker
-    const { displayImage, thumbnailImage } = await processImage(imageBuffer, imageFile.type);
+    // Process image through Cloudflare Images to create optimized variants
+    const { displayImageUrl, thumbnailImageUrl, originalImageUrl } = await processImageWithCloudflare(
+      imageBuffer, 
+      imageFile.name, 
+      imageFile.type, 
+      env,
+      user.account_id,
+      fileId
+    );
 
-    // Upload processed versions
-    if (displayImage) {
-      await env.ARTWORK_IMAGES.put(displayPath, displayImage, {
+    // Store the optimized variants in R2
+    if (displayImageUrl && thumbnailImageUrl) {
+      // Cloudflare Images processing succeeded - download and store variants
+      const variants = [
+        { url: displayImageUrl, path: displayPath, name: 'display' },
+        { url: thumbnailImageUrl, path: thumbPath, name: 'thumbnail' }
+      ];
+
+      for (const variant of variants) {
+        try {
+          const response = await fetch(variant.url);
+          if (response.ok) {
+            const buffer = await response.arrayBuffer();
+            await env.ARTWORK_IMAGES.put(variant.path, buffer, {
+              httpMetadata: {
+                contentType: 'image/webp', // Cloudflare Images serves WebP when possible
+                cacheControl: 'public, max-age=31536000'
+              }
+            });
+          }
+        } catch (error) {
+          console.error(`Failed to download and store ${variant.name} variant:`, error);
+        }
+      }
+    } else {
+      // Fallback: create basic display version (same as original for now)
+      await env.ARTWORK_IMAGES.put(displayPath, imageBuffer, {
         httpMetadata: {
           contentType: imageFile.type,
           cacheControl: 'public, max-age=31536000'
         }
       });
-    }
-
-    if (thumbnailImage) {
-      await env.ARTWORK_IMAGES.put(thumbPath, thumbnailImage, {
-        httpMetadata: {
-          contentType: imageFile.type,
-          cacheControl: 'public, max-age=31536000'
-        }
-      });
+      
+      console.log('Using fallback: stored original as display variant');
     }
 
     // Generate public URLs using environment configuration
     const baseUrl = env.ARTWORK_IMAGES_BASE_URL;
     console.log('Upload baseUrl:', baseUrl);
-    const imageUrl = displayImage ? `${baseUrl}/${displayPath}` : `${baseUrl}/${originalPath}`;
-    const thumbnailUrl = thumbnailImage ? `${baseUrl}/${thumbPath}` : imageUrl;
+    const imageUrl = `${baseUrl}/${displayPath}`;
+    const thumbnailUrl = thumbnailImageUrl ? `${baseUrl}/${thumbPath}` : imageUrl; // Fallback to display if no thumbnail
+    const originalUrl = `${baseUrl}/${originalPath}`;
 
     return withCors(new Response(JSON.stringify({
       message: 'Image uploaded successfully',
       fileId,
       imageUrl,
       thumbnailUrl,
-      originalUrl: `${baseUrl}/${originalPath}`,
+      originalUrl,
       storagePath: originalPath,
       fileSize: imageFile.size,
       fileType: imageFile.type
@@ -258,25 +281,72 @@ async function generateSignedUploadUrl(request, env) {
 }
 
 /**
- * Process image to create display and thumbnail versions
- * This is a simplified implementation - in production you might use:
- * - Cloudflare Images for automatic resizing
- * - A dedicated image processing service
- * - WebAssembly-based image processing in the Worker
+ * Process image through Cloudflare Images API to create optimized variants
+ * Uses Cloudflare Images free tier to generate display and thumbnail versions
  */
-async function processImage(imageBuffer, mimeType) {
-  // For now, return the original image for both display and thumbnail
-  // In a real implementation, you would resize the images here
+async function processImageWithCloudflare(imageBuffer, filename, mimeType, env, accountId, fileId) {
+  try {
+    // Upload to Cloudflare Images
+    const uploadResult = await uploadToCloudflareImages(imageBuffer, filename, env);
+    
+    if (!uploadResult.success) {
+      throw new Error(`Cloudflare Images upload failed: ${uploadResult.error}`);
+    }
+    
+    const imageId = uploadResult.result.id;
+    const accountHash = env.CLOUDFLARE_ACCOUNT_HASH;
+    
+    // Generate variant URLs using Cloudflare Images delivery URLs
+    const baseImageUrl = `https://imagedelivery.net/${accountHash}/${imageId}`;
+    
+    return {
+      displayImageUrl: `${baseImageUrl}/display`,     // 1200px max width variant
+      thumbnailImageUrl: `${baseImageUrl}/thumbnail`, // 300x300px variant
+      originalImageUrl: `${baseImageUrl}/original`,   // Original size variant
+      cloudflareImageId: imageId
+    };
+    
+  } catch (error) {
+    console.error('Cloudflare Images processing error:', error);
+    
+    // Fallback: use original image for all variants
+    // This ensures the upload doesn't fail if Cloudflare Images has issues
+    console.warn('Falling back to original image for all variants');
+    return {
+      displayImageUrl: null,
+      thumbnailImageUrl: null, 
+      originalImageUrl: null,
+      cloudflareImageId: null
+    };
+  }
+}
+
+/**
+ * Upload image to Cloudflare Images API
+ */
+async function uploadToCloudflareImages(imageBuffer, filename, env) {
+  const formData = new FormData();
+  formData.append('file', new File([imageBuffer], filename));
   
-  // You could use libraries like:
-  // - @squoosh/lib (WebAssembly-based)
-  // - Sharp (would need to compile to WASM)
-  // - Canvas API (if available in Workers)
+  const response = await fetch(
+    `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/images/v1`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.CLOUDFLARE_IMAGES_TOKEN}`,
+      },
+      body: formData,
+    }
+  );
   
-  return {
-    displayImage: imageBuffer, // Would be resized to max 1200px width
-    thumbnailImage: null      // Would be resized to 300x300px
-  };
+  const result = await response.json();
+  
+  if (!response.ok) {
+    console.error('Cloudflare Images API error:', result);
+    throw new Error(result.errors?.[0]?.message || 'Upload failed');
+  }
+  
+  return result;
 }
 
 /**
