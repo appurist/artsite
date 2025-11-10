@@ -173,8 +173,11 @@ async function restoreBackup(request, env, ctx) {
     
     try {
       // Load ZIP with JSZip
+      console.log('Starting ZIP processing, buffer size:', zipBuffer.byteLength);
       const zip = new JSZip();
+      console.log('JSZip instance created');
       const zipContent = await zip.loadAsync(zipBuffer);
+      console.log('ZIP loaded successfully, files found:', Object.keys(zipContent.files).length);
       
       // Extract metadata
       const metadataFile = zipContent.file('backup-metadata.json');
@@ -203,14 +206,19 @@ async function restoreBackup(request, env, ctx) {
       const restoreResults = {};
       
       // Process selected components
+      console.log('Processing components:', selectedComponents);
       for (const componentKey of selectedComponents) {
+        console.log(`Processing component: ${componentKey}`);
         if (backupMetadata.components.includes(componentKey)) {
           try {
             const component = BACKUP_COMPONENTS[componentKey];
             if (component && component.restoreHandler) {
+              console.log(`Calling restore handler for ${componentKey}`);
               const restoreResult = await component.restoreHandler(user, env, entries, restoreMode);
+              console.log(`Restore result for ${componentKey}:`, restoreResult);
               restoreResults[componentKey] = { success: true, ...restoreResult };
             } else {
+              console.log(`No restore handler for ${componentKey}`);
               restoreResults[componentKey] = { success: false, error: 'Restore handler not implemented' };
             }
           } catch (error) {
@@ -218,6 +226,7 @@ async function restoreBackup(request, env, ctx) {
             restoreResults[componentKey] = { success: false, error: error.message };
           }
         } else {
+          console.log(`Component ${componentKey} not found in backup`);
           restoreResults[componentKey] = { success: false, error: 'Component not found in backup' };
         }
       }
@@ -279,9 +288,9 @@ async function backupArtworksComponent(user, env, files) {
     data: JSON.stringify(artworksData, null, 2)
   });
 
-  // Process images with memory management - limit to 5 images max to stay under limits
+  // Skip image embedding to avoid Worker limits - rely on URL-based restore
   let imageCount = 0;
-  const maxImages = 5; // Conservative limit to avoid memory issues
+  const maxImages = 0; // Don't embed images, use URL-based restore
   let processedCount = 0;
   
   for (const artwork of artworks) {
@@ -314,11 +323,11 @@ async function backupArtworksComponent(user, env, files) {
       path: 'art/IMAGES_NOTE.txt',
       data: `Image Backup Information
 
-Due to Cloudflare Workers resource limits, only the first ${maxImages} images under 5MB each are included.
+Image files are not embedded in backup to avoid size limits.
+Images will be restored by downloading from their current URLs.
 
 Total artworks: ${artworks.length}
-Images included: ${imageCount}
-Images skipped: ${artworks.length - imageCount}
+Images will be downloaded during restore: ${artworks.length}
 
 All artwork metadata is preserved. Skipped images remain accessible via their original URLs.
 Generated: ${new Date().toISOString()}
@@ -457,46 +466,43 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
       const imagePath = `art/images/${artwork.id}-${artwork.title.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
       
       if (entries[imagePath]) {
-        // Legacy backup with image files - process through Cloudflare Images
-        try {
-          const imageBuffer = new Uint8Array(entries[imagePath]);
-          const filename = `restored-${newArtworkId}-${Date.now()}`;
-          const processedImages = await processImageWithCloudflareRestore(imageBuffer, filename, 'image/jpeg', env, newArtworkId);
-          
-          if (processedImages) {
-            image_url = processedImages.displayImageUrl;
-            thumbnail_url = processedImages.thumbnailImageUrl;
-            display_url = processedImages.displayImageUrl;
-            original_url = processedImages.originalImageUrl;
-            storage_path = processedImages.storagePath || null;
-          }
-        } catch (error) {
-          console.warn(`Failed to process legacy image through Cloudflare Images for artwork ${newArtworkId}:`, error);
-          // Fallback to direct R2 storage
-          storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
-          await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
-            httpMetadata: { contentType: 'image/jpeg' }
-          });
-          image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
-        }
+        // Legacy backup with image files - store immediately, optimize later
+        storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
+        await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
+          httpMetadata: { contentType: 'image/jpeg' }
+        });
+        image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+        
+        // Queue for optimization
+        await queueImageOptimization(env, {
+          artworkId: newArtworkId,
+          accountId: user.account_id,
+          imagePath: storage_path,
+          imageUrl: image_url,
+          type: 'artwork'
+        });
+        
       } else if (artwork.storage_path) {
-        // New backup format - fetch and process through Cloudflare Images
+        // New backup format - fetch and store immediately, optimize later
         try {
           if (artwork.image_url) {
             const imageResponse = await fetch(artwork.image_url);
             if (imageResponse.ok) {
               const imageBuffer = await imageResponse.arrayBuffer();
-              const uint8Array = new Uint8Array(imageBuffer);
-              const filename = `restored-${newArtworkId}-${Date.now()}`;
-              const processedImages = await processImageWithCloudflareRestore(uint8Array, filename, 'image/jpeg', env, newArtworkId);
+              storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
+              await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
+                httpMetadata: { contentType: 'image/jpeg' }
+              });
+              image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
               
-              if (processedImages) {
-                image_url = processedImages.displayImageUrl;
-                thumbnail_url = processedImages.thumbnailImageUrl;
-                display_url = processedImages.displayImageUrl;
-                original_url = processedImages.originalImageUrl;
-                storage_path = processedImages.storagePath || null;
-              }
+              // Queue for optimization
+              await queueImageOptimization(env, {
+                artworkId: newArtworkId,
+                accountId: user.account_id,
+                imagePath: storage_path,
+                imageUrl: image_url,
+                type: 'artwork'
+              });
             } else {
               // Image not accessible, clear the image references
               storage_path = null;
@@ -631,34 +637,23 @@ async function restoreProfileComponent(user, env, entries, restoreMode = 'add') 
         const extension = avatarFile.split('.').pop();
         const mimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
         
-        try {
-          // Process through Cloudflare Images
-          const imageBuffer = new Uint8Array(entries[avatarFile]);
-          const filename = `restored-avatar-${user.account_id}-${Date.now()}`;
-          const processedAvatar = await processAvatarWithCloudflareRestore(imageBuffer, filename, mimeType, env);
-          
-          if (processedAvatar) {
-            // Update profile data with optimized avatar URLs
-            profileData.avatar_url = processedAvatar.originalUrl;
-            profileData.avatar_small_url = processedAvatar.smallUrl;
-            profileData.avatar_medium_url = processedAvatar.mediumUrl;
-            avatarRestored = true;
-          } else {
-            throw new Error('Cloudflare Images processing failed');
-          }
-        } catch (error) {
-          console.warn('Failed to process avatar through Cloudflare Images, falling back to R2:', error);
-          
-          // Fallback to direct R2 storage
-          const avatarPath = `avatars/${user.account_id}/restored.${extension}`;
-          await env.ARTWORK_IMAGES.put(avatarPath, entries[avatarFile], {
-            httpMetadata: { contentType: mimeType }
-          });
-          
-          // Update profile data with R2 avatar URL
-          profileData.avatar_url = `${env.ARTWORK_IMAGES_BASE_URL}/${avatarPath}`;
-          avatarRestored = true;
-        }
+        // Store avatar immediately, optimize later
+        const avatarPath = `avatars/${user.account_id}/restored.${extension}`;
+        await env.ARTWORK_IMAGES.put(avatarPath, entries[avatarFile], {
+          httpMetadata: { contentType: mimeType }
+        });
+        
+        // Update profile data with R2 avatar URL
+        profileData.avatar_url = `${env.ARTWORK_IMAGES_BASE_URL}/${avatarPath}`;
+        avatarRestored = true;
+        
+        // Queue for optimization
+        await queueImageOptimization(env, {
+          accountId: user.account_id,
+          imagePath: avatarPath,
+          imageUrl: profileData.avatar_url,
+          type: 'avatar'
+        });
       }
     }
 
@@ -769,6 +764,33 @@ async function processAvatarWithCloudflareRestore(imageBuffer, filename, mimeTyp
   } catch (error) {
     console.warn('Cloudflare Images avatar processing failed during restore:', error);
     return null; // Will trigger fallback to R2
+  }
+}
+
+/**
+ * Queue image for background optimization
+ */
+async function queueImageOptimization(env, imageJob) {
+  try {
+    // Store job in D1 database queue table
+    await executeQuery(env.DB, `
+      INSERT INTO image_optimization_queue 
+      (id, artwork_id, account_id, image_path, image_url, type, status, created_at, retry_count)
+      VALUES (?, ?, ?, ?, ?, ?, 'pending', ?, 0)
+    `, [
+      generateId(),
+      imageJob.artworkId || null,
+      imageJob.accountId,
+      imageJob.imagePath,
+      imageJob.imageUrl,
+      imageJob.type, // 'artwork' or 'avatar'
+      new Date().toISOString()
+    ]);
+    
+    console.log('Queued image optimization job:', imageJob);
+  } catch (error) {
+    console.warn('Failed to queue image optimization:', error);
+    // Don't throw - restore should continue even if queueing fails
   }
 }
 
