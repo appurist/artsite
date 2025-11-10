@@ -52,10 +52,34 @@ function ArtPage() {
   });
 
   const handleEditArtwork = (artworkId) => {
+    // Check authentication before proceeding
+    if (authLoading()) {
+      vanillaToast.error('Please wait for authentication to complete', { duration: 3000 });
+      return;
+    }
+    
+    if (!isAuthenticated()) {
+      vanillaToast.error('You must be logged in to edit artworks', { duration: 3000 });
+      navigate('/login');
+      return;
+    }
+
     navigate(`/art/${artworkId}/edit`);
   };
 
   const handleDeleteArtwork = async (artworkId) => {
+    // Check authentication before proceeding
+    if (authLoading()) {
+      vanillaToast.error('Please wait for authentication to complete', { duration: 3000 });
+      return;
+    }
+    
+    if (!isAuthenticated()) {
+      vanillaToast.error('You must be logged in to delete artworks', { duration: 3000 });
+      navigate('/login');
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete this artwork? This action cannot be undone.')) {
       return;
     }
@@ -73,14 +97,50 @@ function ArtPage() {
   };
 
   const handleBackup = () => {
+    // Check authentication before proceeding
+    if (authLoading()) {
+      vanillaToast.error('Please wait for authentication to complete', { duration: 3000 });
+      return;
+    }
+    
+    if (!isAuthenticated()) {
+      vanillaToast.error('You must be logged in to backup artworks', { duration: 3000 });
+      navigate('/login');
+      return;
+    }
+
     setShowBackupModal(true);
   };
 
   const handleRestore = () => {
+    // Check authentication before proceeding
+    if (authLoading()) {
+      vanillaToast.error('Please wait for authentication to complete', { duration: 3000 });
+      return;
+    }
+    
+    if (!isAuthenticated()) {
+      vanillaToast.error('You must be logged in to restore artworks', { duration: 3000 });
+      navigate('/login');
+      return;
+    }
+
     setShowRestoreModal(true);
   };
 
   const handleDeleteAllArtworks = async () => {
+    // Check authentication before proceeding
+    if (authLoading()) {
+      vanillaToast.error('Please wait for authentication to complete', { duration: 3000 });
+      return;
+    }
+    
+    if (!isAuthenticated()) {
+      vanillaToast.error('You must be logged in to delete artworks', { duration: 3000 });
+      navigate('/login');
+      return;
+    }
+
     if (!confirm('Are you sure you want to delete ALL your artworks? This action cannot be undone and will permanently remove all your uploaded art.')) {
       return;
     }

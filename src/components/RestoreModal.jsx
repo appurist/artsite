@@ -146,6 +146,7 @@ function RestoreModal(props) {
               id="backup-file" 
               accept=".zip"
               onChange={handleFileChange}
+              disabled={isRestoring()}
             />
           </div>
 
@@ -158,6 +159,7 @@ function RestoreModal(props) {
                 value="add" 
                 checked={restoreMode() === 'add'}
                 onChange={(e) => setRestoreMode(e.target.value)}
+                disabled={isRestoring()}
               />
               <div>
                 <span>Add to existing data</span>
@@ -171,6 +173,7 @@ function RestoreModal(props) {
                 value="replace"
                 checked={restoreMode() === 'replace'}
                 onChange={(e) => setRestoreMode(e.target.value)}
+                disabled={isRestoring()}
               />
               <div>
                 <span>Replace all data</span>
@@ -187,6 +190,7 @@ function RestoreModal(props) {
                 value="artworks" 
                 checked={selectedComponents().includes('artworks')}
                 onChange={(e) => handleComponentChange('artworks', e.target.checked)}
+                disabled={isRestoring()}
               />
               <span>Artworks: All artwork images and metadata</span>
             </div>
@@ -196,6 +200,7 @@ function RestoreModal(props) {
                 value="settings" 
                 checked={selectedComponents().includes('settings')}
                 onChange={(e) => handleComponentChange('settings', e.target.checked)}
+                disabled={isRestoring()}
               />
               <span>Site Settings: Site configuration and preferences</span>
             </div>
@@ -205,6 +210,7 @@ function RestoreModal(props) {
                 value="profile" 
                 checked={selectedComponents().includes('profile')}
                 onChange={(e) => handleComponentChange('profile', e.target.checked)}
+                disabled={isRestoring()}
               />
               <span>Profile: Profile information and avatar</span>
             </div>

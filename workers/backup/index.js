@@ -6,7 +6,7 @@ import { createZip } from 'littlezipper';
 import JSZip from 'jszip';
 import { authenticateRequest } from '../shared/auth.js';
 import { withCors, corsHeaders } from '../shared/cors.js';
-import { executeQuery, queryAll, queryFirst } from '../shared/db.js';
+import { executeQuery, queryAll, queryFirst, generateId, getCurrentTimestamp } from '../shared/db.js';
 
 /**
  * Component-specific backup and restore handlers will be defined below
@@ -434,18 +434,18 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
 
   for (const artwork of artworksData) {
     try {
-      // Check if artwork already exists (only in add mode)
+      // Generate new artwork ID for this instance (never trust IDs from backup)
+      const newArtworkId = generateId();
+      const now = getCurrentTimestamp();
+      
+      // Check if artwork with same title already exists (for add mode)
+      let existing = null;
       if (restoreMode === 'add') {
-        const existing = await queryFirst(
+        existing = await queryFirst(
           env.DB,
-          'SELECT id FROM artworks WHERE id = ? AND account_id = ?',
-          [artwork.id, user.account_id]
+          'SELECT id FROM artworks WHERE title = ? AND account_id = ?',
+          [artwork.title, user.account_id]
         );
-
-        if (existing) {
-          skipped++;
-          continue;
-        }
       }
 
       // Handle image restoration based on backup format
@@ -455,7 +455,7 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
       
       if (entries[imagePath]) {
         // Legacy backup with image files - restore them
-        storage_path = `artworks/${user.account_id}/${artwork.id}/restored.jpg`;
+        storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
         await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
           httpMetadata: { contentType: 'image/jpeg' }
         });
@@ -468,7 +468,7 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
             const imageResponse = await fetch(artwork.image_url);
             if (imageResponse.ok) {
               const imageBuffer = await imageResponse.arrayBuffer();
-              storage_path = `artworks/${user.account_id}/${artwork.id}/restored.jpg`;
+              storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
               await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
                 httpMetadata: { contentType: 'image/jpeg' }
               });
@@ -491,29 +491,48 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
         }
       }
 
-      // Insert artwork record
-      await executeQuery(env.DB, `
-        INSERT INTO artworks (
-          id, account_id, title, description, medium, dimensions, 
-          year_created, price, tags, image_url, storage_path,
-          status, created_at, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-      `, [
-        artwork.id,
-        user.account_id,
-        artwork.title,
-        artwork.description,
-        artwork.medium,
-        artwork.dimensions,
-        artwork.year_created,
-        artwork.price,
-        JSON.stringify(artwork.tags || []),
-        image_url,
-        storage_path,
-        'published',
-        artwork.created_at,
-        new Date().toISOString()
-      ]);
+      if (existing && restoreMode === 'add') {
+        // Update existing artwork with restored image info if we have images
+        if (storage_path && image_url) {
+          await executeQuery(env.DB, `
+            UPDATE artworks SET 
+              image_url = ?, storage_path = ?, updated_at = ?
+            WHERE id = ? AND account_id = ?
+          `, [
+            image_url,
+            storage_path,
+            now,
+            existing.id,
+            user.account_id
+          ]);
+        }
+        skipped++;
+        continue;
+      } else {
+        // Insert new artwork record (always use new ID and current user's account_id)
+        await executeQuery(env.DB, `
+          INSERT INTO artworks (
+            id, account_id, title, description, medium, dimensions, 
+            year_created, price, tags, image_url, storage_path,
+            status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          newArtworkId,
+          user.account_id,
+          artwork.title,
+          artwork.description,
+          artwork.medium,
+          artwork.dimensions,
+          artwork.year_created,
+          artwork.price,
+          JSON.stringify(artwork.tags || []),
+          image_url,
+          storage_path,
+          'published',
+          now,
+          now
+        ]);
+      }
 
       restored++;
     } catch (error) {

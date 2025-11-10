@@ -144,6 +144,7 @@ function BackupModal(props) {
                 value="artworks" 
                 checked={selectedComponents().includes('artworks')}
                 onChange={(e) => handleComponentChange('artworks', e.target.checked)}
+                disabled={isCreatingBackup()}
               />
               <span>Artworks: All artwork images and metadata</span>
             </div>
@@ -153,6 +154,7 @@ function BackupModal(props) {
                 value="settings" 
                 checked={selectedComponents().includes('settings')}
                 onChange={(e) => handleComponentChange('settings', e.target.checked)}
+                disabled={isCreatingBackup()}
               />
               <span>Site Settings: Site configuration and preferences</span>
             </div>
@@ -162,6 +164,7 @@ function BackupModal(props) {
                 value="profile" 
                 checked={selectedComponents().includes('profile')}
                 onChange={(e) => handleComponentChange('profile', e.target.checked)}
+                disabled={isCreatingBackup()}
               />
               <span>Profile: Profile information and avatar</span>
             </div>

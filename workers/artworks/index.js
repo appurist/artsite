@@ -433,17 +433,8 @@ async function deleteArtwork(request, env) {
 async function deleteAllArtworks(request, env) {
   try {
     // Authenticate the request
-    const authResult = await authenticateRequest(request, env.JWT_SECRET);
-    if (!authResult.success) {
-      return withCors(new Response(JSON.stringify({
-        error: authResult.error
-      }), {
-        status: 401,
-        headers: { 'Content-Type': 'application/json' }
-      }));
-    }
-
-    const userId = authResult.user.id;
+    const user = await authenticateRequest(request, env.JWT_SECRET);
+    const userId = user.account_id;
 
     // Get all artworks for this user
     const artworks = await executeQuery(

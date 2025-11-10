@@ -1,4 +1,4 @@
-import { createSignal, onMount, Show } from 'solid-js';
+import { createSignal, onMount, createEffect, Show } from 'solid-js';
 import { A, useNavigate, useParams } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { getArtwork, updateArtwork } from '../api.js';
@@ -8,7 +8,7 @@ import cancelIcon from '../assets/icons/cancel.svg';
 import contentSaveIcon from '../assets/icons/content-save.svg';
 
 function EditArtworkPage() {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, isLoading: authLoading } = useAuth();
   const navigate = useNavigate();
   const params = useParams();
   
@@ -38,41 +38,48 @@ function EditArtworkPage() {
     }, 5000);
   };
 
-  // Load artwork data
-  onMount(async () => {
-    if (!isAuthenticated()) {
-      navigate('/login');
-      return;
-    }
+  // Load artwork data when authentication is ready
+  createEffect(() => {
+    // Only proceed when authentication loading is complete
+    if (authLoading()) return;
 
-    try {
-      const artworkData = await getArtwork(params.id);
-      
-      // Check if user owns this artwork
-      if (artworkData.artist_id !== user().id) {
-        showStatus('You can only edit your own artworks', 'error');
-        setTimeout(() => navigate('/art'), 2000);
+    const loadArtwork = async () => {
+      if (!isAuthenticated()) {
+        navigate('/login');
         return;
       }
 
-      setArtwork(artworkData);
-      
-      // Populate form with current data
-      setTitle(artworkData.title || '');
-      setDescription(artworkData.description || '');
-      setMedium(artworkData.medium || '');
-      setDimensions(artworkData.dimensions || '');
-      setYearCreated(artworkData.year_created?.toString() || '');
-      setPrice(artworkData.price || '');
-      setTags(Array.isArray(artworkData.tags) ? artworkData.tags.join(', ') : (artworkData.tags || ''));
-      
-    } catch (error) {
-      console.error('Error loading artwork:', error);
-      showStatus('Error loading artwork: ' + error.message, 'error');
-      setTimeout(() => navigate('/art'), 2000);
-    } finally {
-      setIsLoading(false);
-    }
+      try {
+        const artworkData = await getArtwork(params.id);
+        
+        // Check if user owns this artwork
+        if (artworkData.account_id !== user().id) {
+          showStatus('You can only edit your own artworks', 'error');
+          setTimeout(() => navigate('/art'), 2000);
+          return;
+        }
+
+        setArtwork(artworkData);
+        
+        // Populate form with current data
+        setTitle(artworkData.title || '');
+        setDescription(artworkData.description || '');
+        setMedium(artworkData.medium || '');
+        setDimensions(artworkData.dimensions || '');
+        setYearCreated(artworkData.year_created?.toString() || '');
+        setPrice(artworkData.price || '');
+        setTags(Array.isArray(artworkData.tags) ? artworkData.tags.join(', ') : (artworkData.tags || ''));
+        
+      } catch (error) {
+        console.error('Error loading artwork:', error);
+        showStatus('Error loading artwork: ' + error.message, 'error');
+        setTimeout(() => navigate('/art'), 2000);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadArtwork();
   });
 
   const handleSubmit = async (e) => {
@@ -115,10 +122,10 @@ function EditArtworkPage() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <Show when={!isLoading()} fallback={
+    <Show when={!authLoading() && !isLoading()} fallback={
       <div class="page-container">
         <div class="loading">
-          <p>Loading artwork...</p>
+          <p>Loading...</p>
         </div>
       </div>
     }>
