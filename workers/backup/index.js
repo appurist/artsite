@@ -451,28 +451,52 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
       // Handle image restoration based on backup format
       let storage_path = null;
       let image_url = null;
+      let thumbnail_url = null;
+      let display_url = null;
+      let original_url = null;
       const imagePath = `art/images/${artwork.id}-${artwork.title.replace(/[^a-zA-Z0-9]/g, '_')}.jpg`;
       
       if (entries[imagePath]) {
-        // Legacy backup with image files - restore them
-        storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
-        await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
-          httpMetadata: { contentType: 'image/jpeg' }
-        });
-        image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
-      } else if (artwork.storage_path) {
-        // New backup format - check if we can copy the image from source
+        // Legacy backup with image files - process through Cloudflare Images
         try {
-          // Try to fetch the image from the original URL if it exists
+          const imageBuffer = new Uint8Array(entries[imagePath]);
+          const filename = `restored-${newArtworkId}-${Date.now()}`;
+          const processedImages = await processImageWithCloudflareRestore(imageBuffer, filename, 'image/jpeg', env, newArtworkId);
+          
+          if (processedImages) {
+            image_url = processedImages.displayImageUrl;
+            thumbnail_url = processedImages.thumbnailImageUrl;
+            display_url = processedImages.displayImageUrl;
+            original_url = processedImages.originalImageUrl;
+            storage_path = processedImages.storagePath || null;
+          }
+        } catch (error) {
+          console.warn(`Failed to process legacy image through Cloudflare Images for artwork ${newArtworkId}:`, error);
+          // Fallback to direct R2 storage
+          storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
+          await env.ARTWORK_IMAGES.put(storage_path, entries[imagePath], {
+            httpMetadata: { contentType: 'image/jpeg' }
+          });
+          image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+        }
+      } else if (artwork.storage_path) {
+        // New backup format - fetch and process through Cloudflare Images
+        try {
           if (artwork.image_url) {
             const imageResponse = await fetch(artwork.image_url);
             if (imageResponse.ok) {
               const imageBuffer = await imageResponse.arrayBuffer();
-              storage_path = `artworks/${user.account_id}/${newArtworkId}/restored.jpg`;
-              await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
-                httpMetadata: { contentType: 'image/jpeg' }
-              });
-              image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+              const uint8Array = new Uint8Array(imageBuffer);
+              const filename = `restored-${newArtworkId}-${Date.now()}`;
+              const processedImages = await processImageWithCloudflareRestore(uint8Array, filename, 'image/jpeg', env, newArtworkId);
+              
+              if (processedImages) {
+                image_url = processedImages.displayImageUrl;
+                thumbnail_url = processedImages.thumbnailImageUrl;
+                display_url = processedImages.displayImageUrl;
+                original_url = processedImages.originalImageUrl;
+                storage_path = processedImages.storagePath || null;
+              }
             } else {
               // Image not accessible, clear the image references
               storage_path = null;
@@ -484,7 +508,7 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
             image_url = null;
           }
         } catch (error) {
-          console.warn(`Failed to fetch image for artwork ${artwork.id}:`, error);
+          console.warn(`Failed to fetch and process image for artwork ${artwork.id}:`, error);
           // Clear image references if we can't fetch the image
           storage_path = null;
           image_url = null;
@@ -493,13 +517,16 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
 
       if (existing && restoreMode === 'add') {
         // Update existing artwork with restored image info if we have images
-        if (storage_path && image_url) {
+        if (image_url) {
           await executeQuery(env.DB, `
             UPDATE artworks SET 
-              image_url = ?, storage_path = ?, updated_at = ?
+              image_url = ?, thumbnail_url = ?, display_url = ?, original_url = ?, storage_path = ?, updated_at = ?
             WHERE id = ? AND account_id = ?
           `, [
             image_url,
+            thumbnail_url,
+            display_url, 
+            original_url,
             storage_path,
             now,
             existing.id,
@@ -513,9 +540,9 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
         await executeQuery(env.DB, `
           INSERT INTO artworks (
             id, account_id, title, description, medium, dimensions, 
-            year_created, price, tags, image_url, storage_path,
+            year_created, price, tags, image_url, thumbnail_url, display_url, original_url, storage_path,
             status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `, [
           newArtworkId,
           user.account_id,
@@ -527,6 +554,9 @@ async function restoreArtworksComponent(user, env, entries, restoreMode = 'add')
           artwork.price,
           JSON.stringify(artwork.tags || []),
           image_url,
+          thumbnail_url,
+          display_url,
+          original_url,
           storage_path,
           'published',
           now,
@@ -599,15 +629,36 @@ async function restoreProfileComponent(user, env, entries, restoreMode = 'add') 
       if (avatarFiles.length > 0) {
         const avatarFile = avatarFiles[0];
         const extension = avatarFile.split('.').pop();
-        const avatarPath = `avatars/${user.account_id}/restored.${extension}`;
+        const mimeType = `image/${extension === 'jpg' ? 'jpeg' : extension}`;
         
-        await env.ARTWORK_IMAGES.put(avatarPath, entries[avatarFile], {
-          httpMetadata: { contentType: `image/${extension}` }
-        });
-        
-        // Update profile data with new avatar URL
-        profileData.avatar_url = `${env.ARTWORK_IMAGES_BASE_URL}/${avatarPath}`;
-        avatarRestored = true;
+        try {
+          // Process through Cloudflare Images
+          const imageBuffer = new Uint8Array(entries[avatarFile]);
+          const filename = `restored-avatar-${user.account_id}-${Date.now()}`;
+          const processedAvatar = await processAvatarWithCloudflareRestore(imageBuffer, filename, mimeType, env);
+          
+          if (processedAvatar) {
+            // Update profile data with optimized avatar URLs
+            profileData.avatar_url = processedAvatar.originalUrl;
+            profileData.avatar_small_url = processedAvatar.smallUrl;
+            profileData.avatar_medium_url = processedAvatar.mediumUrl;
+            avatarRestored = true;
+          } else {
+            throw new Error('Cloudflare Images processing failed');
+          }
+        } catch (error) {
+          console.warn('Failed to process avatar through Cloudflare Images, falling back to R2:', error);
+          
+          // Fallback to direct R2 storage
+          const avatarPath = `avatars/${user.account_id}/restored.${extension}`;
+          await env.ARTWORK_IMAGES.put(avatarPath, entries[avatarFile], {
+            httpMetadata: { contentType: mimeType }
+          });
+          
+          // Update profile data with R2 avatar URL
+          profileData.avatar_url = `${env.ARTWORK_IMAGES_BASE_URL}/${avatarPath}`;
+          avatarRestored = true;
+        }
       }
     }
 
@@ -645,6 +696,82 @@ async function restoreProfileComponent(user, env, entries, restoreMode = 'add') 
 /**
  * Component-specific backup handlers configuration
  */
+/**
+ * Process image with Cloudflare Images during restore
+ */
+async function processImageWithCloudflareRestore(imageBuffer, filename, mimeType, env, artworkId) {
+  try {
+    // Upload to Cloudflare Images
+    const uploadResult = await uploadToCloudflareImagesRestore(imageBuffer, filename, mimeType, env);
+    
+    if (uploadResult.success && uploadResult.result?.id) {
+      const accountHash = env.CLOUDFLARE_ACCOUNT_HASH;
+      const imageId = uploadResult.result.id;
+      const baseImageUrl = `https://imagedelivery.net/${accountHash}/${imageId}`;
+      
+      return {
+        displayImageUrl: `${baseImageUrl}/display`,
+        thumbnailImageUrl: `${baseImageUrl}/thumbnail`, 
+        originalImageUrl: `${baseImageUrl}/original`,
+        storagePath: null // Not using R2 storage path for Cloudflare Images
+      };
+    } else {
+      throw new Error('Cloudflare Images upload failed: ' + JSON.stringify(uploadResult));
+    }
+  } catch (error) {
+    console.warn('Cloudflare Images processing failed during restore:', error);
+    return null; // Will trigger fallback to R2
+  }
+}
+
+/**
+ * Upload to Cloudflare Images during restore
+ */
+async function uploadToCloudflareImagesRestore(imageBuffer, filename, mimeType, env) {
+  const formData = new FormData();
+  const blob = new Blob([imageBuffer], { type: mimeType });
+  formData.append('file', blob, filename);
+
+  const uploadUrl = `https://api.cloudflare.com/client/v4/accounts/${env.CLOUDFLARE_ACCOUNT_ID}/images/v1`;
+  
+  const response = await fetch(uploadUrl, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${env.CLOUDFLARE_IMAGES_TOKEN}`,
+    },
+    body: formData,
+  });
+
+  return await response.json();
+}
+
+/**
+ * Process avatar with Cloudflare Images during restore
+ */
+async function processAvatarWithCloudflareRestore(imageBuffer, filename, mimeType, env) {
+  try {
+    // Upload to Cloudflare Images
+    const uploadResult = await uploadToCloudflareImagesRestore(imageBuffer, filename, mimeType, env);
+    
+    if (uploadResult.success && uploadResult.result?.id) {
+      const accountHash = env.CLOUDFLARE_ACCOUNT_HASH;
+      const imageId = uploadResult.result.id;
+      const baseUrl = `https://imagedelivery.net/${accountHash}/${imageId}`;
+      
+      return {
+        originalUrl: `${baseUrl}/original`,
+        smallUrl: `${baseUrl}/avatarsmall`,
+        mediumUrl: `${baseUrl}/avatarmedium`
+      };
+    } else {
+      throw new Error('Cloudflare Images upload failed: ' + JSON.stringify(uploadResult));
+    }
+  } catch (error) {
+    console.warn('Cloudflare Images avatar processing failed during restore:', error);
+    return null; // Will trigger fallback to R2
+  }
+}
+
 const BACKUP_COMPONENTS = {
   artworks: {
     name: 'Artworks',
