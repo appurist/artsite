@@ -1,10 +1,5 @@
-name = "artsite-api"
-main = "workers/index.js"
-compatibility_date = "2025-09-16"
-
-[assets]
-directory = "./dist"
-not_found_handling = "single-page-application"
+# Cloudflare Pages configuration
+# This is only used for local development with Pages Functions
 
 # Local development database (uses remote artsite-dev)
 [[d1_databases]]
@@ -21,59 +16,9 @@ preview_bucket_name = "artsite-images"
 
 # Environment variables (local development)
 [vars]
-FRONTEND_URL = "http://localhost:5173"
+FRONTEND_URL = "http://localhost:8788"
 EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_BASE_URL = "http://localhost:8787/api/images"
-# Cloudflare Images configuration (stored as secrets for consistency)
-# CLOUDFLARE_ACCOUNT_ID - public identifier, stored as secret for consistency
-# CLOUDFLARE_IMAGES_TOKEN - actual secret, requires secure storage
-# CLOUDFLARE_ACCOUNT_HASH - public identifier (visible in image URLs), stored as secret for consistency
+ARTWORK_IMAGES_BASE_URL = "http://localhost:8788/api/images"
 
-# Development environment
-[env.development]
-workers_dev = false
-route = { pattern = "dev.artsite.ca/*", zone_name = "artsite.ca" }
-
-[[env.development.d1_databases]]
-binding = "DB"
-database_name = "artsite-dev"
-database_id = "838eb3fb-0a38-4118-9bee-d62a149f0503"
-
-[[env.development.r2_buckets]]
-binding = "ARTWORK_IMAGES"
-bucket_name = "artsite-images"
-
-[env.development.vars]
-FRONTEND_URL = "https://dev.artsite.ca"
-EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
-# Cloudflare Images configuration (stored as secrets for consistency)
-# CLOUDFLARE_ACCOUNT_ID - public identifier, stored as secret for consistency
-# CLOUDFLARE_IMAGES_TOKEN - actual secret, requires secure storage
-# CLOUDFLARE_ACCOUNT_HASH - public identifier (visible in image URLs), stored as secret for consistency
-
-# Production environment
-[env.production]
-workers_dev = false
-routes = [
-  { pattern = "artsite.ca/*", zone_name = "artsite.ca" },
-  { pattern = "viktoriasart.ca/*", zone_name = "viktoriasart.ca" }
-]
-
-[[env.production.d1_databases]]
-binding = "DB"
-database_name = "artsite-prod"
-database_id = "ca7f0493-f8e2-4823-9c49-a92e1a3a38e7"
-
-[[env.production.r2_buckets]]
-binding = "ARTWORK_IMAGES"
-bucket_name = "artsite-images"
-
-[env.production.vars]
-FRONTEND_URL = "https://artsite.ca"
-EMAIL_FROM = "noreply@artsite.ca"
-ARTWORK_IMAGES_BASE_URL = "https://r2.artsite.ca"
-# Cloudflare Images configuration (stored as secrets for consistency)
-# CLOUDFLARE_ACCOUNT_ID - public identifier, stored as secret for consistency
-# CLOUDFLARE_IMAGES_TOKEN - actual secret, requires secure storage
-# CLOUDFLARE_ACCOUNT_HASH - public identifier (visible in image URLs), stored as secret for consistency
+# Note: Secrets (JWT_SECRET, CLOUDFLARE_ACCOUNT_ID, etc.) should be set via:
+# wrangler pages secret put <SECRET_NAME> --project-name artsite

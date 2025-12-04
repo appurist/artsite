@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "description": "Routes configuration for Cloudflare Pages",
+  "include": [
+    "/api/*"
+  ],
+  "exclude": [
+    "/api/images/*"
+  ]
+}
