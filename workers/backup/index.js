@@ -32,6 +32,14 @@ export async function handleBackup(request, env, ctx) {
       return await restoreBackup(request, env, ctx);
     }
 
+    if (method === 'POST' && url.pathname === '/api/backup/restore-meta') {
+      return await restoreBackupMeta(request, env, ctx);
+    }
+
+    if (method === 'POST' && url.pathname === '/api/backup/restore-image') {
+      return await restoreBackupImage(request, env, ctx);
+    }
+
     if (method === 'GET' && url.pathname === '/api/backup/components') {
       return await getBackupComponents(request, env);
     }
@@ -263,6 +271,193 @@ async function restoreBackup(request, env, ctx) {
 }
 
 /**
+ * Restore metadata only (profile, settings, artworks without images)
+ */
+async function restoreBackupMeta(request, env, ctx) {
+  try {
+    const user = await authenticateRequest(request, env.JWT_SECRET);
+    
+    // Parse form data
+    const formData = await request.formData();
+    const file = formData.get('file');
+    const restoreMode = formData.get('restore_mode') || 'add';
+    const selectedComponents = formData.get('components')?.split(',') || [];
+
+    if (!file) {
+      return withCors(new Response(JSON.stringify({ 
+        error: 'No backup file provided' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    // Parse ZIP file
+    const zipBuffer = await file.arrayBuffer();
+    const zip = await JSZip.loadAsync(zipBuffer);
+    
+    // Extract files
+    const entries = {};
+    for (const [fileName, file] of Object.entries(zip.files)) {
+      if (!file.dir) {
+        if (fileName.endsWith('.json')) {
+          entries[fileName] = await file.async('text');
+        }
+      }
+    }
+
+    // Verify backup metadata
+    if (!entries['backup-metadata.json']) {
+      return withCors(new Response(JSON.stringify({
+        error: 'Invalid backup file - missing metadata'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    const backupMetadata = JSON.parse(entries['backup-metadata.json']);
+    console.log('Backup metadata:', backupMetadata);
+
+    const restoreResults = {};
+    const artworkIdMapping = {};
+
+    // Process each component (metadata only)
+    for (const componentKey of selectedComponents) {
+      if (backupMetadata.components.includes(componentKey)) {
+        try {
+          const component = BACKUP_COMPONENTS[componentKey];
+          if (component && component.restoreMetaHandler) {
+            const restoreResult = await component.restoreMetaHandler(user, env, entries, restoreMode, artworkIdMapping);
+            restoreResults[componentKey] = { success: true, ...restoreResult };
+          } else if (componentKey === 'artworks') {
+            // Special handling for artworks metadata
+            const restoreResult = await restoreArtworksMetaOnly(user, env, entries, restoreMode, artworkIdMapping);
+            restoreResults[componentKey] = { success: true, ...restoreResult };
+          } else if (componentKey === 'settings') {
+            const restoreResult = await restoreSettingsComponent(user, env, entries, restoreMode);
+            restoreResults[componentKey] = { success: true, ...restoreResult };
+          } else if (componentKey === 'profile') {
+            const restoreResult = await restoreProfileMetaOnly(user, env, entries, restoreMode);
+            restoreResults[componentKey] = { success: true, ...restoreResult };
+          } else {
+            restoreResults[componentKey] = { success: false, error: 'Meta restore handler not implemented' };
+          }
+        } catch (error) {
+          console.error(`Error restoring component ${componentKey}:`, error);
+          restoreResults[componentKey] = { success: false, error: error.message };
+        }
+      }
+    }
+
+    return withCors(new Response(JSON.stringify({
+      message: 'Metadata restore completed',
+      results: restoreResults,
+      artworkIdMapping: artworkIdMapping,
+      backup_date: backupMetadata.export_date
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+  } catch (error) {
+    console.error('Restore meta error:', error);
+    return withCors(new Response(JSON.stringify({
+      error: 'Failed to restore metadata',
+      details: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+}
+
+/**
+ * Restore single image for an artwork
+ */
+async function restoreBackupImage(request, env, ctx) {
+  try {
+    const user = await authenticateRequest(request, env.JWT_SECRET);
+    
+    // Parse form data
+    const formData = await request.formData();
+    const artworkId = formData.get('artwork_id');
+    const imageFile = formData.get('image');
+    const originalFilename = formData.get('original_filename');
+
+    if (!artworkId || !imageFile) {
+      return withCors(new Response(JSON.stringify({ 
+        error: 'Missing artwork_id or image file' 
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    // Verify artwork belongs to user
+    const artwork = await queryFirst(env.DB, 
+      'SELECT id, account_id FROM artworks WHERE id = ? AND account_id = ?',
+      [artworkId, user.account_id]
+    );
+
+    if (!artwork) {
+      return withCors(new Response(JSON.stringify({ 
+        error: 'Artwork not found or access denied' 
+      }), {
+        status: 404,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    // Process and upload image
+    const imageBuffer = await imageFile.arrayBuffer();
+    const storage_path = `artworks/${user.account_id}/${artworkId}/restored.jpg`;
+    
+    // Store original image in R2
+    await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
+      httpMetadata: { contentType: 'image/jpeg' }
+    });
+    
+    const image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
+
+    // Update artwork with image info
+    const now = getCurrentTimestamp();
+    await executeQuery(env.DB, `
+      UPDATE artworks SET 
+        image_url = ?, storage_path = ?, updated_at = ?
+      WHERE id = ? AND account_id = ?
+    `, [image_url, storage_path, now, artworkId, user.account_id]);
+
+    // Queue for Cloudflare Images optimization
+    await queueImageOptimization(env, {
+      artworkId: artworkId,
+      accountId: user.account_id,
+      imagePath: storage_path,
+      imageUrl: image_url,
+      type: 'artwork'
+    });
+
+    return withCors(new Response(JSON.stringify({
+      message: 'Image restored successfully',
+      artwork_id: artworkId,
+      image_url: image_url,
+      storage_path: storage_path
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+  } catch (error) {
+    console.error('Restore image error:', error);
+    return withCors(new Response(JSON.stringify({
+      error: 'Failed to restore image',
+      details: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+}
+
+/**
  * Component-specific backup handlers
  */
 
@@ -400,6 +595,156 @@ async function backupProfileComponent(user, env, files) {
 /**
  * Component-specific restore handlers
  */
+
+/**
+ * Restore artwork metadata only (no images)
+ */
+async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', artworkIdMapping = {}) {
+  let restored = 0;
+  let skipped = 0;
+  let deleted = 0;
+
+  // If replace mode, delete all existing artworks first
+  if (restoreMode === 'replace') {
+    const existingArtworks = await queryAll(
+      env.DB,
+      'SELECT id, storage_path FROM artworks WHERE account_id = ?',
+      [user.account_id]
+    );
+
+    // Delete images from storage
+    for (const artwork of existingArtworks) {
+      if (artwork.storage_path) {
+        try {
+          await env.ARTWORK_IMAGES.delete(artwork.storage_path);
+          console.log(`Deleted image: ${artwork.storage_path}`);
+        } catch (error) {
+          // 404/not found is success - file is already gone
+          if (error.message?.includes('404') || error.message?.includes('not found')) {
+            console.log(`File already deleted (continuing): ${artwork.storage_path}`);
+          } else {
+            console.warn(`Failed to delete image ${artwork.storage_path}:`, error);
+          }
+        }
+      }
+    }
+
+    // Delete all artworks from database
+    await executeQuery(env.DB, 'DELETE FROM artworks WHERE account_id = ?', [user.account_id]);
+    deleted = existingArtworks.length;
+  }
+
+  // Parse artworks metadata
+  const artworksData = entries['art/artworks.json'] 
+    ? JSON.parse(entries['art/artworks.json']) 
+    : [];
+
+  for (const artwork of artworksData) {
+    try {
+      // Generate new artwork ID for this instance (never trust IDs from backup)
+      const newArtworkId = generateId();
+      const now = getCurrentTimestamp();
+      
+      // Store mapping of old ID to new ID for image restoration
+      artworkIdMapping[artwork.id] = newArtworkId;
+      
+      // Check if artwork with same title already exists (for add mode)
+      let existing = null;
+      if (restoreMode === 'add') {
+        existing = await queryFirst(
+          env.DB,
+          'SELECT id FROM artworks WHERE title = ? AND account_id = ?',
+          [artwork.title, user.account_id]
+        );
+      }
+
+      if (existing && restoreMode === 'add') {
+        // Keep track of existing artwork for image restoration
+        artworkIdMapping[artwork.id] = existing.id;
+        skipped++;
+        continue;
+      } else {
+        // Insert new artwork record (no images yet)
+        await executeQuery(env.DB, `
+          INSERT INTO artworks (
+            id, account_id, title, description, medium, dimensions, 
+            year_created, price, tags, image_url, thumbnail_url, display_url, original_url, storage_path,
+            status, created_at, updated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `, [
+          newArtworkId,
+          user.account_id,
+          artwork.title,
+          artwork.description,
+          artwork.medium,
+          artwork.dimensions,
+          artwork.year_created,
+          artwork.price,
+          JSON.stringify(artwork.tags || []),
+          null, // image_url - will be set during image restoration
+          null, // thumbnail_url
+          null, // display_url
+          null, // original_url
+          null, // storage_path
+          'published',
+          now,
+          now
+        ]);
+      }
+
+      restored++;
+    } catch (error) {
+      console.error(`Failed to restore artwork metadata ${artwork.id}:`, error);
+      skipped++;
+    }
+  }
+
+  return { restored, skipped, deleted, total: artworksData.length, mode: restoreMode, artworkIdMapping };
+}
+
+/**
+ * Restore profile metadata only (no avatar image)
+ */
+async function restoreProfileMetaOnly(user, env, entries, restoreMode = 'add') {
+  if (!entries['profile/profile.json']) {
+    return { restored: 0, message: 'No profile data in backup' };
+  }
+
+  try {
+    const profileData = JSON.parse(entries['profile/profile.json']);
+    
+    // Remove avatar URLs - will be restored separately if needed
+    profileData.avatar_url = null;
+    profileData.avatar_small_url = null;
+    profileData.avatar_medium_url = null;
+
+    // Check if profile exists for this user
+    const existing = await queryFirst(
+      env.DB,
+      'SELECT id FROM profiles WHERE id = ?',
+      [user.account_id]
+    );
+
+    if (existing) {
+      // Update existing profile
+      await executeQuery(env.DB,
+        'UPDATE profiles SET record = ? WHERE id = ?',
+        [JSON.stringify(profileData), user.account_id]
+      );
+    } else {
+      // Create new profile
+      await executeQuery(env.DB,
+        'INSERT INTO profiles (id, record) VALUES (?, ?)',
+        [user.account_id, JSON.stringify(profileData)]
+      );
+    }
+
+    return { restored: 1 };
+  } catch (error) {
+    console.error('Profile restore error:', error);
+    throw error;
+  }
+}
 
 async function restoreArtworksComponent(user, env, entries, restoreMode = 'add') {
   let restored = 0;
