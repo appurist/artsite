@@ -40,4 +40,5 @@ workers/.dev.vars
 
 .claude/settings.local.json
 
+backup/
 artsite-backup-*

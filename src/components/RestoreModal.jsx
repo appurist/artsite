@@ -48,21 +48,43 @@ function RestoreModal(props) {
       // Update modal to show progress
       updateRestoreProgress('Preparing restore...', 0);
 
-      // Step 1: Restore metadata first
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('components', selectedComponents().join(','));
-      formData.append('restore_mode', restoreMode());
+      // Step 1: Extract ZIP file client-side
+      updateRestoreProgress('Extracting backup file...', 5);
+      const zip = await JSZip.loadAsync(file);
+      
+      // Extract metadata files from ZIP
+      const entries = {};
+      for (const [fileName, zipFile] of Object.entries(zip.files)) {
+        if (!zipFile.dir && fileName.endsWith('.json')) {
+          entries[fileName] = await zipFile.async('text');
+        }
+      }
 
+      // Verify required files
+      if (!entries['backup-metadata.json']) {
+        throw new Error('Invalid backup file - missing metadata');
+      }
+
+      const backupMetadata = JSON.parse(entries['backup-metadata.json']);
+      
+      // Step 2: Send metadata as JSON to backend
       updateRestoreProgress('Restoring metadata...', 10);
       
       const token = localStorage.getItem('token');
+      const metaPayload = {
+        components: selectedComponents(),
+        restore_mode: restoreMode(),
+        backup_metadata: backupMetadata,
+        entries: entries
+      };
+
       const metaResponse = await fetch(`${API_BASE_URL}/api/backup/restore-meta`, {
         method: 'POST',
         headers: {
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
         },
-        body: formData
+        body: JSON.stringify(metaPayload)
       });
       
       const metaResult = await metaResponse.json();
@@ -73,11 +95,10 @@ function RestoreModal(props) {
       console.log('Metadata restore result:', metaResult);
       updateRestoreProgress('Metadata restored successfully', 30);
 
-      // Step 2: Extract images from ZIP and restore them one by one
+      // Step 3: Extract images from already-loaded ZIP and restore them one by one
       if (selectedComponents().includes('artworks') && metaResult.artworkIdMapping) {
         updateRestoreProgress('Extracting images from backup...', 40);
         
-        const zip = await JSZip.loadAsync(file);
         const artworkImages = [];
         
         // Find all image files in the art/images/ folder

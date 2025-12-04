@@ -277,46 +277,28 @@ async function restoreBackupMeta(request, env, ctx) {
   try {
     const user = await authenticateRequest(request, env.JWT_SECRET);
     
-    // Parse form data
-    const formData = await request.formData();
-    const file = formData.get('file');
-    const restoreMode = formData.get('restore_mode') || 'add';
-    const selectedComponents = formData.get('components')?.split(',') || [];
+    // Parse JSON payload
+    const payload = await request.json();
+    const { components: selectedComponents, restore_mode: restoreMode = 'add', backup_metadata: backupMetadata, entries } = payload;
 
-    if (!file) {
+    if (!backupMetadata || !entries) {
       return withCors(new Response(JSON.stringify({ 
-        error: 'No backup file provided' 
+        error: 'Invalid payload - missing backup_metadata or entries' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
 
-    // Parse ZIP file
-    const zipBuffer = await file.arrayBuffer();
-    const zip = await JSZip.loadAsync(zipBuffer);
-    
-    // Extract files
-    const entries = {};
-    for (const [fileName, file] of Object.entries(zip.files)) {
-      if (!file.dir) {
-        if (fileName.endsWith('.json')) {
-          entries[fileName] = await file.async('text');
-        }
-      }
-    }
-
-    // Verify backup metadata
-    if (!entries['backup-metadata.json']) {
-      return withCors(new Response(JSON.stringify({
-        error: 'Invalid backup file - missing metadata'
+    if (!selectedComponents || selectedComponents.length === 0) {
+      return withCors(new Response(JSON.stringify({ 
+        error: 'No components specified for restore' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
 
-    const backupMetadata = JSON.parse(entries['backup-metadata.json']);
     console.log('Backup metadata:', backupMetadata);
     console.log('Available entries:', Object.keys(entries));
 
