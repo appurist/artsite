@@ -318,6 +318,7 @@ async function restoreBackupMeta(request, env, ctx) {
 
     const backupMetadata = JSON.parse(entries['backup-metadata.json']);
     console.log('Backup metadata:', backupMetadata);
+    console.log('Available entries:', Object.keys(entries));
 
     const restoreResults = {};
     const artworkIdMapping = {};
@@ -483,9 +484,9 @@ async function backupArtworksComponent(user, env, files) {
     data: JSON.stringify(artworksData, null, 2)
   });
 
-  // Skip image embedding to avoid Worker limits - rely on URL-based restore
+  // Include all images in backup - chunked restore handles Worker limits
   let imageCount = 0;
-  const maxImages = 0; // Don't embed images, use URL-based restore
+  const maxImages = artworks.length; // Include all images
   let processedCount = 0;
   
   for (const artwork of artworks) {
