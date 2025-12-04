@@ -36,5 +36,6 @@ setenv.bat
 .wrangler/
 workers/.wrangler/
 workers/.dev.vars
+# Note: wrangler.local.toml is tracked (for local Pages dev)
 
 .claude/settings.local.json
