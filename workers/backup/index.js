@@ -605,6 +605,8 @@ async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', 
   let skipped = 0;
   let deleted = 0;
 
+  console.log(`Starting artwork metadata restore for user ${user.account_id}, mode: ${restoreMode}`);
+
   // If replace mode, delete all existing artworks first
   if (restoreMode === 'replace') {
     const existingArtworks = await queryAll(
@@ -612,6 +614,8 @@ async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', 
       'SELECT id, storage_path FROM artworks WHERE account_id = ?',
       [user.account_id]
     );
+
+    console.log(`Deleting ${existingArtworks.length} existing artworks in replace mode`);
 
     // Delete images from storage
     for (const artwork of existingArtworks) {
@@ -639,6 +643,11 @@ async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', 
   const artworksData = entries['art/artworks.json'] 
     ? JSON.parse(entries['art/artworks.json']) 
     : [];
+
+  console.log(`Found ${artworksData.length} artworks in backup metadata`);
+  if (artworksData.length > 0) {
+    console.log('Sample artwork:', artworksData[0]);
+  }
 
   for (const artwork of artworksData) {
     try {
