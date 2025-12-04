@@ -2318,6 +2318,7 @@ async function performRestore() {
       throw new Error(metaResult.error || 'Metadata restore failed');
     }
 
+    console.log('Metadata restore result:', metaResult);
     updateRestoreProgress('Metadata restored successfully', 30);
 
     // Step 2: Extract images from ZIP and restore them one by one
@@ -2334,6 +2335,7 @@ async function performRestore() {
         }
       }
 
+      console.log(`Found ${artworkImages.length} images in backup`);
       if (artworkImages.length > 0) {
         updateRestoreProgress(`Restoring ${artworkImages.length} images...`, 50);
         
