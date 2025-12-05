@@ -129,13 +129,18 @@ function RestoreModal(props) {
           
           let processedImages = 0;
           for (const { fileName, zipFile } of artworkImages) {
+            console.log(`Processing image: ${fileName}`);
             try {
               // Extract artwork ID from filename (format: art/images/{oldId}-{title}.jpg)
               const baseFileName = fileName.replace('art/images/', '');
+              console.log(`Base filename: ${baseFileName}`);
               const oldArtworkId = baseFileName.split('-')[0];
+              console.log(`Old artwork ID: ${oldArtworkId}`);
               const newArtworkId = metaResult.artworkIdMapping[oldArtworkId];
+              console.log(`New artwork ID: ${newArtworkId}`);
               
               if (newArtworkId) {
+                console.log(`✅ Uploading image for artwork ${newArtworkId}...`);
                 // Get image data
                 const imageBlob = await zipFile.async('blob');
                 
@@ -146,6 +151,7 @@ function RestoreModal(props) {
                 imageFormData.append('original_filename', baseFileName);
 
                 // Restore this image
+                console.log(`Making API call to /api/backup/restore-image...`);
                 const imageResponse = await fetch(`${API_BASE_URL}/api/backup/restore-image`, {
                   method: 'POST',
                   headers: {
@@ -154,13 +160,18 @@ function RestoreModal(props) {
                   body: imageFormData
                 });
 
+                console.log(`Image restore response status: ${imageResponse.status}`);
                 if (!imageResponse.ok) {
                   const imageError = await imageResponse.json();
-                  console.warn(`Failed to restore image for artwork ${newArtworkId}:`, imageError.error);
+                  console.warn(`❌ Failed to restore image for artwork ${newArtworkId}:`, imageError.error);
+                } else {
+                  console.log(`✅ Successfully restored image for artwork ${newArtworkId}`);
                 }
+              } else {
+                console.warn(`❌ No new artwork ID found for old ID: ${oldArtworkId}`);
               }
             } catch (error) {
-              console.warn(`Failed to process image ${fileName}:`, error);
+              console.warn(`❌ Failed to process image ${fileName}:`, error);
             }
             
             processedImages++;
