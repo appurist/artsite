@@ -275,18 +275,6 @@ function ProfilePage() {
           </div>
 
           <div class="form-group">
-            <label for="profile-custom-domain">Custom Artsite Domain</label>
-            <input
-              type="text"
-              id="profile-custom-domain"
-              placeholder="yourdomain.com (optional)"
-              value={customDomain()}
-              onInput={(e) => setCustomDomain(e.target.value)}
-            />
-            <small class="field-note">Optional: Your own domain that will display your artworks exclusively</small>
-          </div>
-
-          <div class="form-group">
             <label for="profile-website">External Website</label>
             <input
               type="url"
@@ -323,6 +311,18 @@ function ProfilePage() {
                 class="disabled-field"
               />
               <small class="field-note">Email cannot be changed. Contact support if needed.</small>
+            </div>
+
+            <div class="form-group">
+              <label for="profile-custom-domain">Custom Artsite Domain</label>
+              <input
+                type="text"
+                id="profile-custom-domain"
+                placeholder="yourdomain.com (optional)"
+                value={customDomain()}
+                onInput={(e) => setCustomDomain(e.target.value)}
+              />
+              <small class="field-note">Optional: Your own domain that will display your artworks exclusively</small>
             </div>
           </div>
 

@@ -104,18 +104,22 @@ function GalleryPage() {
   const createArtworkCard = (artwork) => {
     const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
     
-    // Extract artist name from profile record if available
-    const getArtistName = () => {
+    // Extract artist info from profile record if available
+    const getArtistInfo = () => {
       if (!artwork.profile_record) return null;
       try {
         const profile = JSON.parse(artwork.profile_record);
-        return profile.name || profile.display_name || null;
+        return {
+          name: profile.name || profile.display_name || null,
+          avatar: profile.avatar_url || null
+        };
       } catch {
         return null;
       }
     };
 
-    const showArtistName = !getCurrentUser() && getArtistName();
+    const artistInfo = getArtistInfo();
+    const showArtistInfo = !getCurrentUser() && artistInfo?.name;
 
     return (
       <div class="artwork-item" data-id={artwork.id}>
@@ -128,8 +132,22 @@ function GalleryPage() {
           </div>
           <div class="artwork-details">
             <h3 class="artwork-title" style={primaryColor() ? `color: ${primaryColor()}` : undefined}>{artwork.title}</h3>
-            <Show when={showArtistName}>
-              <p class="artwork-artist">by {getArtistName()}</p>
+            <Show when={showArtistInfo}>
+              <div class="artwork-artist-info">
+                <Show 
+                  when={artistInfo.avatar}
+                  fallback={
+                    <div class="artist-avatar-placeholder">
+                      <span>{artistInfo.name.charAt(0).toUpperCase()}</span>
+                    </div>
+                  }
+                >
+                  <img src={artistInfo.avatar} alt={artistInfo.name} class="artist-avatar-small" />
+                </Show>
+                <a href={`/artist/${artwork.user_id}`} class="artist-name-link">
+                  {artistInfo.name}
+                </a>
+              </div>
             </Show>
             <Show when={artwork.medium || artwork.year_created}>
               <p class="artwork-medium-year">

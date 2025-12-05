@@ -195,6 +195,14 @@ export async function getArtwork(id) {
 }
 
 /**
+ * Get public artist profile by ID
+ */
+export async function getArtistProfile(id) {
+  const response = await apiRequest(`/api/artist/${id}`);
+  return response.artist;
+}
+
+/**
  * Create new artwork
  */
 export async function createArtwork(artworkData) {

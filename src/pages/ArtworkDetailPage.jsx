@@ -272,7 +272,9 @@ function ArtworkDetailPage() {
                 <div class="artwork-detail-header">
                   <h1 class="artwork-detail-title">{artwork().title}</h1>
                   <Show when={getArtistName()}>
-                    <p class="artwork-detail-artist">by {getArtistName()}</p>
+                    <p class="artwork-detail-artist">
+                      by <A href={`/artist/${artwork().user_id}`} class="artist-name-link">{getArtistName()}</A>
+                    </p>
                   </Show>
                   <Show when={isOwner()}>
                     <div class="artwork-detail-actions">

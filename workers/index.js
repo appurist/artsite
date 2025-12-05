@@ -10,6 +10,7 @@ import { getCustomDomainUser } from './shared/db.js';
 // Import route handlers
 import { handleAuth } from './auth/index.js';
 import { handleArtworks } from './artworks/index.js';
+import { handleArtist } from './artist/index.js';
 import { handleProfiles } from './profiles/index.js';
 import { handleProfile } from './profile/index.js';
 import { handleSettings } from './settings/index.js';
@@ -111,6 +112,10 @@ export default {
       
       if (path.startsWith('/api/artworks')) {
         return await handleArtworks(request, env, ctx);
+      }
+      
+      if (path.startsWith('/api/artist/')) {
+        return await handleArtist(request, env, ctx);
       }
       
       if (path.startsWith('/api/profiles')) {
