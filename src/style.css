@@ -1873,6 +1873,10 @@ input[type="file"]:focus {
 }
 
 /* Artwork Detail Page Styles */
+.artwork-detail-page {
+  max-width: none; /* Remove width constraint for artwork detail pages */
+}
+
 .artwork-detail-container {
   display: flex;
   gap: 2rem;

@@ -72,7 +72,7 @@ function ArtworkDetailPage() {
   };
 
   return (
-    <div class="page-container">
+    <div class="page-container artwork-detail-page">
       <Show 
         when={!isLoading()}
         fallback={
