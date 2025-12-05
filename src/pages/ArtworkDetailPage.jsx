@@ -29,10 +29,23 @@ function ArtworkDetailPage() {
       return;
     }
 
+    await loadArtworkData(params.id);
+  });
+
+  // Watch for route changes and reload artwork data
+  createEffect(() => {
+    const artworkId = params.id;
+    if (artworkId && artwork() && artworkId !== artwork().id) {
+      console.log('Route changed, reloading artwork data for:', artworkId);
+      loadArtworkData(artworkId);
+    }
+  });
+
+  const loadArtworkData = async (artworkId) => {
     try {
       setIsLoading(true);
       setError(null);
-      const artworkData = await getArtwork(params.id);
+      const artworkData = await getArtwork(artworkId);
       
       if (artworkData) {
         setArtwork(artworkData);
@@ -51,11 +64,11 @@ function ArtworkDetailPage() {
           setArtistArtworks(artworks);
           
           // Find current artwork's index in the list
-          const index = artworks.findIndex(art => art.id === params.id);
+          const index = artworks.findIndex(art => art.id === artworkId);
           setCurrentIndex(index);
           
           console.log('Navigation debug:', {
-            currentArtworkId: params.id,
+            currentArtworkId: artworkId,
             artistUserId: userId,
             totalArtworks: artworks.length,
             foundIndex: index,
@@ -73,7 +86,7 @@ function ArtworkDetailPage() {
     } finally {
       setIsLoading(false);
     }
-  });
+  };
 
   const handleEdit = () => {
     navigate(`/art/${params.id}/edit`);
