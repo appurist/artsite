@@ -400,7 +400,7 @@ async function restoreBackupImage(request, env, ctx) {
 
     // Process and upload image
     const imageBuffer = await imageFile.arrayBuffer();
-    const storage_path = `artworks/${user.account_id}/${artworkId}/restored.jpg`;
+    const storage_path = `artworks/${user.account_id}/${artworkId}/display.jpg`;
     
     // Store original image in R2
     await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
