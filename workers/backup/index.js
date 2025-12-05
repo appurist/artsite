@@ -377,14 +377,21 @@ async function restoreBackupImage(request, env, ctx) {
     }
 
     // Verify artwork belongs to user
+    console.log(`Looking for artwork ID: ${artworkId} for user: ${user.account_id}`);
     const artwork = await queryFirst(env.DB, 
       'SELECT id, account_id FROM artworks WHERE id = ? AND account_id = ?',
       [artworkId, user.account_id]
     );
+    console.log(`Artwork found:`, artwork);
 
     if (!artwork) {
+      // Additional debugging - check if artwork exists for any user
+      const anyArtwork = await queryFirst(env.DB, 'SELECT id, account_id FROM artworks WHERE id = ?', [artworkId]);
+      console.log(`Artwork exists for any user:`, anyArtwork);
+      
       return withCors(new Response(JSON.stringify({ 
-        error: 'Artwork not found or access denied' 
+        error: 'Artwork not found or access denied',
+        debug: { artworkId, userId: user.account_id, anyArtwork: !!anyArtwork }
       }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }
