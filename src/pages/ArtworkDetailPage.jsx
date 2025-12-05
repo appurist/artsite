@@ -1,4 +1,4 @@
-import { createSignal, createEffect, onMount, Show } from 'solid-js';
+import { createSignal, createEffect, onMount, onCleanup, Show } from 'solid-js';
 import { useParams, A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
 import { getArtwork, getArtworks, deleteArtwork } from '../api.js';
@@ -21,6 +21,35 @@ function ArtworkDetailPage() {
   const [artistArtworks, setArtistArtworks] = createSignal([]);
   const [currentIndex, setCurrentIndex] = createSignal(-1);
 
+  // Keyboard navigation handler
+  const handleKeyDown = (event) => {
+    // Don't handle keyboard events if user is typing in an input field
+    if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+      return;
+    }
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        event.preventDefault();
+        goToPrevious();
+        break;
+      case 'ArrowRight':
+        event.preventDefault();
+        goToNext();
+        break;
+      case 'ArrowUp':
+      case 'Home':
+        event.preventDefault();
+        goToFirst();
+        break;
+      case 'ArrowDown':
+      case 'End':
+        event.preventDefault();
+        goToLast();
+        break;
+    }
+  };
+
   // Load artwork details
   onMount(async () => {
     if (!params.id) {
@@ -30,6 +59,14 @@ function ArtworkDetailPage() {
     }
 
     await loadArtworkData(params.id);
+
+    // Add keyboard event listener
+    document.addEventListener('keydown', handleKeyDown);
+  });
+
+  // Clean up keyboard event listener
+  onCleanup(() => {
+    document.removeEventListener('keydown', handleKeyDown);
   });
 
   // Watch for route changes and reload artwork data
@@ -50,30 +87,15 @@ function ArtworkDetailPage() {
       if (artworkData) {
         setArtwork(artworkData);
         
-        console.log('Artwork data:', artworkData);
-        
         // Load all artworks from this artist for navigation
         try {
-          // Try different possible user ID fields
           const userId = artworkData.user_id || artworkData.account_id;
-          console.log('Using userId for navigation:', userId);
-          
-          console.log('About to call getArtworks with userId:', userId);
           const artworks = await getArtworks({ userId });
-          console.log('getArtworks returned:', artworks);
           setArtistArtworks(artworks);
           
           // Find current artwork's index in the list
           const index = artworks.findIndex(art => art.id === artworkId);
           setCurrentIndex(index);
-          
-          console.log('Navigation debug:', {
-            currentArtworkId: artworkId,
-            artistUserId: userId,
-            totalArtworks: artworks.length,
-            foundIndex: index,
-            artworkIds: artworks.map(a => a.id)
-          });
         } catch (navErr) {
           console.warn('Could not load artist artworks for navigation:', navErr);
         }
@@ -116,15 +138,11 @@ function ArtworkDetailPage() {
 
   // Navigation helpers
   const hasPrevious = () => {
-    const result = currentIndex() > 0;
-    console.log('hasPrevious:', { currentIndex: currentIndex(), result });
-    return result;
+    return currentIndex() > 0;
   };
 
   const hasNext = () => {
-    const result = currentIndex() >= 0 && currentIndex() < artistArtworks().length - 1;
-    console.log('hasNext:', { currentIndex: currentIndex(), total: artistArtworks().length, result });
-    return result;
+    return currentIndex() >= 0 && currentIndex() < artistArtworks().length - 1;
   };
 
   const goToPrevious = () => {
@@ -138,6 +156,21 @@ function ArtworkDetailPage() {
     if (hasNext()) {
       const nextArtwork = artistArtworks()[currentIndex() + 1];
       navigate(`/art/${nextArtwork.id}`);
+    }
+  };
+
+  const goToFirst = () => {
+    if (artistArtworks().length > 0) {
+      const firstArtwork = artistArtworks()[0];
+      navigate(`/art/${firstArtwork.id}`);
+    }
+  };
+
+  const goToLast = () => {
+    const artworks = artistArtworks();
+    if (artworks.length > 0) {
+      const lastArtwork = artworks[artworks.length - 1];
+      navigate(`/art/${lastArtwork.id}`);
     }
   };
 
@@ -306,6 +339,13 @@ function ArtworkDetailPage() {
                       <span class="artwork-position">
                         {currentIndex() + 1} of {artistArtworks().length}
                       </span>
+                    </div>
+                    <div class="artwork-detail-field">
+                      <label>Keyboard Navigation:</label>
+                      <div class="keyboard-shortcuts">
+                        <small>← → Previous/Next</small><br/>
+                        <small>↑ Home First • ↓ End Last</small>
+                      </div>
                     </div>
                   </Show>
                 </div>
