@@ -37,14 +37,29 @@ function ArtworkDetailPage() {
       if (artworkData) {
         setArtwork(artworkData);
         
+        console.log('Artwork data:', artworkData);
+        
         // Load all artworks from this artist for navigation
         try {
-          const artistWorksData = await getArtworks({ userId: artworkData.user_id });
-          setArtistArtworks(artistWorksData.artworks || []);
+          // Try different possible user ID fields
+          const userId = artworkData.user_id || artworkData.account_id;
+          console.log('Using userId for navigation:', userId);
+          
+          const artistWorksData = await getArtworks({ userId });
+          const artworks = artistWorksData.artworks || [];
+          setArtistArtworks(artworks);
           
           // Find current artwork's index in the list
-          const index = (artistWorksData.artworks || []).findIndex(art => art.id === params.id);
+          const index = artworks.findIndex(art => art.id === params.id);
           setCurrentIndex(index);
+          
+          console.log('Navigation debug:', {
+            currentArtworkId: params.id,
+            artistUserId: userId,
+            totalArtworks: artworks.length,
+            foundIndex: index,
+            artworkIds: artworks.map(a => a.id)
+          });
         } catch (navErr) {
           console.warn('Could not load artist artworks for navigation:', navErr);
         }
@@ -87,11 +102,15 @@ function ArtworkDetailPage() {
 
   // Navigation helpers
   const hasPrevious = () => {
-    return currentIndex() > 0;
+    const result = currentIndex() > 0;
+    console.log('hasPrevious:', { currentIndex: currentIndex(), result });
+    return result;
   };
 
   const hasNext = () => {
-    return currentIndex() >= 0 && currentIndex() < artistArtworks().length - 1;
+    const result = currentIndex() >= 0 && currentIndex() < artistArtworks().length - 1;
+    console.log('hasNext:', { currentIndex: currentIndex(), total: artistArtworks().length, result });
+    return result;
   };
 
   const goToPrevious = () => {
