@@ -1877,19 +1877,19 @@ input[type="file"]:focus {
   display: flex;
   gap: 2rem;
   max-width: 100%;
-  min-width: calc(100vw - 200px);
+  width: 100%;
   margin: 0 auto;
   padding: 0;
   min-height: calc(100vh - 120px); /* Minimal space for header and footer */
+  box-sizing: border-box;
 }
 
 .artwork-detail-image-section {
-  /* flex: 2; */
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: calc(100% - 300px);
-  width: calc(100% - 200px);
+  min-width: 0; /* Allow flex item to shrink */
 }
 
 .artwork-detail-image-container {
