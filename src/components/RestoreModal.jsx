@@ -103,8 +103,15 @@ function RestoreModal(props) {
       
       updateRestoreProgress('Metadata restored successfully', 30);
 
-      // Step 3: Extract images from already-loaded ZIP and restore them one by one
-      if (selectedComponents().includes('artworks') && metaResult.artworkIdMapping && Object.keys(metaResult.artworkIdMapping).length > 0) {
+      // Step 3: Extract images from already-loaded ZIP and restore them one by one  
+      console.log('About to check condition...');
+      const hasArtworks = selectedComponents().includes('artworks');
+      const hasMapping = !!metaResult.artworkIdMapping;
+      const mappingNotEmpty = Object.keys(metaResult.artworkIdMapping || {}).length > 0;
+      console.log('Condition parts:', { hasArtworks, hasMapping, mappingNotEmpty });
+      
+      if (hasArtworks && hasMapping && mappingNotEmpty) {
+        console.log('✅ All conditions met, starting image restore...');
         updateRestoreProgress('Extracting images from backup...', 40);
         
         const artworkImages = [];
