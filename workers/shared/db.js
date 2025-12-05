@@ -221,9 +221,10 @@ export async function getArtworks(db, options = {}) {
   const { account_id, status = 'published', page = 1, limit = 20 } = options;
   
   let baseQuery = `
-    SELECT a.*, p.record as profile_record
+    SELECT a.*, p.record as profile_record, acc.username
     FROM artworks a
     LEFT JOIN profiles p ON a.account_id = p.id
+    LEFT JOIN accounts acc ON a.account_id = acc.id
   `;
   
   const filters = {};
@@ -243,9 +244,10 @@ export async function getArtworks(db, options = {}) {
  */
 export async function getArtworkById(db, id) {
   const query = `
-    SELECT a.*, p.record as profile_record
+    SELECT a.*, p.record as profile_record, acc.username
     FROM artworks a
     LEFT JOIN profiles p ON a.account_id = p.id
+    LEFT JOIN accounts acc ON a.account_id = acc.id
     WHERE a.id = ?
   `;
   

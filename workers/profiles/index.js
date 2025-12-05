@@ -113,18 +113,33 @@ async function listProfiles(request, env) {
 async function getProfile(request, env) {
   try {
     const url = new URL(request.url);
-    const userId = url.pathname.split('/').pop();
-
-    const profile = await queryFirst(
-      env.DB,
-      `
-        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain
+    const identifier = url.pathname.split('/').pop();
+    
+    // Check if identifier is a username (starts with @) or UUID
+    const isUsername = identifier.startsWith('@');
+    const lookupValue = isUsername ? identifier.slice(1) : identifier;
+    
+    // Build query based on lookup type
+    let query, params;
+    if (isUsername) {
+      query = `
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain, a.username
+        FROM profiles p
+        JOIN accounts a ON p.id = a.id
+        WHERE a.username = ?
+      `;
+      params = [lookupValue];
+    } else {
+      query = `
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain, a.username
         FROM profiles p
         JOIN accounts a ON p.id = a.id
         WHERE p.id = ?
-      `,
-      [userId]
-    );
+      `;
+      params = [identifier];
+    }
+
+    const profile = await queryFirst(env.DB, query, params);
 
     if (!profile) {
       return withCors(new Response(JSON.stringify({
@@ -178,6 +193,7 @@ async function getProfile(request, env) {
       responseProfile.public_profile = profile.public_profile;
       responseProfile.name = accountData.name;
       responseProfile.email = accountData.email;
+      responseProfile.username = profile.username;
       responseProfile.custom_domain = profile.domain;
     }
 
@@ -213,7 +229,7 @@ async function updateProfile(request, env) {
     // Check if profile exists
     const existingProfile = await queryFirst(
       env.DB,
-      'SELECT id, public_profile, created_at, record FROM profiles WHERE id = ?',
+      'SELECT p.id, p.public_profile, p.created_at, p.record, a.username FROM profiles p LEFT JOIN accounts a ON p.id = a.id WHERE p.id = ?',
       [user.account_id]
     );
 
@@ -272,10 +288,45 @@ async function updateProfile(request, env) {
       const query = `UPDATE profiles SET record = json_set(record, ${updateFields.join(', ')})${publicProfileUpdate} WHERE id = ?`;
       await executeQuery(env.DB, query, params);
 
-      // Handle custom domain separately (updates accounts table)
-      if (profileData.customDomain !== undefined) {
-        const domainValue = profileData.customDomain ? profileData.customDomain.trim() || null : null;
-        await executeQuery(env.DB, 'UPDATE accounts SET domain = ? WHERE id = ?', [domainValue, user.account_id]);
+      // Handle username and custom domain separately (updates accounts table)
+      if (profileData.username !== undefined || profileData.customDomain !== undefined) {
+        const updates = [];
+        const params = [];
+        
+        if (profileData.username !== undefined) {
+          const usernameValue = profileData.username ? profileData.username.trim() || null : null;
+          
+          // Validate username format if provided
+          if (usernameValue && !/^[a-zA-Z0-9_-]+$/.test(usernameValue)) {
+            throw new Error('Username can only contain letters, numbers, underscores, and hyphens');
+          }
+          
+          // Check if username is already taken by another user
+          if (usernameValue) {
+            const existingUser = await queryFirst(
+              env.DB,
+              'SELECT id FROM accounts WHERE username = ? AND id != ?',
+              [usernameValue, user.account_id]
+            );
+            if (existingUser) {
+              throw new Error('Username is already taken');
+            }
+          }
+          
+          updates.push('username = ?');
+          params.push(usernameValue);
+        }
+        
+        if (profileData.customDomain !== undefined) {
+          const domainValue = profileData.customDomain ? profileData.customDomain.trim() || null : null;
+          updates.push('domain = ?');
+          params.push(domainValue);
+        }
+        
+        if (updates.length > 0) {
+          params.push(user.account_id);
+          await executeQuery(env.DB, `UPDATE accounts SET ${updates.join(', ')} WHERE id = ?`, params);
+        }
       }
 
     } else {
@@ -304,10 +355,45 @@ async function updateProfile(request, env) {
         JSON.stringify(profileRecord)
       ]);
 
-      // Handle custom domain separately (updates accounts table)
-      if (profileData.customDomain !== undefined) {
-        const domainValue = profileData.customDomain ? profileData.customDomain.trim() || null : null;
-        await executeQuery(env.DB, 'UPDATE accounts SET domain = ? WHERE id = ?', [domainValue, user.account_id]);
+      // Handle username and custom domain separately (updates accounts table)
+      if (profileData.username !== undefined || profileData.customDomain !== undefined) {
+        const updates = [];
+        const params = [];
+        
+        if (profileData.username !== undefined) {
+          const usernameValue = profileData.username ? profileData.username.trim() || null : null;
+          
+          // Validate username format if provided
+          if (usernameValue && !/^[a-zA-Z0-9_-]+$/.test(usernameValue)) {
+            throw new Error('Username can only contain letters, numbers, underscores, and hyphens');
+          }
+          
+          // Check if username is already taken
+          if (usernameValue) {
+            const existingUser = await queryFirst(
+              env.DB,
+              'SELECT id FROM accounts WHERE username = ?',
+              [usernameValue]
+            );
+            if (existingUser) {
+              throw new Error('Username is already taken');
+            }
+          }
+          
+          updates.push('username = ?');
+          params.push(usernameValue);
+        }
+        
+        if (profileData.customDomain !== undefined) {
+          const domainValue = profileData.customDomain ? profileData.customDomain.trim() || null : null;
+          updates.push('domain = ?');
+          params.push(domainValue);
+        }
+        
+        if (updates.length > 0) {
+          params.push(user.account_id);
+          await executeQuery(env.DB, `UPDATE accounts SET ${updates.join(', ')} WHERE id = ?`, params);
+        }
       }
     }
 
@@ -315,7 +401,7 @@ async function updateProfile(request, env) {
     const updatedProfile = await queryFirst(
       env.DB,
       `
-        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain
+        SELECT p.id, p.public_profile, p.created_at, p.record, a.record as account_record, a.domain, a.username
         FROM profiles p
         JOIN accounts a ON p.id = a.id
         WHERE p.id = ?
@@ -333,6 +419,7 @@ async function updateProfile(request, env) {
         public_profile: updatedProfile.public_profile,
         name: accountData.name,
         email: accountData.email,
+        username: updatedProfile.username,
         custom_domain: updatedProfile.domain
       }
     }), {

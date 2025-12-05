@@ -17,6 +17,7 @@ function ProfilePage() {
 
   // Form state
   const [name, setName] = createSignal('');
+  const [username, setUsername] = createSignal('');
   const [bio, setBio] = createSignal('');
   const [customDomain, setCustomDomain] = createSignal('');
   const [website, setWebsite] = createSignal('');
@@ -44,6 +45,7 @@ function ProfilePage() {
 
         // Populate form with current profile data
         setName(profile?.name || user()?.name || '');
+        setUsername(profile?.username || user()?.username || '');
         setBio(profile?.bio || '');
         setCustomDomain(profile?.custom_domain || '');
         setWebsite(profile?.website || '');
@@ -97,6 +99,7 @@ function ProfilePage() {
     try {
       const profileData = {
         name: name().trim() || null,
+        username: username().trim() || null,
         bio: bio().trim() || null,
         customDomain: cleanCustomDomain(customDomain()),
         website: website().trim() || null,
@@ -261,6 +264,20 @@ function ProfilePage() {
               value={name()}
               onInput={(e) => setName(e.target.value)}
             />
+          </div>
+
+          <div class="form-group">
+            <label for="profile-username">Username</label>
+            <input
+              type="text"
+              id="profile-username"
+              placeholder="username (for prettier profile URLs)"
+              value={username()}
+              onInput={(e) => setUsername(e.target.value)}
+              pattern="[a-zA-Z0-9_-]+"
+              title="Username can only contain letters, numbers, underscores, and hyphens"
+            />
+            <small class="field-note">Optional: Choose a custom username for prettier profile URLs (e.g., artsite.ca/@yourusername)</small>
           </div>
 
           <div class="form-group">

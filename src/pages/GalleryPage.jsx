@@ -144,7 +144,7 @@ function GalleryPage() {
                 <Show when={artistInfo.avatar}>
                   <img src={artistInfo.avatar} alt={artistInfo.name} class="artist-avatar-small" />
                 </Show>
-                <a href={`/artist/${artwork.account_id}`} class="artist-name-link">
+                <a href={artwork.username ? `/@${artwork.username}` : `/artist/${artwork.account_id}`} class="artist-name-link">
                   {artistInfo.name}
                 </a>
               </div>

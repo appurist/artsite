@@ -17,8 +17,10 @@ function ArtistProfilePage() {
   const [error, setError] = createSignal(null);
 
   onMount(async () => {
-    if (!params.id) {
-      setError('No artist ID provided');
+    // Support both /artist/:id and /@:username routes
+    const identifier = params.id || params.username;
+    if (!identifier) {
+      setError('No artist identifier provided');
       setIsLoading(false);
       return;
     }
@@ -27,8 +29,11 @@ function ArtistProfilePage() {
       setIsLoading(true);
       setError(null);
 
+      // Add @ prefix for username route to match backend expectation
+      const lookupId = params.username ? `@${params.username}` : identifier;
+      
       // Load artist profile and their artworks
-      const artistData = await getArtistProfile(params.id);
+      const artistData = await getArtistProfile(lookupId);
       // Use the account ID from the artist profile for artwork lookup
       const artworksData = await getArtworks({ userId: artistData.id });
 

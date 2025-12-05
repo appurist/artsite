@@ -295,7 +295,7 @@ function ArtworkDetailPage() {
                         <Show when={getArtistInfo().avatar}>
                           <img src={getArtistInfo().avatar} alt={getArtistInfo().name} class="artist-avatar-small" />
                         </Show>
-                        <A href={`/artist/${artwork().account_id}`} class="artist-name-link">{getArtistInfo().name}</A>
+                        <A href={artwork().username ? `/@${artwork().username}` : `/artist/${artwork().account_id}`} class="artist-name-link">{getArtistInfo().name}</A>
                       </div>
                     </Show>
                   </div>
