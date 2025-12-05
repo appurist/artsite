@@ -463,9 +463,11 @@ async function restoreBackupImage(request, env, ctx) {
 
   } catch (error) {
     console.error('Restore image error:', error);
+    console.error('Error stack:', error.stack);
     return withCors(new Response(JSON.stringify({
       error: 'Failed to restore image',
-      details: error.message
+      details: error.message,
+      stack: error.stack
     }), {
       status: 500,
       headers: { 'Content-Type': 'application/json' }
