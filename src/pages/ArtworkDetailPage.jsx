@@ -343,7 +343,8 @@ function ArtworkDetailPage() {
                       <label>Keyboard Navigation:</label>
                       <div class="keyboard-shortcuts">
                         <small>← → Previous/Next</small><br/>
-                        <small>↑ Home First • ↓ End Last</small>
+                        <small>↑ Home First</small><br/>
+                        <small>↓ End Last</small>
                       </div>
                     </div>
                   </Show>
