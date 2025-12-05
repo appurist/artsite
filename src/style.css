@@ -1886,11 +1886,11 @@ input[type="file"]:focus {
 }
 
 .artwork-detail-image-section {
-  flex: 1;
+  flex: none;
+  width: calc(100% - 300px - 4rem); /* Total width minus sidebar (300px) minus gap (2rem) minus padding (2rem) */
   display: flex;
   align-items: center;
   justify-content: center;
-  min-width: 0; /* Allow flex item to shrink */
 }
 
 .artwork-detail-image-container {
