@@ -97,3 +97,4 @@ wrangler d1 execute artsite-prod --file=migrations/0001_initial.sql --env=produc
 - Production deployment requires confirmation for safety
 - Development environment can be deployed for bug fixes without confirmation
 - We cannot store API keys on git-tracked files, as some repos are public!!! This repo is public. The Images API token must be stored outside git.
+- Remember to increment the package.json's build number before each push. If it gets to 9, continue with 10 (e.g. 0.9.10, 0.9.11, etc)
