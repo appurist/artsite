@@ -134,7 +134,9 @@ function RestoreModal(props) {
               // Extract artwork ID from filename (format: art/images/{oldId}-{title}.jpg)
               const baseFileName = fileName.replace('art/images/', '');
               console.log(`Base filename: ${baseFileName}`);
-              const oldArtworkId = baseFileName.split('-')[0];
+              // Split on the first dash after the UUID (UUIDs have 4 dashes, so take first 5 parts)
+              const parts = baseFileName.split('-');
+              const oldArtworkId = parts.slice(0, 5).join('-'); // Full UUID: xxxx-xxxx-xxxx-xxxx-xxxx
               console.log(`Old artwork ID: ${oldArtworkId}`);
               const newArtworkId = metaResult.artworkIdMapping[oldArtworkId];
               console.log(`New artwork ID: ${newArtworkId}`);
