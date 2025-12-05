@@ -342,9 +342,9 @@ function ArtworkDetailPage() {
                     <div class="artwork-detail-field">
                       <label>Keyboard Navigation:</label>
                       <div class="keyboard-shortcuts">
-                        <small>← → Previous/Next</small><br/>
-                        <small>↑ Home First</small><br/>
-                        <small>↓ End Last</small>
+                        <small>← → = Previous/Next</small><br/>
+                        <small>↑ (or Home) = First</small><br/>
+                        <small>↓ (or End) = Last</small>
                       </div>
                     </div>
                   </Show>
