@@ -184,6 +184,7 @@ async function getProfile(request, env) {
       instagram: profileData.instagram,
       twitter: profileData.twitter,
       location: profileData.location,
+      username: profile.username,
       created_at: profile.created_at
     };
 
