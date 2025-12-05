@@ -1,7 +1,7 @@
 import { createSignal, createEffect, onMount, Show } from 'solid-js';
 import { useParams, A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
-import { getArtwork, deleteArtwork } from '../api.js';
+import { getArtwork, getArtworks, deleteArtwork } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
 import LoadingSpinner from '../components/Spinner';
 
@@ -18,6 +18,8 @@ function ArtworkDetailPage() {
   const [isLoading, setIsLoading] = createSignal(true);
   const [error, setError] = createSignal(null);
   const [isDeleting, setIsDeleting] = createSignal(false);
+  const [artistArtworks, setArtistArtworks] = createSignal([]);
+  const [currentIndex, setCurrentIndex] = createSignal(-1);
 
   // Load artwork details
   onMount(async () => {
@@ -34,6 +36,18 @@ function ArtworkDetailPage() {
       
       if (artworkData) {
         setArtwork(artworkData);
+        
+        // Load all artworks from this artist for navigation
+        try {
+          const artistWorksData = await getArtworks({ userId: artworkData.user_id });
+          setArtistArtworks(artistWorksData.artworks || []);
+          
+          // Find current artwork's index in the list
+          const index = (artistWorksData.artworks || []).findIndex(art => art.id === params.id);
+          setCurrentIndex(index);
+        } catch (navErr) {
+          console.warn('Could not load artist artworks for navigation:', navErr);
+        }
       } else {
         setError('Artwork not found');
       }
@@ -69,6 +83,29 @@ function ArtworkDetailPage() {
 
   const isOwner = () => {
     return artwork() && user() && artwork().user_id === user().id;
+  };
+
+  // Navigation helpers
+  const hasPrevious = () => {
+    return currentIndex() > 0;
+  };
+
+  const hasNext = () => {
+    return currentIndex() >= 0 && currentIndex() < artistArtworks().length - 1;
+  };
+
+  const goToPrevious = () => {
+    if (hasPrevious()) {
+      const prevArtwork = artistArtworks()[currentIndex() - 1];
+      navigate(`/art/${prevArtwork.id}`);
+    }
+  };
+
+  const goToNext = () => {
+    if (hasNext()) {
+      const nextArtwork = artistArtworks()[currentIndex() + 1];
+      navigate(`/art/${nextArtwork.id}`);
+    }
   };
 
   return (
@@ -118,6 +155,28 @@ function ArtworkDetailPage() {
                     alt={artwork().title}
                     class="artwork-detail-image"
                   />
+                  
+                  {/* Previous/Next navigation arrows */}
+                  <Show when={hasPrevious()}>
+                    <button 
+                      class="artwork-nav-arrow artwork-nav-prev"
+                      onClick={goToPrevious}
+                      title="Previous artwork"
+                    >
+                      ‹
+                    </button>
+                  </Show>
+                  
+                  <Show when={hasNext()}>
+                    <button 
+                      class="artwork-nav-arrow artwork-nav-next"
+                      onClick={goToNext}
+                      title="Next artwork"
+                    >
+                      ›
+                    </button>
+                  </Show>
+
                   <Show when={artwork().original_url}>
                     <div class="artwork-full-size-link">
                       <a 
@@ -207,6 +266,15 @@ function ArtworkDetailPage() {
                       {new Date(artwork().created_at).toLocaleDateString()}
                     </span>
                   </div>
+
+                  <Show when={artistArtworks().length > 1}>
+                    <div class="artwork-detail-field">
+                      <label>Gallery Position:</label>
+                      <span class="artwork-position">
+                        {currentIndex() + 1} of {artistArtworks().length}
+                      </span>
+                    </div>
+                  </Show>
                 </div>
 
                 <div class="artwork-detail-navigation">
