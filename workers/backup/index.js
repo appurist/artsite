@@ -607,21 +607,26 @@ async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', 
 
     console.log(`Deleting ${existingArtworks.length} existing artworks in replace mode`);
 
-    // Delete images from storage
-    for (const artwork of existingArtworks) {
-      if (artwork.storage_path) {
+    // Delete ALL files under artworks/{user_id}/ to avoid orphan files
+    const userArtworkPrefix = `artworks/${user.account_id}/`;
+    console.log(`Deleting all files with prefix: ${userArtworkPrefix}`);
+    
+    try {
+      // List all files for this user
+      const listResult = await env.ARTWORK_IMAGES.list({ prefix: userArtworkPrefix });
+      console.log(`Found ${listResult.objects?.length || 0} files to delete`);
+      
+      // Delete all files
+      for (const object of listResult.objects || []) {
         try {
-          await env.ARTWORK_IMAGES.delete(artwork.storage_path);
-          console.log(`Deleted image: ${artwork.storage_path}`);
+          await env.ARTWORK_IMAGES.delete(object.key);
+          console.log(`Deleted file: ${object.key}`);
         } catch (error) {
-          // 404/not found is success - file is already gone
-          if (error.message?.includes('404') || error.message?.includes('not found')) {
-            console.log(`File already deleted (continuing): ${artwork.storage_path}`);
-          } else {
-            console.warn(`Failed to delete image ${artwork.storage_path}:`, error);
-          }
+          console.warn(`Failed to delete file ${object.key}:`, error);
         }
       }
+    } catch (error) {
+      console.warn(`Failed to list/delete artwork files:`, error);
     }
 
     // Delete all artworks from database
