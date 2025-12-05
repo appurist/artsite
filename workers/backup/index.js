@@ -367,50 +367,43 @@ async function restoreBackupImage(request, env, ctx) {
     
     // Parse form data
     const formData = await request.formData();
-    const artworkId = formData.get('artwork_id');
+    const artworkMetadataStr = formData.get('artwork_metadata');
     const imageFile = formData.get('image');
     const originalFilename = formData.get('original_filename');
+    const restoreMode = formData.get('restore_mode') || 'add';
 
-    if (!artworkId || !imageFile) {
+    if (!artworkMetadataStr || !imageFile) {
       return withCors(new Response(JSON.stringify({ 
-        error: 'Missing artwork_id or image file' 
+        error: 'Missing artwork_metadata or image file' 
       }), {
         status: 400,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
 
-    // Verify artwork belongs to user
-    console.log(`Looking for artwork ID: ${artworkId} for user: ${user.account_id}`);
-    const artwork = await queryFirst(env.DB, 
-      'SELECT id, account_id FROM artworks WHERE id = ? AND account_id = ?',
-      [artworkId, user.account_id]
-    );
-    console.log(`Artwork found:`, artwork);
-
-    if (!artwork) {
-      // Additional debugging - check if artwork exists for any user
-      const anyArtwork = await queryFirst(env.DB, 'SELECT id, account_id FROM artworks WHERE id = ?', [artworkId]);
-      console.log(`Artwork exists for any user:`, anyArtwork);
-      
+    // Parse artwork metadata from backup
+    let artworkData;
+    try {
+      artworkData = JSON.parse(artworkMetadataStr);
+    } catch (parseError) {
       return withCors(new Response(JSON.stringify({ 
-        error: 'Artwork not found or access denied',
-        debug: { 
-          artworkId, 
-          userId: user.account_id, 
-          anyArtwork: !!anyArtwork,
-          anyArtworkDetails: anyArtwork || null 
-        }
+        error: 'Invalid artwork metadata JSON' 
       }), {
-        status: 404,
+        status: 400,
         headers: { 'Content-Type': 'application/json' }
       }));
     }
 
+    console.log(`Creating artwork: ${artworkData.title} for user: ${user.account_id}`);
+
+    // Generate new artwork ID (never trust IDs from backup)
+    const newArtworkId = generateId();
+    const now = getCurrentTimestamp();
+
     // Process and upload image  
     const imageBuffer = await imageFile.arrayBuffer();
     // Simple approach: use artwork ID as filename since each artwork has its own folder
-    const storage_path = `artworks/${user.account_id}/${artworkId}.jpg`;
+    const storage_path = `artworks/${user.account_id}/${newArtworkId}.jpg`;
     
     // Store original image in R2
     await env.ARTWORK_IMAGES.put(storage_path, imageBuffer, {
@@ -419,17 +412,39 @@ async function restoreBackupImage(request, env, ctx) {
     
     const image_url = `${env.ARTWORK_IMAGES_BASE_URL}/${storage_path}`;
 
-    // Update artwork with image info
-    const now = getCurrentTimestamp();
+    // Create new artwork record with image
+    console.log(`Creating artwork record with ID: ${newArtworkId}`);
     await executeQuery(env.DB, `
-      UPDATE artworks SET 
-        image_url = ?, storage_path = ?, updated_at = ?
-      WHERE id = ? AND account_id = ?
-    `, [image_url, storage_path, now, artworkId, user.account_id]);
+      INSERT INTO artworks (
+        id, account_id, title, description, medium, dimensions, 
+        year_created, price, tags, image_url, thumbnail_url, display_url, original_url, storage_path,
+        status, created_at, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `, [
+      newArtworkId,
+      user.account_id,
+      artworkData.title,
+      artworkData.description,
+      artworkData.medium,
+      artworkData.dimensions,
+      artworkData.year_created,
+      artworkData.price,
+      JSON.stringify(artworkData.tags || []),
+      image_url,
+      image_url, // Use same image for thumbnail initially
+      image_url, // Use same image for display initially
+      image_url, // Use same image for original initially
+      storage_path,
+      'published',
+      now,
+      now
+    ]);
+
+    console.log(`✅ Successfully created artwork: ${newArtworkId} for title: ${artworkData.title}`);
 
     // Queue for Cloudflare Images optimization
     await queueImageOptimization(env, {
-      artworkId: artworkId,
+      artworkId: newArtworkId,
       accountId: user.account_id,
       imagePath: storage_path,
       imageUrl: image_url,
@@ -437,10 +452,11 @@ async function restoreBackupImage(request, env, ctx) {
     });
 
     return withCors(new Response(JSON.stringify({
-      message: 'Image restored successfully',
-      artwork_id: artworkId,
+      success: true,
+      message: 'Artwork created successfully',
+      artwork_id: newArtworkId,
       image_url: image_url,
-      storage_path: storage_path
+      title: artworkData.title
     }), {
       headers: { 'Content-Type': 'application/json' }
     }));
