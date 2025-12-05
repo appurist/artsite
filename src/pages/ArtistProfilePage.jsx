@@ -19,6 +19,8 @@ function ArtistProfilePage() {
   onMount(async () => {
     // Support both /artist/:id and /@:username routes
     const identifier = params.id || params.username;
+    console.log('ArtistProfilePage params:', { id: params.id, username: params.username, identifier });
+    
     if (!identifier) {
       setError('No artist identifier provided');
       setIsLoading(false);
@@ -31,6 +33,7 @@ function ArtistProfilePage() {
 
       // Add @ prefix for username route to match backend expectation
       const lookupId = params.username ? `@${params.username}` : identifier;
+      console.log('ArtistProfilePage lookupId:', lookupId);
       
       // Load artist profile and their artworks
       const artistData = await getArtistProfile(lookupId);
