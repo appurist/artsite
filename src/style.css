@@ -1879,9 +1879,10 @@ input[type="file"]:focus {
   max-width: 100%;
   width: 100%;
   margin: 0 auto;
-  padding: 0;
+  padding: 1rem;
   min-height: calc(100vh - 120px); /* Minimal space for header and footer */
   box-sizing: border-box;
+  overflow: hidden; /* Prevent horizontal overflow */
 }
 
 .artwork-detail-image-section {
@@ -1899,12 +1900,14 @@ input[type="file"]:focus {
   box-shadow: 0 4px 8px var(--shadow-color);
   position: relative;
   width: 100%;
-  height: calc(100vh - 100px); /* Minimal space for header and footer */
+  height: calc(100vh - 120px); /* Minimal space for header and footer */
+  max-width: 100%;
   margin: 0px;
   padding: 0px;
   display: flex;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
 }
 
 .artwork-detail-image {
