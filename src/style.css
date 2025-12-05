@@ -1940,7 +1940,8 @@ input[type="file"]:focus {
 }
 
 .artwork-detail-info-section {
-  flex: 1;
+  flex: none;
+  width: 300px;
   min-width: 300px;
 }
 
