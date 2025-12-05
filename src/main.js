@@ -2058,6 +2058,12 @@ async function handleDeleteAllImages() {
     return;
   }
 
+  // Find the delete all button and show loading state
+  const deleteButton = event.target;
+  const originalText = deleteButton.textContent;
+  deleteButton.disabled = true;
+  deleteButton.textContent = 'Deleting All Images...';
+
   try {
     const token = localStorage.getItem('token');
     if (!token) {
@@ -2076,6 +2082,10 @@ async function handleDeleteAllImages() {
   } catch (error) {
     console.error('Error deleting all images:', error);
     alert('Failed to delete all images: ' + error.message);
+  } finally {
+    // Restore button state
+    deleteButton.disabled = false;
+    deleteButton.textContent = originalText;
   }
 }
 
