@@ -15,6 +15,7 @@ import ProfilePage from './pages/ProfilePage';
 import AboutPage from './pages/AboutPage';
 
 function App() {
+  console.log('App component loaded, current URL:', window.location.href);
   return (
     <AuthProvider>
       <SettingsProvider>
