@@ -391,7 +391,12 @@ async function restoreBackupImage(request, env, ctx) {
       
       return withCors(new Response(JSON.stringify({ 
         error: 'Artwork not found or access denied',
-        debug: { artworkId, userId: user.account_id, anyArtwork: !!anyArtwork }
+        debug: { 
+          artworkId, 
+          userId: user.account_id, 
+          anyArtwork: !!anyArtwork,
+          anyArtworkDetails: anyArtwork || null 
+        }
       }), {
         status: 404,
         headers: { 'Content-Type': 'application/json' }

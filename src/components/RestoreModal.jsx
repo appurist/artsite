@@ -166,6 +166,9 @@ function RestoreModal(props) {
                 if (!imageResponse.ok) {
                   const imageError = await imageResponse.json();
                   console.warn(`❌ Failed to restore image for artwork ${newArtworkId}:`, imageError.error);
+                  if (imageError.debug) {
+                    console.warn(`Debug info:`, imageError.debug);
+                  }
                 } else {
                   console.log(`✅ Successfully restored image for artwork ${newArtworkId}`);
                 }
