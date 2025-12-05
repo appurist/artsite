@@ -417,9 +417,9 @@ async function restoreBackupImage(request, env, ctx) {
     await executeQuery(env.DB, `
       INSERT INTO artworks (
         id, account_id, title, description, medium, dimensions, 
-        year_created, price, tags, image_url, thumbnail_url, display_url, original_url, storage_path,
+        year_created, price, tags, image_url, thumbnail_url, storage_path,
         status, created_at, updated_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `, [
       newArtworkId,
       user.account_id,
@@ -432,8 +432,6 @@ async function restoreBackupImage(request, env, ctx) {
       JSON.stringify(artworkData.tags || []),
       image_url,
       image_url, // Use same image for thumbnail initially
-      image_url, // Use same image for display initially
-      image_url, // Use same image for original initially
       storage_path,
       'published',
       now,
