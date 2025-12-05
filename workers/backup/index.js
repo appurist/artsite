@@ -314,9 +314,9 @@ async function restoreBackupMeta(request, env, ctx) {
             const restoreResult = await component.restoreMetaHandler(user, env, entries, restoreMode, artworkIdMapping);
             restoreResults[componentKey] = { success: true, ...restoreResult };
           } else if (componentKey === 'artworks') {
-            // Special handling for artworks metadata
-            const restoreResult = await restoreArtworksMetaOnly(user, env, entries, restoreMode, artworkIdMapping);
-            restoreResults[componentKey] = { success: true, ...restoreResult };
+            // Artworks are handled during image restore, not metadata restore
+            // Just track that artworks component was requested
+            restoreResults[componentKey] = { success: true, message: 'Artworks will be created during image upload' };
           } else if (componentKey === 'settings') {
             const restoreResult = await restoreSettingsComponent(user, env, entries, restoreMode);
             restoreResults[componentKey] = { success: true, ...restoreResult };
@@ -333,12 +333,16 @@ async function restoreBackupMeta(request, env, ctx) {
       }
     }
 
-    return withCors(new Response(JSON.stringify({
+    const responseData = {
       message: 'Metadata restore completed',
       results: restoreResults,
       artworkIdMapping: artworkIdMapping,
       backup_date: backupMetadata.export_date
-    }), {
+    };
+    
+    console.log('Final metadata restore response:', responseData);
+    
+    return withCors(new Response(JSON.stringify(responseData), {
       headers: { 'Content-Type': 'application/json' }
     }));
 
@@ -710,9 +714,11 @@ async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', 
       }
 
       restored++;
+      console.log(`✅ Artwork ${newArtworkId} created and restored++. Total so far: ${restored}`);
     } catch (error) {
-      console.error(`Failed to restore artwork metadata ${artwork.id}:`, error);
+      console.error(`❌ Failed to restore artwork metadata ${artwork.id}:`, error);
       skipped++;
+      console.log(`Skipped artwork ${artwork.id}. Total skipped so far: ${skipped}`);
     }
   }
 

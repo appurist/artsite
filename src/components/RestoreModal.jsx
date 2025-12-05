@@ -106,13 +106,16 @@ function RestoreModal(props) {
       // Step 3: Extract images from already-loaded ZIP and restore them one by one  
       console.log('About to check condition...');
       const hasArtworks = selectedComponents().includes('artworks');
-      const hasMapping = !!metaResult.artworkIdMapping;
-      const mappingNotEmpty = Object.keys(metaResult.artworkIdMapping || {}).length > 0;
-      console.log('Condition parts:', { hasArtworks, hasMapping, mappingNotEmpty });
+      const hasArtworkData = !!entries['art/artworks.json'];
+      console.log('Condition parts:', { hasArtworks, hasArtworkData });
       
-      if (hasArtworks && hasMapping && mappingNotEmpty) {
+      if (hasArtworks && hasArtworkData) {
         console.log('✅ All conditions met, starting image restore...');
         updateRestoreProgress('Extracting images from backup...', 40);
+        
+        // Parse artwork metadata to match with images
+        const artworksData = JSON.parse(entries['art/artworks.json']);
+        console.log(`Found ${artworksData.length} artworks in metadata`);
         
         const artworkImages = [];
         
@@ -138,19 +141,22 @@ function RestoreModal(props) {
               const parts = baseFileName.split('-');
               const oldArtworkId = parts.slice(0, 5).join('-'); // Full UUID: xxxx-xxxx-xxxx-xxxx-xxxx
               console.log(`Old artwork ID: ${oldArtworkId}`);
-              const newArtworkId = metaResult.artworkIdMapping[oldArtworkId];
-              console.log(`New artwork ID: ${newArtworkId}`);
               
-              if (newArtworkId) {
-                console.log(`✅ Uploading image for artwork ${newArtworkId}...`);
+              // Find the corresponding artwork metadata
+              const artworkData = artworksData.find(artwork => artwork.id === oldArtworkId);
+              console.log(`Artwork metadata:`, artworkData);
+              
+              if (artworkData) {
+                console.log(`✅ Uploading image and creating artwork: ${artworkData.title}`);
                 // Get image data
                 const imageBlob = await zipFile.async('blob');
                 
-                // Create form data for image restore
+                // Create form data for image restore (now includes artwork metadata)
                 const imageFormData = new FormData();
-                imageFormData.append('artwork_id', newArtworkId);
+                imageFormData.append('artwork_metadata', JSON.stringify(artworkData));
                 imageFormData.append('image', imageBlob);
                 imageFormData.append('original_filename', baseFileName);
+                imageFormData.append('restore_mode', restoreMode());
 
                 // Restore this image
                 console.log(`Making API call to /api/backup/restore-image...`);
@@ -165,15 +171,16 @@ function RestoreModal(props) {
                 console.log(`Image restore response status: ${imageResponse.status}`);
                 if (!imageResponse.ok) {
                   const imageError = await imageResponse.json();
-                  console.warn(`❌ Failed to restore image for artwork ${newArtworkId}:`, imageError.error);
+                  console.warn(`❌ Failed to restore image for artwork ${artworkData.title}:`, imageError.error);
                   if (imageError.debug) {
                     console.warn(`Debug info:`, imageError.debug);
                   }
                 } else {
-                  console.log(`✅ Successfully restored image for artwork ${newArtworkId}`);
+                  const result = await imageResponse.json();
+                  console.log(`✅ Successfully created artwork ${artworkData.title} with ID: ${result.artwork_id}`);
                 }
               } else {
-                console.warn(`❌ No new artwork ID found for old ID: ${oldArtworkId}`);
+                console.warn(`❌ No artwork metadata found for old ID: ${oldArtworkId}`);
               }
             } catch (error) {
               console.warn(`❌ Failed to process image ${fileName}:`, error);
