@@ -2,6 +2,7 @@ import { createSignal, onMount, Show } from 'solid-js';
 import { useParams, A } from '@solidjs/router';
 import { getArtistProfile, getArtworks } from '../api.js';
 import LoadingSpinner from '../components/Spinner';
+import { getAvatarUrl } from '../avatar-utils.js';
 
 // Import icons
 import homeIcon from '../assets/icons/home.svg';
@@ -27,10 +28,12 @@ function ArtistProfilePage() {
       setError(null);
 
       // Load artist profile and their artworks
-      const [artistData, artworksData] = await Promise.all([
-        getArtistProfile(params.id),
-        getArtworks({ userId: params.id })
-      ]);
+      const artistData = await getArtistProfile(params.id);
+      // Use the account ID from the artist profile for artwork lookup
+      const artworksData = await getArtworks({ userId: artistData.id });
+
+      // Update the artist data with the actual artwork count
+      artistData.artwork_count = artworksData.length;
 
       setArtist(artistData);
       setArtworks(artworksData);
@@ -114,11 +117,9 @@ function ArtistProfilePage() {
             <div class="artist-profile-container">
               {/* Artist Header */}
               <div class="artist-profile-header">
-                <Show when={artist().avatar_url}>
-                  <div class="artist-avatar-section">
-                    <img src={artist().avatar_url} alt={artist().name} class="artist-avatar" />
-                  </div>
-                </Show>
+                <div class="artist-avatar-section">
+                  <img src={getAvatarUrl({ name: artist().name }, artist())} alt={artist().name} class="artist-avatar" />
+                </div>
                 <div class="artist-info-section">
                   <h1 class="artist-name">{artist().name}</h1>
                   <div class="artist-stats">

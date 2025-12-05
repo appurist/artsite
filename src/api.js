@@ -5,9 +5,24 @@
 
 // For production: same origin (empty string)
 // For local dev: explicit backend URL
-const API_BASE_URL = window.location.hostname === 'localhost' || window.location.hostname.endsWith('.local')
-  ? 'http://localhost:8787'
-  : '';
+// For dev-prod mode: use production backend from localhost frontend
+const API_BASE_URL = (() => {
+  const hostname = window.location.hostname;
+  const isLocal = hostname === 'localhost' || hostname.endsWith('.local');
+  
+  // Check for dev-prod mode (environment variable set by build)
+  if (isLocal && import.meta.env.VITE_USE_PROD_BACKEND === 'true') {
+    return 'https://artsite.ca';
+  }
+  
+  // Standard local dev with local backend
+  if (isLocal) {
+    return 'http://localhost:8787';
+  }
+  
+  // Production - same origin
+  return '';
+})();
 
 export { API_BASE_URL };
 
@@ -198,8 +213,19 @@ export async function getArtwork(id) {
  * Get public artist profile by ID
  */
 export async function getArtistProfile(id) {
-  const response = await apiRequest(`/api/artist/${id}`);
-  return response.artist;
+  const response = await apiRequest(`/api/profiles/${id}`);
+  // Map profile response to expected artist format
+  const profile = response.profile;
+  return {
+    id: profile.account_id,
+    name: profile.display_name,
+    bio: profile.bio,
+    avatar_url: profile.avatar_url,
+    avatar_type: profile.avatar_type,
+    website: profile.website,
+    location: profile.location,
+    artwork_count: 0 // We'll fetch this separately if needed
+  };
 }
 
 /**

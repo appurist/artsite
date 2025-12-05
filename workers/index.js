@@ -115,6 +115,7 @@ export default {
       }
       
       if (path.startsWith('/api/artist/')) {
+        console.log('Routing to artist handler for path:', path);
         return await handleArtist(request, env, ctx);
       }
       

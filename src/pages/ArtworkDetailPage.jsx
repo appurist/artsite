@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { getArtwork, getArtworks, deleteArtwork } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
 import LoadingSpinner from '../components/Spinner';
+import { getAvatarUrl } from '../avatar-utils.js';
 
 // Import icons
 import pencilIcon from '../assets/icons/pencil.svg';
@@ -135,15 +136,32 @@ function ArtworkDetailPage() {
     return artwork() && user() && artwork().user_id === user().id;
   };
 
-  // Extract artist name from profile record
-  const getArtistName = () => {
+  // Extract artist info from profile record
+  const getArtistInfo = () => {
     if (!artwork()?.profile_record) return null;
     try {
       const profile = JSON.parse(artwork().profile_record);
-      return profile.name || profile.display_name || profile.artist_name || null;
+      const name = profile.name || profile.display_name || profile.artist_name || null;
+      
+      if (!name) return null;
+      
+      // Create a user object for avatar generation
+      const user = { name: name };
+      const avatarUrl = getAvatarUrl(user, profile);
+      
+      return {
+        name: name,
+        avatar: avatarUrl
+      };
     } catch {
       return null;
     }
+  };
+
+  // Extract artist name from profile record (legacy function)
+  const getArtistName = () => {
+    const artistInfo = getArtistInfo();
+    return artistInfo?.name || null;
   };
 
   // Navigation helpers
@@ -270,12 +288,17 @@ function ArtworkDetailPage() {
 
               <div class="artwork-detail-info-section">
                 <div class="artwork-detail-header">
-                  <h1 class="artwork-detail-title">{artwork().title}</h1>
-                  <Show when={getArtistName()}>
-                    <p class="artwork-detail-artist">
-                      by <A href={`/artist/${artwork().user_id}`} class="artist-name-link">{getArtistName()}</A>
-                    </p>
-                  </Show>
+                  <div class="artwork-detail-title-section">
+                    <h1 class="artwork-detail-title">{artwork().title}</h1>
+                    <Show when={getArtistInfo()}>
+                      <div class="artwork-detail-artist">
+                        <Show when={getArtistInfo().avatar}>
+                          <img src={getArtistInfo().avatar} alt={getArtistInfo().name} class="artist-avatar-small" />
+                        </Show>
+                        <A href={`/artist/${artwork().account_id}`} class="artist-name-link">{getArtistInfo().name}</A>
+                      </div>
+                    </Show>
+                  </div>
                   <Show when={isOwner()}>
                     <div class="artwork-detail-actions">
                       <button 

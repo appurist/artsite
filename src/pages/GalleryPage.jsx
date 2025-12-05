@@ -2,6 +2,7 @@ import { createSignal, createEffect, Show } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { getArtworks, getCustomDomainUserSettings } from '../api.js';
 import { useSettings } from '../contexts/SettingsContext';
+import { getAvatarUrl } from '../avatar-utils.js';
 
 function GalleryPage() {
   const params = useParams();
@@ -109,9 +110,15 @@ function GalleryPage() {
       if (!artwork.profile_record) return null;
       try {
         const profile = JSON.parse(artwork.profile_record);
+        const name = profile.name || profile.display_name || null;
+        
+        // Create a user object for avatar generation
+        const user = { name: name };
+        const avatarUrl = getAvatarUrl(user, profile);
+        
         return {
-          name: profile.name || profile.display_name || null,
-          avatar: profile.avatar_url || null
+          name: name,
+          avatar: avatarUrl
         };
       } catch {
         return null;
@@ -137,7 +144,7 @@ function GalleryPage() {
                 <Show when={artistInfo.avatar}>
                   <img src={artistInfo.avatar} alt={artistInfo.name} class="artist-avatar-small" />
                 </Show>
-                <a href={`/artist/${artwork.user_id}`} class="artist-name-link">
+                <a href={`/artist/${artwork.account_id}`} class="artist-name-link">
                   {artistInfo.name}
                 </a>
               </div>

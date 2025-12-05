@@ -64,7 +64,7 @@ function ProfilePage() {
   const currentProfile = () => {
     const loadedProfile = profile();
     if (!loadedProfile) return null;
-    
+
     return {
       ...loadedProfile,
       avatar_type: avatarType(),
@@ -78,15 +78,15 @@ function ProfilePage() {
   // Function to clean custom domain input
   const cleanCustomDomain = (domain) => {
     if (!domain || !domain.trim()) return null;
-    
+
     let cleaned = domain.trim();
-    
+
     // Remove http:// or https:// prefix
     cleaned = cleaned.replace(/^https?:\/\//, '');
-    
+
     // Remove trailing slash and any path
     cleaned = cleaned.split('/')[0];
-    
+
     return cleaned || null;
   };
 
@@ -153,7 +153,7 @@ function ProfilePage() {
       // Add cache-busting parameter to force browser to reload the image
       const avatarUrlWithCacheBust = `${result.avatar_url}?t=${Date.now()}`;
       setAvatarUrl(avatarUrlWithCacheBust);
-      
+
       vanillaToast.success('Avatar uploaded successfully!', { duration: 5000 });
     } catch (error) {
       console.error('Error uploading avatar:', error);
@@ -275,7 +275,7 @@ function ProfilePage() {
           </div>
 
           <div class="form-group">
-            <label for="profile-website">External Website</label>
+            <label for="profile-website">Website</label>
             <input
               type="url"
               id="profile-website"

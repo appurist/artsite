@@ -588,10 +588,10 @@ body {
 /* Gallery header */
 .gallery-header {
   text-align: center;
-  padding: 3rem 2rem;
+  padding: 1rem 2rem;
   background: var(--gallery-header-bg);
   width: 100%;
-  margin-bottom: 3rem;
+  margin-bottom: 0;
 }
 
 .gallery-title {
@@ -753,15 +753,9 @@ body {
 .artwork-details {
   text-align: center;
   background: transparent;
-  padding: 1rem 0;
+  padding: 0;
 }
 
-.artwork-title {
-  font-size: 1.1rem;
-  font-weight: 600;
-  margin-bottom: 0.25rem;
-  color: var(--primary-color);
-}
 
 .artwork-tags {
   margin-top: 0.5rem;
@@ -818,7 +812,7 @@ body {
   font-size: 2rem;
   font-weight: 500;
   color: var(--primary-color);
-  margin: 0 0 1.5rem 0;
+  margin: 0;
   line-height: 1.2;
 }
 
@@ -885,6 +879,7 @@ body {
 .artwork-artist-info {
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
   margin: 0.5rem 0;
 }
@@ -895,6 +890,12 @@ body {
   border-radius: 50%;
   object-fit: cover;
   border: 1px solid var(--border-color);
+}
+
+/* Gallery page specific avatar size */
+.gallery-grid .artist-avatar-small {
+  width: 24px;
+  height: 24px;
 }
 
 .artist-name-link {
@@ -2144,6 +2145,12 @@ input[type="file"]:focus {
   gap: 1rem;
 }
 
+.artwork-detail-title-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .artwork-detail-title {
   font-size: 2rem;
   font-weight: 700;
@@ -2153,9 +2160,11 @@ input[type="file"]:focus {
 }
 
 .artwork-detail-artist {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
   font-size: 1.1rem;
   color: var(--text-muted);
-  font-style: italic;
   margin: 0.25rem 0 1rem 0;
 }
 
