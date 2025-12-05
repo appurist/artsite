@@ -6,15 +6,15 @@ import { getAvatarUrl } from '../avatar-utils.js';
 
 function GalleryPage() {
   const params = useParams();
-  const { customDomainUser, siteTitle } = useSettings();
+  const { customDomainUser, siteTitle, primaryColor, secondaryColor } = useSettings();
   const [artworks, setArtworks] = createSignal([]);
   const [isLoading, setIsLoading] = createSignal(true);
   const [error, setError] = createSignal(null);
   const [userDisplayName, setUserDisplayName] = createSignal(null);
   const [galleryDescription, setGalleryDescription] = createSignal(null);
   const [artistBio, setArtistBio] = createSignal(null);
-  const [primaryColor, setPrimaryColor] = createSignal(null);
-  const [secondaryColor, setSecondaryColor] = createSignal(null);
+  const [localPrimaryColor, setLocalPrimaryColor] = createSignal(null);
+  const [localSecondaryColor, setLocalSecondaryColor] = createSignal(null);
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
@@ -60,8 +60,8 @@ function GalleryPage() {
       setUserDisplayName(null);
       setGalleryDescription(null);
       setArtistBio(null);
-      setPrimaryColor(null);
-      setSecondaryColor(null);
+      setLocalPrimaryColor(null);
+      setLocalSecondaryColor(null);
 
       try {
         // Load artworks
@@ -71,6 +71,7 @@ function GalleryPage() {
         setArtworks(fetchedArtworks);
 
         // Load user display name and gallery settings if we have a specific user
+        // For custom domains, colors are loaded by SettingsContext
         if (currentUser) {
           try {
             const settings = await getCustomDomainUserSettings(currentUser);
@@ -83,11 +84,14 @@ function GalleryPage() {
             if (settings?.artist_bio) {
               setArtistBio(settings.artist_bio);
             }
-            if (settings?.primary_color) {
-              setPrimaryColor(settings.primary_color);
-            }
-            if (settings?.secondary_color) {
-              setSecondaryColor(settings.secondary_color);
+            // Only load colors locally if this is NOT a custom domain user
+            if (customDomainUser() !== currentUser) {
+              if (settings?.primary_color) {
+                setLocalPrimaryColor(settings.primary_color);
+              }
+              if (settings?.secondary_color) {
+                setLocalSecondaryColor(settings.secondary_color);
+              }
             }
           } catch (settingsError) {
             console.log('Could not load user display name:', settingsError);
@@ -101,6 +105,23 @@ function GalleryPage() {
       }
     })();
   });
+
+  // Get effective colors (context for custom domains, local for user galleries)
+  const getEffectivePrimaryColor = () => {
+    const currentUser = getCurrentUser();
+    if (customDomainUser() === currentUser) {
+      return primaryColor();
+    }
+    return localPrimaryColor();
+  };
+
+  const getEffectiveSecondaryColor = () => {
+    const currentUser = getCurrentUser();
+    if (customDomainUser() === currentUser) {
+      return secondaryColor();
+    }
+    return localSecondaryColor();
+  };
 
   const createArtworkCard = (artwork) => {
     const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
@@ -138,7 +159,7 @@ function GalleryPage() {
             </div>
           </div>
           <div class="artwork-details">
-            <h3 class="artwork-title" style={primaryColor() ? `color: ${primaryColor()}` : undefined}>{artwork.title}</h3>
+            <h3 class="artwork-title" style={getEffectivePrimaryColor() ? `color: ${getEffectivePrimaryColor()}` : undefined}>{artwork.title}</h3>
             <Show when={showArtistInfo}>
               <div class="artwork-artist-info">
                 <Show when={artistInfo.avatar}>
@@ -162,7 +183,7 @@ function GalleryPage() {
             <Show when={artwork.tags}>
               <div class="artwork-tags">
                 {artwork.tags.split(',').map(tag => 
-                  <span class="tag-pill" style={secondaryColor() ? `background-color: ${secondaryColor()}; color: white` : undefined}>{tag.replace(/"/g, '').trim()}</span>
+                  <span class="tag-pill" style={getEffectiveSecondaryColor() ? `background-color: ${getEffectiveSecondaryColor()}; color: white` : undefined}>{tag.replace(/"/g, '').trim()}</span>
                 )}
               </div>
             </Show>

@@ -7,6 +7,8 @@ export function SettingsProvider(props) {
   const [settings, setSettings] = createSignal({});
   const [customDomainUser, setCustomDomainUser] = createSignal(undefined);
   const [siteTitle, setSiteTitle] = createSignal(window.location.hostname);
+  const [primaryColor, setPrimaryColor] = createSignal(null);
+  const [secondaryColor, setSecondaryColor] = createSignal(null);
 
   // Load custom domain user and settings on mount
   createEffect(() => {
@@ -15,12 +17,18 @@ export function SettingsProvider(props) {
         const currentCustomDomainUser = await getCustomDomainUser();
         setCustomDomainUser(currentCustomDomainUser);
 
-        // Load site title based on custom domain mode
+        // Load site title and colors based on custom domain mode
         if (currentCustomDomainUser) {
           const customDomainSettings = await getCustomDomainUserSettings(currentCustomDomainUser);
           if (customDomainSettings?.site_title) {
             setSiteTitle(customDomainSettings.site_title);
             document.title = customDomainSettings.site_title;
+          }
+          if (customDomainSettings?.primary_color) {
+            setPrimaryColor(customDomainSettings.primary_color);
+          }
+          if (customDomainSettings?.secondary_color) {
+            setSecondaryColor(customDomainSettings.secondary_color);
           }
         } else {
           document.title = window.location.hostname;
@@ -48,6 +56,10 @@ export function SettingsProvider(props) {
     customDomainUser,
     siteTitle,
     setSiteTitle,
+    primaryColor,
+    setPrimaryColor,
+    secondaryColor,
+    setSecondaryColor,
     loadSettings
   };
 
