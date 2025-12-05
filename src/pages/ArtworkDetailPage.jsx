@@ -73,7 +73,6 @@ function ArtworkDetailPage() {
   createEffect(() => {
     const artworkId = params.id;
     if (artworkId && artwork() && artworkId !== artwork().id) {
-      console.log('Route changed, reloading artwork data for:', artworkId);
       loadArtworkData(artworkId);
     }
   });
