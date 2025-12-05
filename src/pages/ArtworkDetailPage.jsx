@@ -45,8 +45,9 @@ function ArtworkDetailPage() {
           const userId = artworkData.user_id || artworkData.account_id;
           console.log('Using userId for navigation:', userId);
           
-          const artistWorksData = await getArtworks({ userId });
-          const artworks = artistWorksData.artworks || [];
+          console.log('About to call getArtworks with userId:', userId);
+          const artworks = await getArtworks({ userId });
+          console.log('getArtworks returned:', artworks);
           setArtistArtworks(artworks);
           
           // Find current artwork's index in the list

@@ -182,7 +182,9 @@ export async function getArtworks(options = {}) {
   const query = params.toString();
   const endpoint = query ? `/api/artworks?${query}` : '/api/artworks';
 
+  console.log('getArtworks: calling', endpoint);
   const response = await apiRequest(endpoint);
+  console.log('getArtworks: response', response);
   return response.artworks || [];
 }
 
