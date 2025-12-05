@@ -97,11 +97,14 @@ function RestoreModal(props) {
       console.log('artworkIdMapping:', metaResult.artworkIdMapping);
       console.log('artworkIdMapping exists:', !!metaResult.artworkIdMapping);
       console.log('artworkIdMapping size:', Object.keys(metaResult.artworkIdMapping || {}).length);
+      console.log('Condition check - includes artworks:', selectedComponents().includes('artworks'));
+      console.log('Condition check - has mapping:', !!metaResult.artworkIdMapping);
+      console.log('Condition check - mapping not empty:', Object.keys(metaResult.artworkIdMapping || {}).length > 0);
       
       updateRestoreProgress('Metadata restored successfully', 30);
 
       // Step 3: Extract images from already-loaded ZIP and restore them one by one
-      if (selectedComponents().includes('artworks') && metaResult.artworkIdMapping) {
+      if (selectedComponents().includes('artworks') && metaResult.artworkIdMapping && Object.keys(metaResult.artworkIdMapping).length > 0) {
         updateRestoreProgress('Extracting images from backup...', 40);
         
         const artworkImages = [];
