@@ -274,7 +274,7 @@ function ProfilePage() {
               placeholder="username (for prettier profile URLs)"
               value={username()}
               onInput={(e) => setUsername(e.target.value)}
-              pattern="[a-zA-Z0-9_-]+"
+              pattern="[a-zA-Z0-9_-]{1,30}"
               title="Username can only contain letters, numbers, underscores, and hyphens"
             />
             <small class="field-note">Optional: Choose a custom username for prettier profile URLs (e.g., artsite.ca/@yourusername)</small>

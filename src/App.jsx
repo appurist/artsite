@@ -20,7 +20,6 @@ function App() {
       <SettingsProvider>
         <Router root={Layout}>
           <Route path="/" component={GalleryPage} />
-          <Route path="/@:userId" component={GalleryPage} />
           <Route path="/login" component={LoginPage} />
           <Route path="/register" component={RegisterPage} />
           <Route path="/art" component={ArtPage} />
