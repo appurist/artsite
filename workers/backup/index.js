@@ -670,31 +670,38 @@ async function restoreArtworksMetaOnly(user, env, entries, restoreMode = 'add', 
         continue;
       } else {
         // Insert new artwork record (no images yet)
-        await executeQuery(env.DB, `
-          INSERT INTO artworks (
-            id, account_id, title, description, medium, dimensions, 
-            year_created, price, tags, image_url, thumbnail_url, display_url, original_url, storage_path,
-            status, created_at, updated_at
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `, [
-          newArtworkId,
-          user.account_id,
-          artwork.title,
-          artwork.description,
-          artwork.medium,
-          artwork.dimensions,
-          artwork.year_created,
-          artwork.price,
-          JSON.stringify(artwork.tags || []),
-          null, // image_url - will be set during image restoration
-          null, // thumbnail_url
-          null, // display_url
-          null, // original_url
-          null, // storage_path
-          'published',
-          now,
-          now
-        ]);
+        console.log(`Creating artwork: ${newArtworkId} for title: "${artwork.title}"`);
+        try {
+          await executeQuery(env.DB, `
+            INSERT INTO artworks (
+              id, account_id, title, description, medium, dimensions, 
+              year_created, price, tags, image_url, thumbnail_url, display_url, original_url, storage_path,
+              status, created_at, updated_at
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          `, [
+            newArtworkId,
+            user.account_id,
+            artwork.title,
+            artwork.description,
+            artwork.medium,
+            artwork.dimensions,
+            artwork.year_created,
+            artwork.price,
+            JSON.stringify(artwork.tags || []),
+            null, // image_url - will be set during image restoration
+            null, // thumbnail_url
+            null, // display_url
+            null, // original_url
+            null, // storage_path
+            'published',
+            now,
+            now
+          ]);
+          console.log(`✅ Successfully created artwork: ${newArtworkId}`);
+        } catch (insertError) {
+          console.error(`❌ Failed to create artwork ${newArtworkId}:`, insertError);
+          throw insertError;
+        }
       }
 
       restored++;
