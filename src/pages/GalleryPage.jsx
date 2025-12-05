@@ -134,14 +134,7 @@ function GalleryPage() {
             <h3 class="artwork-title" style={primaryColor() ? `color: ${primaryColor()}` : undefined}>{artwork.title}</h3>
             <Show when={showArtistInfo}>
               <div class="artwork-artist-info">
-                <Show 
-                  when={artistInfo.avatar}
-                  fallback={
-                    <div class="artist-avatar-placeholder">
-                      <span>{artistInfo.name.charAt(0).toUpperCase()}</span>
-                    </div>
-                  }
-                >
+                <Show when={artistInfo.avatar}>
                   <img src={artistInfo.avatar} alt={artistInfo.name} class="artist-avatar-small" />
                 </Show>
                 <a href={`/artist/${artwork.user_id}`} class="artist-name-link">

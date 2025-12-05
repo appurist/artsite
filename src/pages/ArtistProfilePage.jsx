@@ -114,18 +114,11 @@ function ArtistProfilePage() {
             <div class="artist-profile-container">
               {/* Artist Header */}
               <div class="artist-profile-header">
-                <div class="artist-avatar-section">
-                  <Show 
-                    when={artist().avatar_url} 
-                    fallback={
-                      <div class="artist-avatar-placeholder">
-                        <span>{artist().name.charAt(0).toUpperCase()}</span>
-                      </div>
-                    }
-                  >
+                <Show when={artist().avatar_url}>
+                  <div class="artist-avatar-section">
                     <img src={artist().avatar_url} alt={artist().name} class="artist-avatar" />
-                  </Show>
-                </div>
+                  </div>
+                </Show>
                 <div class="artist-info-section">
                   <h1 class="artist-name">{artist().name}</h1>
                   <div class="artist-stats">

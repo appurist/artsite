@@ -890,24 +890,10 @@ body {
 }
 
 .artist-avatar-small {
-  width: 24px;
-  height: 24px;
+  width: 32px;
+  height: 32px;
   border-radius: 50%;
   object-fit: cover;
-  border: 1px solid var(--border-color);
-}
-
-.artist-avatar-placeholder {
-  width: 24px;
-  height: 24px;
-  border-radius: 50%;
-  background-color: var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 0.7rem;
-  font-weight: bold;
-  color: white;
   border: 1px solid var(--border-color);
 }
 
@@ -2053,19 +2039,6 @@ input[type="file"]:focus {
   border: 3px solid var(--border-color);
 }
 
-.artist-avatar-placeholder {
-  width: 120px;
-  height: 120px;
-  border-radius: 50%;
-  background: var(--primary-color);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 3rem;
-  font-weight: bold;
-  color: white;
-  border: 3px solid var(--border-color);
-}
 
 .artist-info-section {
   flex: 1;
