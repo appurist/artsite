@@ -452,40 +452,51 @@ async function deleteAllArtworks(request, env) {
       }));
     }
 
-    // Delete images from R2 storage
-    let deletedCount = 0;
+    // Delete ALL files from R2 storage for this user (including orphans)
+    let deletedCount = artworkList.length;
     let deletedFiles = 0;
     let skippedFiles = 0;
     
-    for (const artwork of artworkList) {
-      if (artwork.storage_path) {
+    // List and delete all files under artworks/{user_id}/
+    const userArtworkPrefix = `artworks/${userId}/`;
+    try {
+      const listResult = await env.ARTWORK_IMAGES.list({ prefix: userArtworkPrefix });
+      
+      for (const object of listResult.objects || []) {
         try {
-          await env.ARTWORK_IMAGES.delete(artwork.storage_path);
+          await env.ARTWORK_IMAGES.delete(object.key);
           deletedFiles++;
-          console.log(`Deleted image: ${artwork.storage_path}`);
-          
-          // Also delete thumbnail if it exists
-          const thumbnailPath = artwork.storage_path.replace(/^images\//, 'thumbnails/');
-          try {
-            await env.ARTWORK_IMAGES.delete(thumbnailPath);
-            console.log(`Deleted thumbnail: ${thumbnailPath}`);
-          } catch (thumbError) {
-            // Thumbnail may not exist, just log and continue
-            console.log(`Thumbnail not found (continuing): ${thumbnailPath}`);
-          }
+          console.log(`Deleted file: ${object.key}`);
         } catch (r2Error) {
-          // Handle 404 (not found) gracefully - file may already be gone
           if (r2Error.message?.includes('404') || r2Error.message?.includes('not found')) {
-            console.log(`File not found (continuing cleanup): ${artwork.storage_path}`);
+            console.log(`File not found (continuing cleanup): ${object.key}`);
             skippedFiles++;
           } else {
-            console.error('Error deleting image from R2:', r2Error);
+            console.error('Error deleting file from R2:', r2Error);
             skippedFiles++;
           }
-          // Continue with deletion even if R2 cleanup fails
         }
       }
-      deletedCount++;
+    } catch (listError) {
+      console.error('Error listing files from R2:', listError);
+      // Fall back to individual file deletion based on database records
+      for (const artwork of artworkList) {
+        if (artwork.storage_path) {
+          try {
+            await env.ARTWORK_IMAGES.delete(artwork.storage_path);
+            deletedFiles++;
+            console.log(`Deleted image: ${artwork.storage_path}`);
+          } catch (r2Error) {
+            if (r2Error.message?.includes('404') || r2Error.message?.includes('not found')) {
+              console.log(`File not found (continuing cleanup): ${artwork.storage_path}`);
+              skippedFiles++;
+            } else {
+              console.error('Error deleting image from R2:', r2Error);
+              skippedFiles++;
+            }
+          }
+        }
+      }
     }
 
     // Delete all artworks from database
