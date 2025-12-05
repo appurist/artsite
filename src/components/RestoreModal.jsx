@@ -93,6 +93,11 @@ function RestoreModal(props) {
       }
 
       console.log('Metadata restore result:', metaResult);
+      console.log('Selected components:', selectedComponents());
+      console.log('artworkIdMapping:', metaResult.artworkIdMapping);
+      console.log('artworkIdMapping exists:', !!metaResult.artworkIdMapping);
+      console.log('artworkIdMapping size:', Object.keys(metaResult.artworkIdMapping || {}).length);
+      
       updateRestoreProgress('Metadata restored successfully', 30);
 
       // Step 3: Extract images from already-loaded ZIP and restore them one by one
