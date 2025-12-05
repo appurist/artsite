@@ -1,7 +1,7 @@
 {
   "name": "artsite",
   "private": true,
-  "version": "0.9.30",
+  "version": "0.9.31",
   "type": "module",
   "author": "Paul Whittemore <dev@appurist.com>",
   "scripts": {

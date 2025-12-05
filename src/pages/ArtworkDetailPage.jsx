@@ -135,6 +135,17 @@ function ArtworkDetailPage() {
     return artwork() && user() && artwork().user_id === user().id;
   };
 
+  // Extract artist name from profile record
+  const getArtistName = () => {
+    if (!artwork()?.profile_record) return null;
+    try {
+      const profile = JSON.parse(artwork().profile_record);
+      return profile.name || profile.display_name || profile.artist_name || null;
+    } catch {
+      return null;
+    }
+  };
+
   // Navigation helpers
   const hasPrevious = () => {
     return currentIndex() > 0;
@@ -260,6 +271,9 @@ function ArtworkDetailPage() {
               <div class="artwork-detail-info-section">
                 <div class="artwork-detail-header">
                   <h1 class="artwork-detail-title">{artwork().title}</h1>
+                  <Show when={getArtistName()}>
+                    <p class="artwork-detail-artist">by {getArtistName()}</p>
+                  </Show>
                   <Show when={isOwner()}>
                     <div class="artwork-detail-actions">
                       <button 
