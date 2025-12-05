@@ -49,7 +49,7 @@ function RestoreModal(props) {
       updateRestoreProgress('Preparing restore...', 0);
 
       // Step 1: Extract ZIP file client-side
-      updateRestoreProgress('Extracting backup file...', 5);
+      updateRestoreProgress('Extracting backup file...', 0);
       const zip = await JSZip.loadAsync(file);
       
       // Extract metadata files from ZIP
@@ -68,7 +68,7 @@ function RestoreModal(props) {
       const backupMetadata = JSON.parse(entries['backup-metadata.json']);
       
       // Step 2: Send metadata as JSON to backend
-      updateRestoreProgress('Restoring metadata...', 10);
+      updateRestoreProgress('Restoring metadata...', 0);
       
       const token = localStorage.getItem('token');
       const metaPayload = {
@@ -100,8 +100,6 @@ function RestoreModal(props) {
       console.log('Condition check - includes artworks:', selectedComponents().includes('artworks'));
       console.log('Condition check - has mapping:', !!metaResult.artworkIdMapping);
       console.log('Condition check - mapping not empty:', Object.keys(metaResult.artworkIdMapping || {}).length > 0);
-      
-      updateRestoreProgress('Metadata restored successfully', 30);
 
       // Step 3: Extract images from already-loaded ZIP and restore them one by one  
       console.log('About to check condition...');
@@ -111,7 +109,6 @@ function RestoreModal(props) {
       
       if (hasArtworks && hasArtworkData) {
         console.log('✅ All conditions met, starting image restore...');
-        updateRestoreProgress('Extracting images from backup...', 40);
         
         // Parse artwork metadata to match with images
         const artworksData = JSON.parse(entries['art/artworks.json']);
@@ -128,7 +125,7 @@ function RestoreModal(props) {
 
         console.log(`Found ${artworkImages.length} images in backup`);
         if (artworkImages.length > 0) {
-          updateRestoreProgress(`Restoring ${artworkImages.length} images...`, 50);
+          updateRestoreProgress(`Starting upload of ${artworkImages.length} images...`, 0);
           
           let processedImages = 0;
           for (const { fileName, zipFile } of artworkImages) {
@@ -193,10 +190,14 @@ function RestoreModal(props) {
             }
             
             processedImages++;
-            const progress = 50 + (processedImages / artworkImages.length) * 40;
-            updateRestoreProgress(`Restored ${processedImages}/${artworkImages.length} images`, progress);
+            const progress = Math.round((processedImages / artworkImages.length) * 100);
+            updateRestoreProgress(`Uploaded ${processedImages}/${artworkImages.length} images`, progress);
           }
+        } else if (artworkImages.length === 0) {
+          updateRestoreProgress('No images to restore', 100);
         }
+      } else {
+        updateRestoreProgress('Metadata restored successfully', 100);
       }
 
       updateRestoreProgress('Restore completed successfully!', 100);
