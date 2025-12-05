@@ -32,7 +32,6 @@ export function AuthProvider(props) {
         // Clear invalid token
         localStorage.removeItem('token');
       } finally {
-        console.log('Setting auth loading to false');
         setIsLoading(false);
       }
     };

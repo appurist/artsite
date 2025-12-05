@@ -1,15 +1,32 @@
-import { createSignal, onMount, Show } from 'solid-js';
+import { createSignal, onMount, onCleanup, Show } from 'solid-js';
 import { useParams, A } from '@solidjs/router';
-import { getArtistProfile, getArtworks } from '../api.js';
+import { getArtistProfile, getArtworks, getCustomDomainUserSettings } from '../api.js';
 import LoadingSpinner from '../components/Spinner';
 import { getAvatarUrl } from '../avatar-utils.js';
+import { useSettings } from '../contexts/SettingsContext';
 
 // Import icons
 import homeIcon from '../assets/icons/home.svg';
 import webIcon from '../assets/icons/web.svg';
 
+// Utility function to determine if a color is dark
+function isColorDark(color) {
+  // Convert hex to RGB
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate luminance (0-255, where lower values are darker)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+  
+  // Return true if luminance is below threshold (dark color)
+  return luminance < 128;
+}
+
 function ArtistProfilePage() {
   const params = useParams();
+  const { customDomainUser } = useSettings();
   
   const [artist, setArtist] = createSignal(null);
   const [artworks, setArtworks] = createSignal([]);
@@ -19,11 +36,9 @@ function ArtistProfilePage() {
   onMount(async () => {
     // Support both /artist/:id and /*username routes (for @username pattern)
     const identifier = params.id || params.username;
-    console.log('ArtistProfilePage params:', { id: params.id, username: params.username, identifier });
     
     // Check if this is a @username route - if not, this component shouldn't handle it
     if (params.username && !params.username.startsWith('@')) {
-      console.log('Not a @username route, returning 404');
       setError('Page not found');
       setIsLoading(false);
       return;
@@ -41,7 +56,6 @@ function ArtistProfilePage() {
 
       // For @username routes, pass the @username directly; for /artist/:id routes, pass the UUID
       const lookupId = params.username || identifier;
-      console.log('ArtistProfilePage lookupId:', lookupId);
       
       // Load artist profile and their artworks
       const artistData = await getArtistProfile(lookupId);
@@ -53,11 +67,43 @@ function ArtistProfilePage() {
 
       setArtist(artistData);
       setArtworks(artworksData);
+
+      // Load custom colors for this artist (if not a custom domain user)
+      if (customDomainUser() !== artistData.id) {
+        try {
+          const settings = await getCustomDomainUserSettings(artistData.id);
+          if (settings?.primary_color) {
+            document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+            // Add dark theme class if primary color is dark
+            if (isColorDark(settings.primary_color)) {
+              document.documentElement.classList.add('dark-primary');
+            } else {
+              document.documentElement.classList.remove('dark-primary');
+            }
+          }
+          if (settings?.secondary_color) {
+            document.documentElement.style.setProperty('--secondary-color', settings.secondary_color);
+          }
+        } catch (settingsError) {
+          console.log('Could not load artist custom colors:', settingsError);
+        }
+      }
     } catch (err) {
       console.error('Error loading artist profile:', err);
       setError('Artist not found or profile not public');
     } finally {
       setIsLoading(false);
+    }
+  });
+
+  // Cleanup effect to reset colors when navigating away from artist profile
+  onCleanup(() => {
+    const currentArtist = artist();
+    // If we're leaving an artist profile (not a custom domain), reset colors to defaults
+    if (currentArtist && customDomainUser() !== currentArtist.id) {
+      document.documentElement.style.removeProperty('--primary-color');
+      document.documentElement.style.removeProperty('--secondary-color');
+      document.documentElement.classList.remove('dark-primary');
     }
   });
 

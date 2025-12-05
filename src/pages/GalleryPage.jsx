@@ -1,20 +1,33 @@
-import { createSignal, createEffect, Show } from 'solid-js';
+import { createSignal, createEffect, onCleanup, Show } from 'solid-js';
 import { useParams } from '@solidjs/router';
 import { getArtworks, getCustomDomainUserSettings } from '../api.js';
 import { useSettings } from '../contexts/SettingsContext';
 import { getAvatarUrl } from '../avatar-utils.js';
 
+// Utility function to determine if a color is dark
+function isColorDark(color) {
+  // Convert hex to RGB
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate luminance (0-255, where lower values are darker)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+  
+  // Return true if luminance is below threshold (dark color)
+  return luminance < 128;
+}
+
 function GalleryPage() {
   const params = useParams();
-  const { customDomainUser, siteTitle, primaryColor, secondaryColor } = useSettings();
+  const { customDomainUser, siteTitle } = useSettings();
   const [artworks, setArtworks] = createSignal([]);
   const [isLoading, setIsLoading] = createSignal(true);
   const [error, setError] = createSignal(null);
   const [userDisplayName, setUserDisplayName] = createSignal(null);
   const [galleryDescription, setGalleryDescription] = createSignal(null);
   const [artistBio, setArtistBio] = createSignal(null);
-  const [localPrimaryColor, setLocalPrimaryColor] = createSignal(null);
-  const [localSecondaryColor, setLocalSecondaryColor] = createSignal(null);
 
   // Determine which user's gallery to show
   const getCurrentUser = () => {
@@ -60,8 +73,6 @@ function GalleryPage() {
       setUserDisplayName(null);
       setGalleryDescription(null);
       setArtistBio(null);
-      setLocalPrimaryColor(null);
-      setLocalSecondaryColor(null);
 
       try {
         // Load artworks
@@ -69,6 +80,14 @@ function GalleryPage() {
           userId: currentUser 
         });
         setArtworks(fetchedArtworks);
+
+        // Reset colors to defaults if viewing default gallery (no specific user)
+        if (!currentUser) {
+          // Reset to default theme colors from CSS
+          document.documentElement.style.removeProperty('--primary-color');
+          document.documentElement.style.removeProperty('--secondary-color');
+          document.documentElement.classList.remove('dark-primary');
+        }
 
         // Load user display name and gallery settings if we have a specific user
         // For custom domains, colors are loaded by SettingsContext
@@ -84,13 +103,22 @@ function GalleryPage() {
             if (settings?.artist_bio) {
               setArtistBio(settings.artist_bio);
             }
-            // Only load colors locally if this is NOT a custom domain user
-            if (customDomainUser() !== currentUser) {
+            // Update colors for any specific user gallery (unless already handled by custom domain)
+            // Only apply custom colors when viewing a specific user's gallery, not the default gallery
+            if (currentUser && customDomainUser() !== currentUser) {
               if (settings?.primary_color) {
-                setLocalPrimaryColor(settings.primary_color);
+                // Update CSS custom property for user-specific gallery
+                document.documentElement.style.setProperty('--primary-color', settings.primary_color);
+                // Add dark theme class if primary color is dark
+                if (isColorDark(settings.primary_color)) {
+                  document.documentElement.classList.add('dark-primary');
+                } else {
+                  document.documentElement.classList.remove('dark-primary');
+                }
               }
               if (settings?.secondary_color) {
-                setLocalSecondaryColor(settings.secondary_color);
+                // Update CSS custom property for user-specific gallery
+                document.documentElement.style.setProperty('--secondary-color', settings.secondary_color);
               }
             }
           } catch (settingsError) {
@@ -106,22 +134,16 @@ function GalleryPage() {
     })();
   });
 
-  // Get effective colors (context for custom domains, local for user galleries)
-  const getEffectivePrimaryColor = () => {
+  // Cleanup effect to reset colors when navigating away from user-specific galleries
+  onCleanup(() => {
     const currentUser = getCurrentUser();
-    if (customDomainUser() === currentUser) {
-      return primaryColor();
+    // If we're leaving a user-specific gallery (not a custom domain), reset colors to defaults
+    if (currentUser && customDomainUser() !== currentUser) {
+      document.documentElement.style.removeProperty('--primary-color');
+      document.documentElement.style.removeProperty('--secondary-color');
+      document.documentElement.classList.remove('dark-primary');
     }
-    return localPrimaryColor();
-  };
-
-  const getEffectiveSecondaryColor = () => {
-    const currentUser = getCurrentUser();
-    if (customDomainUser() === currentUser) {
-      return secondaryColor();
-    }
-    return localSecondaryColor();
-  };
+  });
 
   const createArtworkCard = (artwork) => {
     const thumbnailUrl = artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg';
@@ -159,7 +181,7 @@ function GalleryPage() {
             </div>
           </div>
           <div class="artwork-details">
-            <h3 class="artwork-title" style={getEffectivePrimaryColor() ? `color: ${getEffectivePrimaryColor()}` : undefined}>{artwork.title}</h3>
+            <h3 class="artwork-title">{artwork.title}</h3>
             <Show when={showArtistInfo}>
               <div class="artwork-artist-info">
                 <Show when={artistInfo.avatar}>
@@ -183,7 +205,7 @@ function GalleryPage() {
             <Show when={artwork.tags}>
               <div class="artwork-tags">
                 {artwork.tags.split(',').map(tag => 
-                  <span class="tag-pill" style={getEffectiveSecondaryColor() ? `background-color: ${getEffectiveSecondaryColor()}; color: white` : undefined}>{tag.replace(/"/g, '').trim()}</span>
+                  <span class="tag-pill">{tag.replace(/"/g, '').trim()}</span>
                 )}
               </div>
             </Show>

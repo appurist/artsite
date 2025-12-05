@@ -1,6 +1,21 @@
 import { createContext, useContext, createSignal, createEffect } from 'solid-js';
 import { getSettings, getCustomDomainUser, getCustomDomainUserSettings } from '../api.js';
 
+// Utility function to determine if a color is dark
+function isColorDark(color) {
+  // Convert hex to RGB
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substr(0, 2), 16);
+  const g = parseInt(hex.substr(2, 2), 16);
+  const b = parseInt(hex.substr(4, 2), 16);
+  
+  // Calculate luminance (0-255, where lower values are darker)
+  const luminance = (0.299 * r + 0.587 * g + 0.114 * b);
+  
+  // Return true if luminance is below threshold (dark color)
+  return luminance < 128;
+}
+
 const SettingsContext = createContext();
 
 export function SettingsProvider(props) {
@@ -26,9 +41,19 @@ export function SettingsProvider(props) {
           }
           if (customDomainSettings?.primary_color) {
             setPrimaryColor(customDomainSettings.primary_color);
+            // Update CSS custom property
+            document.documentElement.style.setProperty('--primary-color', customDomainSettings.primary_color);
+            // Add dark theme class if primary color is dark
+            if (isColorDark(customDomainSettings.primary_color)) {
+              document.documentElement.classList.add('dark-primary');
+            } else {
+              document.documentElement.classList.remove('dark-primary');
+            }
           }
           if (customDomainSettings?.secondary_color) {
             setSecondaryColor(customDomainSettings.secondary_color);
+            // Update CSS custom property
+            document.documentElement.style.setProperty('--secondary-color', customDomainSettings.secondary_color);
           }
         } else {
           document.title = window.location.hostname;
