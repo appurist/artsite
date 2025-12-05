@@ -28,10 +28,10 @@ function App() {
           <Route path="/art/:id/edit" component={EditArtworkPage} />
           <Route path="/art/:id" component={ArtworkDetailPage} />
           <Route path="/artist/:id" component={ArtistProfilePage} />
-          <Route path="/@:username" component={ArtistProfilePage} />
           <Route path="/site" component={SitePage} />
           <Route path="/profile" component={ProfilePage} />
           <Route path="/about" component={AboutPage} />
+          <Route path="/*username" component={ArtistProfilePage} />
         </Router>
       </SettingsProvider>
     </AuthProvider>

@@ -17,9 +17,17 @@ function ArtistProfilePage() {
   const [error, setError] = createSignal(null);
 
   onMount(async () => {
-    // Support both /artist/:id and /@:username routes
+    // Support both /artist/:id and /*username routes (for @username pattern)
     const identifier = params.id || params.username;
     console.log('ArtistProfilePage params:', { id: params.id, username: params.username, identifier });
+    
+    // Check if this is a @username route - if not, this component shouldn't handle it
+    if (params.username && !params.username.startsWith('@')) {
+      console.log('Not a @username route, returning 404');
+      setError('Page not found');
+      setIsLoading(false);
+      return;
+    }
     
     if (!identifier) {
       setError('No artist identifier provided');
@@ -31,8 +39,8 @@ function ArtistProfilePage() {
       setIsLoading(true);
       setError(null);
 
-      // Add @ prefix for username route to match backend expectation
-      const lookupId = params.username ? `@${params.username}` : identifier;
+      // For @username routes, pass the @username directly; for /artist/:id routes, pass the UUID
+      const lookupId = params.username || identifier;
       console.log('ArtistProfilePage lookupId:', lookupId);
       
       // Load artist profile and their artworks
