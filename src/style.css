@@ -2099,6 +2099,64 @@ input[type="file"]:focus {
   filter: invert(1);
 }
 
+/* Drag and Drop Styles */
+.admin-artwork-container {
+  position: relative;
+  display: flex;
+  align-items: stretch;
+  margin-bottom: 1rem;
+  transition: all 0.2s ease;
+}
+
+.admin-artwork-container.drag-over {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.admin-artwork-container.dragging {
+  opacity: 0.5;
+  transform: rotate(2deg);
+}
+
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  padding: 0.5rem 0;
+  margin-right: 0.75rem;
+  cursor: grab;
+  background: transparent;
+  border: none;
+  transition: all 0.2s ease;
+}
+
+.drag-handle:hover {
+  background: rgba(0, 0, 0, 0.05);
+  border-radius: 4px;
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
+.hamburger-icon {
+  width: 16px;
+  height: 16px;
+  opacity: 0.6;
+  transition: opacity 0.2s ease;
+}
+
+.drag-handle:hover .hamburger-icon {
+  opacity: 1;
+}
+
+.admin-artwork-link {
+  flex: 1;
+  text-decoration: none;
+  color: inherit;
+}
+
 .artist-gallery {
   margin-bottom: 2rem;
 }

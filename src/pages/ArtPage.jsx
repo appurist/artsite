@@ -1,7 +1,7 @@
 import { createSignal, createEffect, Show, For } from 'solid-js';
 import { A, useNavigate } from '@solidjs/router';
 import { useAuth } from '../contexts/AuthContext';
-import { getArtworks, deleteArtwork, deleteAllArtworks, API_BASE_URL } from '../api.js';
+import { getArtworks, deleteArtwork, deleteAllArtworks, getArtworkOrder, updateArtworkOrder, API_BASE_URL } from '../api.js';
 import { vanillaToast } from 'vanilla-toast';
 import RestoreModal from '../components/RestoreModal';
 import BackupModal from '../components/BackupModal';
@@ -13,6 +13,7 @@ import pencilIcon from '../assets/icons/pencil.svg';
 import deleteIcon from '../assets/icons/delete.svg';
 import downloadIcon from '../assets/icons/download.svg';
 import uploadIcon from '../assets/icons/upload.svg';
+import hamburgerIcon from '../assets/icons/hamburger.svg';
 
 function ArtPage() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -22,6 +23,8 @@ function ArtPage() {
   const [showRestoreModal, setShowRestoreModal] = createSignal(false);
   const [showBackupModal, setShowBackupModal] = createSignal(false);
   const [error, setError] = createSignal(null);
+  const [draggedIndex, setDraggedIndex] = createSignal(null);
+  const [dragOverIndex, setDragOverIndex] = createSignal(null);
 
   // Redirect if not authenticated (but wait for auth to load first)
   createEffect(() => {
@@ -39,7 +42,35 @@ function ArtPage() {
         setIsLoading(true);
         setError(null);
         const userArtworks = await getArtworks({ userId: user().id });
-        setArtworks(userArtworks || []); // Ensure it's always an array
+        
+        // Load custom order and apply it
+        try {
+          const customOrder = await getArtworkOrder();
+          if (customOrder && customOrder.length > 0) {
+            // Apply custom order by sorting artworks according to the order array
+            const orderedArtworks = [];
+            const artworkMap = new Map(userArtworks.map(artwork => [artwork.id, artwork]));
+            
+            // Add artworks in custom order
+            for (const artworkId of customOrder) {
+              const artwork = artworkMap.get(artworkId);
+              if (artwork) {
+                orderedArtworks.push(artwork);
+                artworkMap.delete(artworkId); // Remove from map to avoid duplicates
+              }
+            }
+            
+            // Add any remaining artworks that aren't in the custom order
+            orderedArtworks.push(...artworkMap.values());
+            
+            setArtworks(orderedArtworks);
+          } else {
+            setArtworks(userArtworks || []); // Use default order if no custom order
+          }
+        } catch (orderErr) {
+          console.warn('Could not load custom artwork order:', orderErr);
+          setArtworks(userArtworks || []); // Fall back to default order
+        }
       } catch (err) {
         console.error('Error loading artworks:', err);
         setError('Error loading artworks. Please try refreshing the page.');
@@ -161,6 +192,67 @@ function ArtPage() {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (e, index) => {
+    setDraggedIndex(index);
+    e.dataTransfer.effectAllowed = 'move';
+  };
+
+  const handleDragOver = (e, index) => {
+    e.preventDefault();
+    setDragOverIndex(index);
+  };
+
+  const handleDragLeave = (e) => {
+    e.preventDefault();
+    setDragOverIndex(null);
+  };
+
+  const handleDrop = (e, dropIndex) => {
+    e.preventDefault();
+    const dragIndex = draggedIndex();
+    
+    if (dragIndex === null || dragIndex === dropIndex) {
+      setDraggedIndex(null);
+      setDragOverIndex(null);
+      return;
+    }
+
+    // Reorder artworks array
+    const newArtworks = [...artworks()];
+    const draggedArtwork = newArtworks[dragIndex];
+    
+    // Remove from old position
+    newArtworks.splice(dragIndex, 1);
+    
+    // Insert at new position
+    newArtworks.splice(dropIndex, 0, draggedArtwork);
+    
+    setArtworks(newArtworks);
+    
+    // TODO: Save order to backend
+    saveArtworkOrder(newArtworks.map(artwork => artwork.id));
+    
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  // Save artwork order to backend
+  const saveArtworkOrder = async (orderIds) => {
+    try {
+      await updateArtworkOrder(orderIds);
+      vanillaToast.success('Artwork order updated', { duration: 2000 });
+    } catch (err) {
+      console.error('Error saving artwork order:', err);
+      vanillaToast.error('Failed to save artwork order', { duration: 3000 });
+    }
+  };
+
   return (
     <>
     <Show
@@ -241,51 +333,67 @@ function ArtPage() {
               >
                 <div class="admin-artworks-grid">
                   <For each={artworks()}>
-                    {(artwork) => (
-                      <A href={`/art/${artwork.id}`} class="admin-artwork-link">
-                        <div class="admin-artwork-item">
-                          <div class="admin-artwork-preview">
-                            <img
-                              src={artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg'}
-                              alt={artwork.title}
-                            />
-                          </div>
-                          <div class="admin-artwork-details">
-                            <h4>{artwork.title}</h4>
-                            <p>
-                              {artwork.medium || 'No medium specified'}
-                              {artwork.year_created && ` (${artwork.year_created})`}
-                            </p>
-                            <p class="artwork-created">
-                              Uploaded: {new Date(artwork.created_at).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <div class="admin-artwork-actions">
-                            <button
-                              class="btn btn-secondary btn-sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleEditArtwork(artwork.id);
-                              }}
-                            >
-                              <img src={pencilIcon} alt="Edit" class="icon" aria-hidden="true" />
-                              Edit
-                            </button>
-                            <button
-                              class="btn btn-danger btn-sm"
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                handleDeleteArtwork(artwork.id);
-                              }}
-                            >
-                              <img src={deleteIcon} alt="Delete" class="icon" aria-hidden="true" />
-                              Delete
-                            </button>
-                          </div>
+                    {(artwork, index) => (
+                      <div 
+                        class={`admin-artwork-container ${dragOverIndex() === index() ? 'drag-over' : ''} ${draggedIndex() === index() ? 'dragging' : ''}`}
+                        onDragOver={(e) => handleDragOver(e, index())}
+                        onDragLeave={handleDragLeave}
+                        onDrop={(e) => handleDrop(e, index())}
+                      >
+                        <div 
+                          class="drag-handle"
+                          draggable={true}
+                          onDragStart={(e) => handleDragStart(e, index())}
+                          onDragEnd={handleDragEnd}
+                          title="Drag to reorder"
+                        >
+                          <img src={hamburgerIcon} alt="Drag to reorder" class="hamburger-icon" />
                         </div>
-                      </A>
+                        <A href={`/art/${artwork.id}`} class="admin-artwork-link">
+                          <div class="admin-artwork-item">
+                            <div class="admin-artwork-preview">
+                              <img
+                                src={artwork.thumbnail_url || artwork.image_url || '/placeholder.jpg'}
+                                alt={artwork.title}
+                              />
+                            </div>
+                            <div class="admin-artwork-details">
+                              <h4>{artwork.title}</h4>
+                              <p>
+                                {artwork.medium || 'No medium specified'}
+                                {artwork.year_created && ` (${artwork.year_created})`}
+                              </p>
+                              <p class="artwork-created">
+                                Uploaded: {new Date(artwork.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div class="admin-artwork-actions">
+                              <button
+                                class="btn btn-secondary btn-sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleEditArtwork(artwork.id);
+                                }}
+                              >
+                                <img src={pencilIcon} alt="Edit" class="icon" aria-hidden="true" />
+                                Edit
+                              </button>
+                              <button
+                                class="btn btn-danger btn-sm"
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  handleDeleteArtwork(artwork.id);
+                                }}
+                              >
+                                <img src={deleteIcon} alt="Delete" class="icon" aria-hidden="true" />
+                                Delete
+                              </button>
+                            </div>
+                          </div>
+                        </A>
+                      </div>
                     )}
                   </For>
                 </div>

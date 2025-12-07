@@ -268,6 +268,31 @@ export async function deleteAllArtworks() {
   });
 }
 
+/**
+ * Get artwork order for the authenticated user
+ */
+export async function getArtworkOrder() {
+  const response = await apiRequest('/api/artworks/order', {
+    method: 'GET'
+  });
+  
+  return response.artwork_ids;
+}
+
+/**
+ * Update artwork order for the authenticated user
+ */
+export async function updateArtworkOrder(artworkIds) {
+  const response = await apiRequest('/api/artworks/order', {
+    method: 'PUT',
+    body: JSON.stringify({
+      artwork_ids: artworkIds
+    })
+  });
+  
+  return response;
+}
+
 // ===== PROFILES API =====
 
 /**

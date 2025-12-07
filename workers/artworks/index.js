@@ -44,7 +44,14 @@ export async function handleArtworks(request, env, ctx) {
     if ((path === '/api/artworks/all' || path === '/api/artworks/delete-all') && method === 'DELETE') {
       return await deleteAllArtworks(request, env);
     }
-
+    
+    if (path === '/api/artworks/order' && method === 'GET') {
+      return await getArtworkOrder(request, env);
+    }
+    
+    if (path === '/api/artworks/order' && method === 'PUT') {
+      return await updateArtworkOrder(request, env);
+    }
 
     return withCors(new Response(JSON.stringify({ 
       error: 'Endpoint not found' 
@@ -530,6 +537,146 @@ async function deleteAllArtworks(request, env) {
 
     return withCors(new Response(JSON.stringify({
       error: 'Failed to delete artworks',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+}
+
+/**
+ * Get artwork order for the authenticated user
+ */
+async function getArtworkOrder(request, env) {
+  try {
+    // Authenticate the request
+    const user = await authenticateRequest(request, env.JWT_SECRET);
+    const userId = user.account_id;
+
+    // Get the artwork order for this user
+    const orderRecord = await queryFirst(
+      env.DB,
+      'SELECT artwork_ids FROM artwork_order WHERE account_id = ?',
+      [userId]
+    );
+
+    const artworkIds = orderRecord ? JSON.parse(orderRecord.artwork_ids) : [];
+
+    return withCors(new Response(JSON.stringify({
+      artwork_ids: artworkIds
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+  } catch (error) {
+    console.error('Get artwork order error:', error);
+    
+    if (error.message.includes('Unauthorized') || error.message.includes('token')) {
+      return withCors(new Response(JSON.stringify({
+        error: 'Unauthorized',
+        message: error.message
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    return withCors(new Response(JSON.stringify({
+      error: 'Failed to get artwork order',
+      message: error.message
+    }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    }));
+  }
+}
+
+/**
+ * Update artwork order for the authenticated user
+ */
+async function updateArtworkOrder(request, env) {
+  try {
+    // Authenticate the request
+    const user = await authenticateRequest(request, env.JWT_SECRET);
+    const userId = user.account_id;
+
+    // Parse request body
+    const body = await request.json();
+    const { artwork_ids } = body;
+
+    if (!Array.isArray(artwork_ids)) {
+      return withCors(new Response(JSON.stringify({
+        error: 'Invalid artwork_ids format',
+        message: 'artwork_ids must be an array'
+      }), {
+        status: 400,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    // Verify that all artwork IDs belong to this user
+    if (artwork_ids.length > 0) {
+      const artworkCount = await queryFirst(
+        env.DB,
+        'SELECT COUNT(*) as count FROM artworks WHERE account_id = ? AND id IN (' + 
+        artwork_ids.map(() => '?').join(',') + ')',
+        [userId, ...artwork_ids]
+      );
+
+      if (artworkCount.count !== artwork_ids.length) {
+        return withCors(new Response(JSON.stringify({
+          error: 'Invalid artwork IDs',
+          message: 'Some artwork IDs do not belong to the authenticated user'
+        }), {
+          status: 400,
+          headers: { 'Content-Type': 'application/json' }
+        }));
+      }
+    }
+
+    // Update or insert the artwork order
+    const artworkIdsJson = JSON.stringify(artwork_ids);
+    const currentTime = getCurrentTimestamp();
+
+    // Try to update existing record first
+    const updateResult = await executeQuery(
+      env.DB,
+      'UPDATE artwork_order SET artwork_ids = ?, updated_at = ? WHERE account_id = ?',
+      [artworkIdsJson, currentTime, userId]
+    );
+
+    // If no rows affected, insert new record
+    if (updateResult.meta.changes === 0) {
+      await executeQuery(
+        env.DB,
+        'INSERT INTO artwork_order (account_id, artwork_ids, created_at, updated_at) VALUES (?, ?, ?, ?)',
+        [userId, artworkIdsJson, currentTime, currentTime]
+      );
+    }
+
+    return withCors(new Response(JSON.stringify({
+      message: 'Artwork order updated successfully',
+      artwork_ids: artwork_ids
+    }), {
+      headers: { 'Content-Type': 'application/json' }
+    }));
+
+  } catch (error) {
+    console.error('Update artwork order error:', error);
+    
+    if (error.message.includes('Unauthorized') || error.message.includes('token')) {
+      return withCors(new Response(JSON.stringify({
+        error: 'Unauthorized',
+        message: error.message
+      }), {
+        status: 401,
+        headers: { 'Content-Type': 'application/json' }
+      }));
+    }
+
+    return withCors(new Response(JSON.stringify({
+      error: 'Failed to update artwork order',
       message: error.message
     }), {
       status: 500,
