@@ -43,34 +43,8 @@ function ArtPage() {
         setError(null);
         const userArtworks = await getArtworks({ userId: user().id });
         
-        // Load custom order and apply it
-        try {
-          const customOrder = await getArtworkOrder();
-          if (customOrder && customOrder.length > 0) {
-            // Apply custom order by sorting artworks according to the order array
-            const orderedArtworks = [];
-            const artworkMap = new Map(userArtworks.map(artwork => [artwork.id, artwork]));
-            
-            // Add artworks in custom order
-            for (const artworkId of customOrder) {
-              const artwork = artworkMap.get(artworkId);
-              if (artwork) {
-                orderedArtworks.push(artwork);
-                artworkMap.delete(artworkId); // Remove from map to avoid duplicates
-              }
-            }
-            
-            // Add any remaining artworks that aren't in the custom order
-            orderedArtworks.push(...artworkMap.values());
-            
-            setArtworks(orderedArtworks);
-          } else {
-            setArtworks(userArtworks || []); // Use default order if no custom order
-          }
-        } catch (orderErr) {
-          console.warn('Could not load custom artwork order:', orderErr);
-          setArtworks(userArtworks || []); // Fall back to default order
-        }
+        // Backend now handles custom ordering automatically
+        setArtworks(userArtworks || []);
       } catch (err) {
         console.error('Error loading artworks:', err);
         setError('Error loading artworks. Please try refreshing the page.');

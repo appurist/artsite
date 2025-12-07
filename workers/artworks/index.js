@@ -87,7 +87,8 @@ async function listArtworks(request, env) {
       account_id: userId,
       status,
       page,
-      limit
+      limit,
+      applyCustomOrder: !!userId // Apply custom order when loading for a specific user
     });
 
     return withCors(new Response(JSON.stringify({

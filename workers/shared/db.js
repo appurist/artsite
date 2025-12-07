@@ -218,7 +218,7 @@ export async function createArtwork(db, artworkData) {
  * Get artworks with pagination
  */
 export async function getArtworks(db, options = {}) {
-  const { account_id, status = 'published', page = 1, limit = 20 } = options;
+  const { account_id, status = 'published', page = 1, limit = 20, applyCustomOrder = false } = options;
   
   let baseQuery = `
     SELECT a.*, p.record as profile_record, acc.username
@@ -232,7 +232,40 @@ export async function getArtworks(db, options = {}) {
   if (status) filters['a.status'] = status;
   
   const { whereClause, params } = buildWhereClause(filters);
-  baseQuery += ` ${whereClause} ORDER BY a.created_at DESC`;
+  baseQuery += ` ${whereClause}`;
+  
+  // Apply custom order if requested and we have a specific account_id
+  if (applyCustomOrder && account_id) {
+    try {
+      // Get the custom order for this account
+      const orderRecord = await queryFirst(
+        db,
+        'SELECT artwork_ids FROM artwork_order WHERE account_id = ?',
+        [account_id]
+      );
+      
+      if (orderRecord && orderRecord.artwork_ids) {
+        const customOrder = JSON.parse(orderRecord.artwork_ids);
+        if (customOrder.length > 0) {
+          // Create a CASE statement to order by custom order
+          const caseStatement = customOrder
+            .map((id, index) => `WHEN a.id = '${id}' THEN ${index}`)
+            .join(' ');
+          
+          baseQuery += ` ORDER BY CASE ${caseStatement} ELSE 999999 END, a.created_at DESC`;
+        } else {
+          baseQuery += ` ORDER BY a.created_at DESC`;
+        }
+      } else {
+        baseQuery += ` ORDER BY a.created_at DESC`;
+      }
+    } catch (error) {
+      console.warn('Failed to apply custom order, falling back to default:', error);
+      baseQuery += ` ORDER BY a.created_at DESC`;
+    }
+  } else {
+    baseQuery += ` ORDER BY a.created_at DESC`;
+  }
   
   const paginatedQuery = buildPaginationQuery(baseQuery, page, limit);
   
