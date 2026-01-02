@@ -2292,6 +2292,7 @@ input[type="file"]:focus {
 
   .artwork-detail-image-section {
     flex: none;
+    width: 100%;
   }
 
   .artwork-detail-image-container {
